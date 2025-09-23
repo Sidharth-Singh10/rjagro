@@ -16,6 +16,6 @@
    - run `shuttle run`
 
 6. **Frontend Server**
-   - `cd rjagrofrontend`
+   - `cd rjagro_frontend`
    - `npm i`
    - `npm run dev`
