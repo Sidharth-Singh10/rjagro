@@ -59,20 +59,17 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
 
     const { sortedData, requestSort, getSortIcon } = useBatchesSorting(batches);
 
-    // Mortality calculation function
     const calculateMortality = (initial: number, current: number): number => {
         if (initial === 0) return 0;
         return ((initial - current) / initial) * 100;
     };
 
-    // Filter items by Chick category
     const chickItems = useMemo(() => {
         return items.filter(item =>
             item.item_category && item.item_category.toLowerCase().includes('chick')
         );
     }, [items]);
 
-    // Handle multiple chick items selection
     const handleChickItemToggle = (itemCode: string) => {
         setNewBatch(prev => {
             const currentItems = prev.chick_item_code || [];
