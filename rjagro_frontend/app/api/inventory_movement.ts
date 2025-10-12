@@ -7,7 +7,6 @@ export const fetchInventoryMovements = async (): Promise<InventoryMovement[]> =>
     return response.data;
 };
 
-// Add a new inventory movement
 export const handleAddInventoryMovement = async (
     payload: InventoryMovementPayload,
     queryClient: any,
