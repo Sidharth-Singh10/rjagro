@@ -78,7 +78,7 @@ const Dashboard = () => {
         payment_account: newPurchase.payment_account ?? LedgerAccountType.Asset,
         // fix this shit
         created_by: user ? user.user_id : 9999,
-        inventory_account_id: newPurchase.inventory_account_id!,  // Required field
+        inventory_account_id: newPurchase.inventory_account_id!,
         payment_account_id: newPurchase.payment_account_id!
     };
 
@@ -241,7 +241,7 @@ const Dashboard = () => {
         current_qty: ''
     });
 
-    // Add this function to handle item code selection for inventory
+
     const handleInventoryItemCodeSelect = (itemCode: string) => {
         const selectedItem = items.find(item => item.item_code === itemCode);
         if (selectedItem) {
@@ -253,13 +253,11 @@ const Dashboard = () => {
         }
     };
 
-    // Create final payload for inventory
     const finalInventory: InventoryPayload = {
         item_code: newInventory.item_code,
         current_qty: Number(newInventory.current_qty),
     };
 
-    // Add this function to handle inventory updates
     const handleInventoryUpdate = (item_code: string, current_qty: number) => {
         handleUpdateInventory(item_code, { current_qty }, queryClient);
     };
