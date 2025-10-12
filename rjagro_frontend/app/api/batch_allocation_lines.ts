@@ -2,13 +2,11 @@ import { BatchAllocationLine, BatchAllocationLinePayload } from "../types/interf
 import api from "../utils/api";
 import { toast } from "react-toastify";
 
-// Fetch all batch allocation lines
 export const fetchBatchAllocationLines = async (): Promise<BatchAllocationLine[]> => {
   const response = await api.get("/getall/batch_allocation_lines");
   return response.data;
 };
 
-// Add a new batch allocation line
 export const handleAddBatchAllocationLine = async (
   payload: BatchAllocationLinePayload,
   queryClient: any,
@@ -43,7 +41,6 @@ export const handleAddBatchAllocationLine = async (
   }
 };
 
-// Update a batch allocation line
 export const handleUpdateBatchAllocationLine = async (
   allocationLineId: number,
   payload: Partial<BatchAllocationLinePayload>,
@@ -60,7 +57,6 @@ export const handleUpdateBatchAllocationLine = async (
   }
 };
 
-// Delete a batch allocation line
 export const handleDeleteBatchAllocationLine = async (
   allocationLineId: number,
   queryClient?: any
