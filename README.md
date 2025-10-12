@@ -19,3 +19,5 @@
    - `cd rjagro_frontend`
    - `npm i`
    - `npm run dev`
+   - set .env
+   - remove `Bearer` prefix from `/utils/api.ts` from line 24
