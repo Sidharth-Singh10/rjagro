@@ -2,6 +2,7 @@ import React from 'react';
 import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, TrendingDown, TrendingUp, ArrowUp, ArrowUpDown, ArrowDown } from 'lucide-react';
 import { Batch, BirdCountHistory, NewBirdCountHistory } from '@/app/types/interfaces';
 import { TableConfigs, useTableSorting } from '@/app/hooks/sorting';
+import { getBatchInfo, getNetChange } from '@/app/utils/helper';
 
 interface BirdCountHistoryTableProps {
     birdCountHistory: BirdCountHistory[];
@@ -24,26 +25,21 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
     setNewRecord,
     handleAddRecord,
 }) => {
+    
+    const [selectedBatchFilter, setSelectedBatchFilter] = React.useState<string>('');
+
+    const filteredBirdCountHistory = React.useMemo(() => {
+        if (!selectedBatchFilter) {
+            return birdCountHistory;
+        }
+        return birdCountHistory.filter(record => record.batch_id.toString() === selectedBatchFilter);
+    }, [birdCountHistory, selectedBatchFilter]);
 
     const { sortedData, requestSort, getSortIcon } = useTableSorting(
-        birdCountHistory,
+        filteredBirdCountHistory,
         { key: 'record_date', direction: 'desc' },
         TableConfigs.birdCountHistory.getValueFn
     );
-
-    const getNetChange = (deaths: number, additions: number) => {
-        const net = additions - deaths;
-        return {
-            value: net,
-            isPositive: net > 0,
-            isNeutral: net === 0
-        };
-    };
-
-    const getBatchInfo = (batchId: number) => {
-        const batch = batches.find(b => b.batch_id === batchId);
-        return batch ? `Batch ${batchId} - ${batch.farmer_name}` : `Batch ${batchId}`;
-    };
 
     const SortableHeader: React.FC<{
         columnKey: string;
@@ -80,12 +76,54 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                         <Plus size={18} />
                         Add Record
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <Filter size={18} />
-                        Filters
-                    </button>
+
+                    {/* Batch Filter Dropdown */}
+                    <div className="flex items-center gap-2">
+                        <Filter size={18} className="text-gray-600" />
+                        <select
+                            value={selectedBatchFilter}
+                            onChange={(e) => setSelectedBatchFilter(e.target.value)}
+                            className="px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">All Batches</option>
+                            {batches.map((batch) => (
+                                <option key={batch.batch_id} value={batch.batch_id.toString()}>
+                                    {getBatchInfo(batch.batch_id, batches)}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* Clear Filter Button */}
+                        {selectedBatchFilter && (
+                            <button
+                                onClick={() => setSelectedBatchFilter('')}
+                                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Clear filter"
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
+
+            {/* Filter Indicator */}
+            {selectedBatchFilter && (
+                <div className="px-4 py-2 bg-blue-50 border-b border-blue-200">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-800">
+                            <span className="font-medium">Filtered by:</span> {getBatchInfo(parseInt(selectedBatchFilter), batches)}
+                            <span className="ml-2 text-blue-600">({filteredBirdCountHistory.length} record{filteredBirdCountHistory.length !== 1 ? 's' : ''})</span>
+                        </span>
+                        <button
+                            onClick={() => setSelectedBatchFilter('')}
+                            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                            Clear filter
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {showAddForm && (
                 <div className="p-4 border-b bg-gray-50">
@@ -115,7 +153,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                                 <option value="">Select Batch</option>
                                 {batches.map((batch) => (
                                     <option key={batch.batch_id} value={batch.batch_id}>
-                                        {getBatchInfo(batch.batch_id)}
+                                        {getBatchInfo(batch.batch_id, batches)}
                                     </option>
                                 ))}
                             </select>
@@ -259,7 +297,10 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                         ) : sortedData.length === 0 ? (
                             <tr>
                                 <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-                                    No bird count records found
+                                    {selectedBatchFilter
+                                        ? `No bird count records found for ${getBatchInfo(parseInt(selectedBatchFilter), batches)}`
+                                        : "No bird count records found"
+                                    }
                                 </td>
                             </tr>
                         ) : (
@@ -271,7 +312,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                                             {record.record_id}
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {getBatchInfo(record.batch_id)}
+                                            {getBatchInfo(record.batch_id, batches)}
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {record.record_date}
