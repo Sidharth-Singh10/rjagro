@@ -2,6 +2,7 @@ import React from 'react';
 import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, TrendingDown, TrendingUp, ArrowUp, ArrowUpDown, ArrowDown } from 'lucide-react';
 import { Batch, BirdCountHistory, NewBirdCountHistory } from '@/app/types/interfaces';
 import { TableConfigs, useTableSorting } from '@/app/hooks/sorting';
+import { getBatchInfo, getNetChange } from '@/app/utils/helper';
 
 interface BirdCountHistoryTableProps {
     birdCountHistory: BirdCountHistory[];
@@ -24,10 +25,9 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
     setNewRecord,
     handleAddRecord,
 }) => {
-    // State for batch filter
+    
     const [selectedBatchFilter, setSelectedBatchFilter] = React.useState<string>('');
 
-    // Filter data based on selected batch
     const filteredBirdCountHistory = React.useMemo(() => {
         if (!selectedBatchFilter) {
             return birdCountHistory;
@@ -40,20 +40,6 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
         { key: 'record_date', direction: 'desc' },
         TableConfigs.birdCountHistory.getValueFn
     );
-
-    const getNetChange = (deaths: number, additions: number) => {
-        const net = additions - deaths;
-        return {
-            value: net,
-            isPositive: net > 0,
-            isNeutral: net === 0
-        };
-    };
-
-    const getBatchInfo = (batchId: number) => {
-        const batch = batches.find(b => b.batch_id === batchId);
-        return batch ? `Batch ${batchId} - ${batch.farmer_name}` : `Batch ${batchId}`;
-    };
 
     const SortableHeader: React.FC<{
         columnKey: string;
@@ -90,7 +76,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                         <Plus size={18} />
                         Add Record
                     </button>
-                    
+
                     {/* Batch Filter Dropdown */}
                     <div className="flex items-center gap-2">
                         <Filter size={18} className="text-gray-600" />
@@ -102,11 +88,11 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                             <option value="">All Batches</option>
                             {batches.map((batch) => (
                                 <option key={batch.batch_id} value={batch.batch_id.toString()}>
-                                    {getBatchInfo(batch.batch_id)}
+                                    {getBatchInfo(batch.batch_id, batches)}
                                 </option>
                             ))}
                         </select>
-                        
+
                         {/* Clear Filter Button */}
                         {selectedBatchFilter && (
                             <button
@@ -126,7 +112,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                 <div className="px-4 py-2 bg-blue-50 border-b border-blue-200">
                     <div className="flex items-center justify-between">
                         <span className="text-sm text-blue-800">
-                            <span className="font-medium">Filtered by:</span> {getBatchInfo(parseInt(selectedBatchFilter))} 
+                            <span className="font-medium">Filtered by:</span> {getBatchInfo(parseInt(selectedBatchFilter), batches)}
                             <span className="ml-2 text-blue-600">({filteredBirdCountHistory.length} record{filteredBirdCountHistory.length !== 1 ? 's' : ''})</span>
                         </span>
                         <button
@@ -167,7 +153,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                                 <option value="">Select Batch</option>
                                 {batches.map((batch) => (
                                     <option key={batch.batch_id} value={batch.batch_id}>
-                                        {getBatchInfo(batch.batch_id)}
+                                        {getBatchInfo(batch.batch_id, batches)}
                                     </option>
                                 ))}
                             </select>
@@ -311,8 +297,8 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                         ) : sortedData.length === 0 ? (
                             <tr>
                                 <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-                                    {selectedBatchFilter 
-                                        ? `No bird count records found for ${getBatchInfo(parseInt(selectedBatchFilter))}`
+                                    {selectedBatchFilter
+                                        ? `No bird count records found for ${getBatchInfo(parseInt(selectedBatchFilter), batches)}`
                                         : "No bird count records found"
                                     }
                                 </td>
@@ -326,7 +312,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                                             {record.record_id}
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {getBatchInfo(record.batch_id)}
+                                            {getBatchInfo(record.batch_id, batches)}
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {record.record_date}
