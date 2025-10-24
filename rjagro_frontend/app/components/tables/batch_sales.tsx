@@ -34,12 +34,13 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
   handleAddBatchSale,
 }) => {
   // Calculate value automatically when quantity or rate changes
-  const calculateValue = (quantity: number | '', rate: number | '') => {
-    if (quantity && rate) {
-      return Number(quantity) * Number(rate);
-    }
-    return 0;
+  const calculateValue = (avgWeight: number | '' | string, rate: number | '' | string) => {
+    const w = typeof avgWeight === 'number' ? avgWeight : Number(avgWeight);
+    const r = typeof rate === 'number' ? rate : Number(rate);
+    if (!w || !r) return 0;
+    return w * r;
   };
+
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -174,8 +175,14 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
               <input
                 type="number"
                 value={newBatchSale.avg_weight}
-                onChange={(e) => setNewBatchSale(prev => ({ ...prev, avg_weight: e.target.value ? parseFloat(e.target.value) : '' }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                onChange={(e) => {
+                  const avg_weight = e.target.value ? parseFloat(e.target.value) : '';
+                  setNewBatchSale(prev => ({
+                    ...prev,
+                    avg_weight,
+                    value: calculateValue(avg_weight, prev.rate)
+                  }));
+                }} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="0.00"
                 step="0.01"
               />
@@ -193,7 +200,7 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
                   setNewBatchSale(prev => ({
                     ...prev,
                     rate,
-                    value: calculateValue(prev.quantity, rate)
+                    value: calculateValue(prev.avg_weight, rate)
                   }));
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -211,11 +218,7 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
                 value={newBatchSale.quantity}
                 onChange={(e) => {
                   const quantity = e.target.value ? parseFloat(e.target.value) : '';
-                  setNewBatchSale(prev => ({
-                    ...prev,
-                    quantity,
-                    value: calculateValue(quantity, prev.rate)
-                  }));
+                  setNewBatchSale(prev => ({ ...prev, quantity }));
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="0.00"
