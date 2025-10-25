@@ -170,7 +170,7 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Average Weight *
+                Total Weight *
               </label>
               <input
                 type="number"
