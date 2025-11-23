@@ -1,13 +1,14 @@
 import React from 'react';
-import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { calculateTotalCost } from '../../utils/helper';
 import { Item, LedgerAccountType, NewPurchase, Purchase } from '@/app/types/interfaces';
 import { INVENTORY_ACCOUNT_MAP, PAYMENT_ACCOUNT_MAP } from '@/app/types/constants';
+import { TableConfigs, useTableSorting } from '@/app/hooks/sorting';
 
 interface ExtendedNewPurchase extends NewPurchase {
-  category?: string;
-  inventory_account_id?: number;
-  payment_account_id?: number;
+    category?: string;
+    inventory_account_id?: number;
+    payment_account_id?: number;
 }
 
 interface PurchasesTableProps {
@@ -62,15 +63,15 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
 
     const handleSubmit = () => {
         handleAddPurchase();
-        resetForm(); 
+        resetForm();
     };
 
     const handlePaymentMethodChange = (paymentMethod: string) => {
         const paymentAccount = paymentMethod === 'Cash' ? LedgerAccountType.Asset : LedgerAccountType.Liability;
         const paymentAccountId = PAYMENT_ACCOUNT_MAP[paymentMethod as keyof typeof PAYMENT_ACCOUNT_MAP];
-        
-        setNewPurchase(prev => ({ 
-            ...prev, 
+
+        setNewPurchase(prev => ({
+            ...prev,
             payment_method: paymentMethod,
             payment_account: paymentAccount as LedgerAccountType | undefined,
             payment_account_id: paymentAccountId
@@ -79,7 +80,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
 
     const handleCategoryChange = (category: string) => {
         const inventoryAccountId = INVENTORY_ACCOUNT_MAP[category as keyof typeof INVENTORY_ACCOUNT_MAP];
-        
+
         setNewPurchase(prev => ({
             ...prev,
             category: category,
@@ -92,6 +93,33 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
         { value: 'medicine', label: 'Medicine' },
         { value: 'chicks', label: 'Chicks' }
     ];
+
+    const { sortedData, requestSort, getSortIcon } = useTableSorting(
+        purchases,
+        { key: 'purchase_date', direction: 'desc' }, // Primary sort
+        TableConfigs.purchases.getValueFn
+    );
+
+    const SortableHeader: React.FC<{
+        columnKey: string;
+        children: React.ReactNode;
+        className?: string;
+    }> = ({ columnKey, children, className = "" }) => {
+        const IconComponent = getSortIcon(columnKey) === 'ArrowUp' ? ArrowUp :
+            getSortIcon(columnKey) === 'ArrowDown' ? ArrowDown : ArrowUpDown;
+
+        return (
+            <th
+                className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors ${className}`}
+                onClick={() => requestSort(columnKey)}
+            >
+                <div className="flex items-center justify-between group">
+                    <span>{children}</span>
+                    <IconComponent size={14} className="ml-1 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                </div>
+            </th>
+        );
+    };
 
     return (
         <div className="bg-white rounded-lg shadow">
@@ -258,7 +286,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
 
             <div className="overflow-x-auto">
                 <table className="w-full">
-                    <thead className="bg-gray-50 border-b">
+                    {/* <thead className="bg-gray-50 border-b">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Purchase ID
@@ -294,6 +322,23 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                 Actions
                             </th>
                         </tr>
+                    </thead> */}
+                    <thead className="bg-gray-50 border-b">
+                        <tr>
+                            <SortableHeader columnKey="purchase_id">Purchase ID</SortableHeader>
+                            <SortableHeader columnKey="item_code">Item Code</SortableHeader>
+                            <SortableHeader columnKey="item_name">Item Name</SortableHeader>
+                            <SortableHeader columnKey="cost_per_unit">Cost Per Unit</SortableHeader>
+                            <SortableHeader columnKey="total_cost">Total Cost</SortableHeader>
+                            <SortableHeader columnKey="quantity">Quantity</SortableHeader>
+                            <SortableHeader columnKey="purchase_date">Purchase Date</SortableHeader>
+                            <SortableHeader columnKey="supplier">Supplier</SortableHeader>
+                            <SortableHeader columnKey="payment_method">Payment Method</SortableHeader>
+                            <SortableHeader columnKey="created_by">Created By</SortableHeader>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
@@ -302,14 +347,14 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                     Loading...
                                 </td>
                             </tr>
-                        ) : purchases.length === 0 ? (
+                        ) : sortedData.length === 0 ? (
                             <tr>
                                 <td colSpan={11} className="px-4 py-8 text-center text-gray-500">
                                     No purchases found
                                 </td>
                             </tr>
                         ) : (
-                            purchases.map((purchase) => (
+                            sortedData.map((purchase) => (
                                 <tr key={purchase.purchase_id} className="hover:bg-gray-50">
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {purchase.purchase_id}
@@ -326,7 +371,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {purchase.total_cost}
                                     </td>
-                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {purchase.quantity}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">

@@ -125,5 +125,33 @@ export const TableConfigs = {
                     return item[key];
             }
         }
+    },
+    purchases: {
+        columns: {
+            'purchase_id': 'numeric',
+            'item_code': 'string',
+            'item_name': 'string',
+            'cost_per_unit': 'numeric',
+            'total_cost': 'numeric',
+            'quantity': 'numeric',
+            'purchase_date': 'date',
+            'supplier': 'string',
+            'payment_method': 'string',
+            'created_by': 'string'
+        },
+        getValueFn: (item: any, key: string): SortableValue => {
+            switch (key) {
+                case 'purchase_date':
+                    return new Date(item[key]);
+                case 'cost_per_unit':
+                case 'total_cost':
+                case 'quantity':
+                    return parseFloat(item[key]) || 0;
+                case 'purchase_id':
+                    return parseInt(item[key]) || 0;
+                default:
+                    return item[key];
+            }
+        }
     }
 };
