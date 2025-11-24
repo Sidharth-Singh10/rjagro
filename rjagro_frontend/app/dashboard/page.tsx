@@ -503,8 +503,8 @@ const Dashboard = () => {
     });
 
     const [newBatchSale, setNewBatchSale] = useState<NewBatchSale>({
-        item_code: '',
-        item_name: '',
+        item_code: 'DC101',
+        item_name: 'DESI CHICKEN',
         batch_id: '',
         farmer_name: '',
         trader_id: '',
@@ -958,8 +958,8 @@ const Dashboard = () => {
                             };
                             handleAddBatchSale(payload, queryClient, setLoading, () => {
                                 setNewBatchSale({
-                                    item_code: '',
-                                    item_name: '',
+                                    item_code: 'DC101',
+                                    item_name: 'DESI CHICKEN',
                                     batch_id: '',
                                     farmer_name: '',
                                     trader_id: '',

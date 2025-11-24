@@ -79,18 +79,13 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Item Code *
               </label>
-              <select
-                value={newBatchSale.item_code}
-                onChange={(e) => handleItemCodeSelect(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="">Select Item</option>
-                {items.map((item) => (
-                  <option key={item.item_code} value={item.item_code}>
-                    {item.item_code} - {item.item_name}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="text"
+                value="DC101"
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                placeholder="Auto-filled"
+              />
             </div>
 
             <div>
@@ -99,7 +94,7 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
               </label>
               <input
                 type="text"
-                value={newBatchSale.item_name}
+                value="DESI CHICKEN"
                 readOnly
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
                 placeholder="Auto-filled"
