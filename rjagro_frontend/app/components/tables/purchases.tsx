@@ -1,7 +1,11 @@
-import React from 'react';
-import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+'use client'
+
+import React, { useState } from 'react';
+import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, Trash2 } from 'lucide-react';
 import { calculateTotalCost } from '../../utils/helper';
 import { Item, LedgerAccountType, NewPurchase, Purchase } from '@/app/types/interfaces';
+import { useQueryClient } from '@tanstack/react-query';
+import { handleDeletePurchase } from '@/app/api/purchases';
 import { INVENTORY_ACCOUNT_MAP, PAYMENT_ACCOUNT_MAP } from '@/app/types/constants';
 import { TableConfigs, useTableSorting } from '@/app/hooks/sorting';
 
@@ -99,6 +103,9 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
         { key: 'purchase_date', direction: 'desc' }, // Primary sort
         TableConfigs.purchases.getValueFn
     );
+
+    const queryClient = useQueryClient();
+    const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
     const SortableHeader: React.FC<{
         columnKey: string;
@@ -286,43 +293,6 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
 
             <div className="overflow-x-auto">
                 <table className="w-full">
-                    {/* <thead className="bg-gray-50 border-b">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Purchase ID
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Item Code
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Item Name
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Cost Per Unit
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Total Cost
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Quantity
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Purchase Date
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Supplier
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Payment Method
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Created By
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead> */}
                     <thead className="bg-gray-50 border-b">
                         <tr>
                             <SortableHeader columnKey="purchase_id">Purchase ID</SortableHeader>
@@ -386,10 +356,38 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {purchase.created_by}
                                     </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <button className="text-blue-600 hover:text-blue-800">
-                                            <Edit size={16} />
-                                        </button>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 relative">
+                                        <div className="flex items-center gap-2">
+                                            {/* Actions dropdown */}
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setOpenMenuId(openMenuId === purchase.purchase_id ? null : purchase.purchase_id)}
+                                                    className="px-2 py-1 rounded hover:bg-gray-100"
+                                                    aria-haspopup="true"
+                                                    aria-expanded={openMenuId === purchase.purchase_id}
+                                                >
+                                                    <MoreVertical size={16} />
+                                                </button>
+
+                                                {openMenuId === purchase.purchase_id && (
+                                                    <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow z-10">
+                                                        <button
+                                                            onClick={() => {
+                                                                const confirmed = window.confirm(`Delete purchase #${purchase.purchase_id}?`);
+                                                                if (!confirmed) return;
+
+                                                                handleDeletePurchase(purchase.purchase_id, queryClient);
+                                                                setOpenMenuId(null);
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 hover:bg-gray-50 text-red-600 flex items-center gap-2"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                            <span>Delete</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             ))

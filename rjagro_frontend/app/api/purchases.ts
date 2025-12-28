@@ -42,3 +42,16 @@ export const handleAddPurchase = async (
     }
 };
 
+export const handleDeletePurchase = async (
+    purchaseId: number,
+    queryClient?: any
+) => {
+    try {
+        await api.delete(`/delete/purchases/${purchaseId}`);
+        toast.success(`Purchase #${purchaseId} deleted!`);
+        queryClient?.invalidateQueries(['purchases']);
+    } catch (error) {
+        console.error('Error deleting purchase:', error);
+        toast.error('Error deleting purchase');
+    }
+};

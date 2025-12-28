@@ -1,15 +1,19 @@
 use crate::models::CreatePurchase;
-use axum::{extract::State, Json};
+use axum::{
+    extract::{Path, State},
+    Json,
+};
 use chrono::Utc;
 use entity::sea_orm_active_enums::MovementType;
 use entity::{
     inventory, inventory_movements, ledger_accounts, ledger_entries, purchases, stock_receipts,
 };
 use reqwest::StatusCode;
-use sea_orm::prelude::Decimal;
 use sea_orm::ActiveModelTrait;
+use sea_orm::ColumnTrait;
 use sea_orm::EntityTrait;
 use sea_orm::TransactionTrait;
+use sea_orm::{prelude::Decimal, QueryFilter};
 use sea_orm::{ActiveValue::Set, DatabaseConnection};
 use uuid::Uuid;
 
@@ -260,143 +264,97 @@ pub fn internal_error<E: std::fmt::Display>(action: &'static str) -> impl FnOnce
         StatusCode::INTERNAL_SERVER_ERROR
     }
 }
-// pub async fn create_purchase(
-//     State(db): State<DatabaseConnection>,
-//     Json(payload): Json<CreatePurchase>,
-// ) -> Result<Json<purchases::Model>, StatusCode> {
-//     let txn = db.begin().await.map_err(|err| {
-//         eprintln!("Failed to begin transaction: {}", err);
-//         StatusCode::INTERNAL_SERVER_ERROR
-//     })?;
 
-//     // Insert purchase
-//     let new_purchase = purchases::ActiveModel {
-//         item_code: Set(payload.item_code.clone()),
-//         cost_per_unit: Set(payload.cost_per_unit),
-//         total_cost: Set(payload.total_cost),
-//         quantity: Set(payload.quantity),
-//         purchase_date: Set(payload.purchase_date),
-//         supplier: Set(payload.supplier.clone()),
-//         created_by: Set(payload.created_by),
-//         ..Default::default()
-//     };
+pub async fn delete_purchase(
+    State(db): State<DatabaseConnection>,
+    Path(purchase_id): Path<i32>,
+) -> Result<reqwest::StatusCode, reqwest::StatusCode> {
+    let txn = db
+        .begin()
+        .await
+        .map_err(internal_error("begin transaction"))?;
 
-//     let purchase = new_purchase.insert(&txn).await.map_err(|err| {
-//         eprintln!("Failed to insert purchase: {}", err);
-//         StatusCode::INTERNAL_SERVER_ERROR
-//     })?;
-//     let new_receipt = stock_receipts::ActiveModel {
-//         purchase_id: Set(Some(purchase.purchase_id)),
-//         item_code: Set(payload.item_code.clone()),
-//         received_qty: Set(payload.quantity),
-//         remaining_qty: Set(payload.quantity),
-//         unit_cost: Set(payload.cost_per_unit),
-//         received_date: Set(payload.purchase_date),
-//         supplier: Set(payload.supplier.clone()),
-//         ..Default::default()
-//     };
+    // Fetch purchase
+    let purchase = purchases::Entity::find_by_id(purchase_id)
+        .one(&txn)
+        .await
+        .map_err(internal_error("fetch purchase"))?
+        .ok_or(reqwest::StatusCode::NOT_FOUND)?;
 
-//     let receipt = new_receipt.insert(&txn).await.map_err(|err| {
-//         eprintln!("Failed to insert stock_receipt: {}", err);
-//         StatusCode::INTERNAL_SERVER_ERROR
-//     })?;
-//     println!("DEBUG: inserted stock_receipt within txn: {:?}", receipt);
+    let item_code = purchase.item_code.clone();
+    let qty = purchase.quantity;
 
-//     // Insert/Update inventory
-//     if let Some(inv) = inventory::Entity::find_by_id(payload.item_code.clone())
-//         .one(&txn)
-//         .await
-//         .map_err(|err| {
-//             eprintln!("Failed to fetch inventory: {}", err);
-//             StatusCode::INTERNAL_SERVER_ERROR
-//         })?
-//     {
-//         // Item already exists → update
-//         let mut active_inv: inventory::ActiveModel = inv.into();
-//         active_inv.current_qty =
-//             Set(active_inv.current_qty.take().unwrap_or_default() + payload.quantity);
-//         active_inv.last_updated = Set(Utc::now().into());
-//         active_inv.update(&txn).await.map_err(|err| {
-//             eprintln!("Failed to update inventory: {}", err);
-//             StatusCode::INTERNAL_SERVER_ERROR
-//         })?;
-//     } else {
-//         // Item does not exist → create
-//         let new_inv = inventory::ActiveModel {
-//             item_code: Set(payload.item_code.clone()),
-//             current_qty: Set(payload.quantity),
-//             last_updated: Set(Utc::now().into()),
-//         };
-//         new_inv.insert(&txn).await.map_err(|err| {
-//             eprintln!("Failed to insert inventory: {}", err);
-//             StatusCode::INTERNAL_SERVER_ERROR
-//         })?;
-//     }
+    // 1. Reverse ledger entries effects on account balances
+    let entries = ledger_entries::Entity::find()
+        .filter(ledger_entries::Column::ReferenceTable.eq(Some("purchases".to_string())))
+        .filter(ledger_entries::Column::ReferenceId.eq(Some(purchase_id)))
+        .all(&txn)
+        .await
+        .map_err(internal_error("fetch ledger entries"))?;
 
-//     // Insert inventory movement
-//     let movement = inventory_movements::ActiveModel {
-//         item_code: Set(payload.item_code.clone()),
-//         movement_type: Set(MovementType::Purchase),
-//         qty_change: Set(payload.quantity),
-//         reference_id: Set(Some(purchase.purchase_id)),
-//         ..Default::default()
-//     };
+    for entry in entries.iter() {
+        if let Some(debit) = entry.debit {
+            update_account_balance(&txn, entry.account_id, Some(debit), false).await?;
+        }
+        if let Some(credit) = entry.credit {
+            update_account_balance(&txn, entry.account_id, Some(credit), true).await?;
+        }
+    }
 
-//     movement.insert(&txn).await.map_err(|err| {
-//         eprintln!("Failed to insert inventory movement: {}", err);
-//         StatusCode::INTERNAL_SERVER_ERROR
-//     })?;
+    // Delete the ledger entries
+    ledger_entries::Entity::delete_many()
+        .filter(ledger_entries::Column::ReferenceTable.eq(Some("purchases".to_string())))
+        .filter(ledger_entries::Column::ReferenceId.eq(Some(purchase_id)))
+        .exec(&txn)
+        .await
+        .map_err(internal_error("delete ledger entries"))?;
 
-//     let total_cost = payload.total_cost;
+    // 2. Update inventory
+    if let Some(inv) = inventory::Entity::find_by_id(item_code.clone())
+        .one(&txn)
+        .await
+        .map_err(internal_error("fetch inventory"))?
+    {
+        let mut active_inv: inventory::ActiveModel = inv.into();
+        let current_qty = active_inv.current_qty.take().unwrap_or_default();
+        let new_qty = current_qty - qty;
 
-//     // Debit → Inventory
-//     let debit_entry = ledger_entries::ActiveModel {
-//         transaction_type: Set(LedgerAccountType::Asset),
-//         debit: Set(total_cost),
-//         credit: Set(None),
-//         txn_date: Set(purchase.purchase_date),
-//         reference_table: Set(Some("purchases".into())),
-//         reference_id: Set(Some(purchase.purchase_id)),
-//         narration: Set(Some(format!(
-//             "Purchase of {} (item {})",
-//             payload.quantity, payload.item_code
-//         ))),
-//         created_at: Set(Utc::now().into()),
-//         created_by: Set(payload.created_by),
-//         ..Default::default()
-//     };
+        if new_qty < Decimal::ZERO {
+            return Err(reqwest::StatusCode::BAD_REQUEST);
+        }
 
-//     debit_entry.insert(&txn).await.map_err(|err| {
-//         eprintln!("Failed to insert ledger debit entry: {}", err);
-//         StatusCode::INTERNAL_SERVER_ERROR
-//     })?;
+        active_inv.current_qty = Set(new_qty);
+        active_inv.last_updated = Set(Utc::now().into());
+        active_inv
+            .update(&txn)
+            .await
+            .map_err(internal_error("update inventory"))?;
+    } else {
+        return Err(reqwest::StatusCode::BAD_REQUEST);
+    }
 
-//     // Credit → chosen account (Cash / Payables etc.)
-//     let credit_entry = ledger_entries::ActiveModel {
-//         transaction_type: Set(payload.payment_account.clone()),
-//         debit: Set(None),
-//         credit: Set(total_cost),
-//         txn_date: Set(purchase.purchase_date),
-//         reference_table: Set(Some("purchases".into())),
-//         reference_id: Set(Some(purchase.purchase_id)),
-//         narration: Set(Some(format!(
-//             "Payment for purchase of {} (item {})",
-//             payload.quantity, payload.item_code
-//         ))),
-//         created_at: Set(Utc::now().into()),
-//         created_by: Set(payload.created_by),
-//         ..Default::default()
-//     };
+    // 3. delete movement
+    inventory_movements::Entity::delete_many()
+        .filter(inventory_movements::Column::ReferenceId.eq(Some(purchase_id)))
+        .exec(&txn)
+        .await
+        .map_err(internal_error("delete inventory movements"))?;
 
-//     credit_entry.insert(&txn).await.map_err(|err| {
-//         eprintln!("Failed to insert ledger credit entry: {}", err);
-//         StatusCode::INTERNAL_SERVER_ERROR
-//     })?;
+    stock_receipts::Entity::delete_many()
+        .filter(stock_receipts::Column::PurchaseId.eq(Some(purchase_id)))
+        .exec(&txn)
+        .await
+        .map_err(internal_error("delete stock receipts"))?;
 
-//     txn.commit().await.map_err(|err| {
-//         eprintln!("Failed to commit transaction: {}", err);
-//         StatusCode::INTERNAL_SERVER_ERROR
-//     })?;
+    // 4. Delete the purchase
+    purchases::Entity::delete_by_id(purchase_id)
+        .exec(&txn)
+        .await
+        .map_err(internal_error("delete purchase"))?;
 
-//     Ok(Json(purchase))
-// }
+    txn.commit()
+        .await
+        .map_err(internal_error("commit transaction"))?;
+
+    Ok(reqwest::StatusCode::NO_CONTENT)
+}
