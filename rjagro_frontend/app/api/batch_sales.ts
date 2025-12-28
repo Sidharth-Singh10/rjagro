@@ -43,3 +43,19 @@ export const handleAddBatchSale = async (
     setLoading(false);
   }
 };
+
+// Delete a batch sale
+export const handleDeleteBatchSale = async (
+  saleId: number,
+  queryClient?: any
+) => {
+  try {
+    await api.delete(`/delete/batch_sales/${saleId}`);
+
+    toast.success(`Batch sale #${saleId} deleted!`);
+    queryClient?.invalidateQueries(["batch_sales"]);
+  } catch (error) {
+    console.error("Error deleting batch sale:", error);
+    toast.error("Error deleting batch sale");
+  }
+};

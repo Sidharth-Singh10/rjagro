@@ -1,6 +1,10 @@
-import React from 'react';
-import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+'use client';
+import React, { useState } from 'react';
+import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, Trash2 } from 'lucide-react';
 import { Batch, BatchSale, Item, NewBatchSale, Trader } from '@/app/types/interfaces';
+import { useQueryClient } from '@tanstack/react-query';
+import TableActionsDropdown from '../utils/table_actions';
+import { handleDeleteBatchSale } from '@/app/api/batch_sales';
 
 interface BatchSalesTableProps {
   batchSales: BatchSale[];
@@ -33,6 +37,8 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
   handleTraderSelect,
   handleAddBatchSale,
 }) => {
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
   // Calculate value automatically when quantity or rate changes
   const calculateValue = (avgWeight: number | '' | string, rate: number | '' | string) => {
     const w = typeof avgWeight === 'number' ? avgWeight : Number(avgWeight);
@@ -335,9 +341,24 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
                     {new Date(sale.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button className="text-blue-600 hover:text-blue-800">
-                      <Edit size={16} />
-                    </button>
+                    <TableActionsDropdown
+                      rowId={sale.id}
+                      openMenuId={openMenuId}
+                      onMenuToggle={(id) => setOpenMenuId(typeof id === 'string' ? null : id)}
+                      actions={[
+                        {
+                          label: 'Delete',
+                          icon: <Trash2 size={14} />,
+                          variant: 'danger',
+                          onClick: () => {
+                            const confirmed = window.confirm(`Delete batch sale #${sale.id}?`);
+                            if (!confirmed) return;
+                            handleDeleteBatchSale(sale.id, queryClient);
+                          }
+                        }
+                      ]}
+                    />
+
                   </td>
                 </tr>
               ))

@@ -1,8 +1,11 @@
 import React from 'react';
-import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, TrendingDown, TrendingUp, ArrowUp, ArrowUpDown, ArrowDown } from 'lucide-react';
+import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, TrendingDown, TrendingUp, ArrowUp, ArrowUpDown, ArrowDown, Trash2 } from 'lucide-react';
 import { Batch, BirdCountHistory, NewBirdCountHistory } from '@/app/types/interfaces';
 import { TableConfigs, useTableSorting } from '@/app/hooks/sorting';
 import { getBatchInfo, getNetChange } from '@/app/utils/helper';
+import { useQueryClient } from '@tanstack/react-query';
+import TableActionsDropdown from '../utils/table_actions';
+import { handleDeleteBirdCountHistory } from '@/app/api/bird_count_history';
 
 interface BirdCountHistoryTableProps {
     birdCountHistory: BirdCountHistory[];
@@ -25,7 +28,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
     setNewRecord,
     handleAddRecord,
 }) => {
-    
+
     const [selectedBatchFilter, setSelectedBatchFilter] = React.useState<string>('');
 
     const filteredBirdCountHistory = React.useMemo(() => {
@@ -34,6 +37,9 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
         }
         return birdCountHistory.filter(record => record.batch_id.toString() === selectedBatchFilter);
     }, [birdCountHistory, selectedBatchFilter]);
+
+    const [openMenuId, setOpenMenuId] = React.useState<number | null>(null);
+    const queryClient = useQueryClient();
 
     const { sortedData, requestSort, getSortIcon } = useTableSorting(
         filteredBirdCountHistory,
@@ -348,9 +354,25 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                                             {new Date(record.created_at).toLocaleDateString()}
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <button className="text-blue-600 hover:text-blue-800">
-                                                <Edit size={16} />
-                                            </button>
+                                            <TableActionsDropdown
+                                                rowId={record.record_id}
+                                                openMenuId={openMenuId}
+                                                onMenuToggle={(id) => setOpenMenuId(typeof id === 'number' ? id : null)}
+                                                actions={[
+                                                    {
+                                                        label: 'Delete',
+                                                        icon: <Trash2 size={14} />,
+                                                        variant: 'danger',
+                                                        onClick: () => {
+                                                            const confirmed = window.confirm(`Delete bird count record #${record.record_id}?`);
+                                                            if (!confirmed) return;
+                                                            handleDeleteBirdCountHistory(record.record_id, queryClient);
+                                                        }
+                                                    }
+                                                ]}
+                                            />
+
+
                                         </td>
                                     </tr>
                                 );

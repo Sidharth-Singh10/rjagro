@@ -40,3 +40,18 @@ export const handleAddBirdCountHistory = async (
         setLoading(false);
     }
 };
+
+export const handleDeleteBirdCountHistory = async (
+    recordId: number,
+    queryClient?: any
+) => {
+    try {
+        await api.delete(`/delete/bird_count_history/${recordId}`);
+
+        toast.success(`Bird count record #${recordId} deleted!`);
+        queryClient?.invalidateQueries(['bird_count_history']);
+    } catch (error) {
+        console.error('Error deleting bird count record:', error);
+        toast.error('Error deleting bird count record');
+    }
+};

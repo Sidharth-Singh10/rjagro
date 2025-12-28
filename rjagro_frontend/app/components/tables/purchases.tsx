@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { handleDeletePurchase } from '@/app/api/purchases';
 import { INVENTORY_ACCOUNT_MAP, PAYMENT_ACCOUNT_MAP } from '@/app/types/constants';
 import { TableConfigs, useTableSorting } from '@/app/hooks/sorting';
+import TableActionsDropdown from '../utils/table_actions';
 
 interface ExtendedNewPurchase extends NewPurchase {
     category?: string;
@@ -357,37 +358,23 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                         {purchase.created_by}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 relative">
-                                        <div className="flex items-center gap-2">
-                                            {/* Actions dropdown */}
-                                            <div className="relative">
-                                                <button
-                                                    onClick={() => setOpenMenuId(openMenuId === purchase.purchase_id ? null : purchase.purchase_id)}
-                                                    className="px-2 py-1 rounded hover:bg-gray-100"
-                                                    aria-haspopup="true"
-                                                    aria-expanded={openMenuId === purchase.purchase_id}
-                                                >
-                                                    <MoreVertical size={16} />
-                                                </button>
-
-                                                {openMenuId === purchase.purchase_id && (
-                                                    <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow z-10">
-                                                        <button
-                                                            onClick={() => {
-                                                                const confirmed = window.confirm(`Delete purchase #${purchase.purchase_id}?`);
-                                                                if (!confirmed) return;
-
-                                                                handleDeletePurchase(purchase.purchase_id, queryClient);
-                                                                setOpenMenuId(null);
-                                                            }}
-                                                            className="w-full text-left px-3 py-2 hover:bg-gray-50 text-red-600 flex items-center gap-2"
-                                                        >
-                                                            <Trash2 size={14} />
-                                                            <span>Delete</span>
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                                        <TableActionsDropdown
+                                            rowId={purchase.purchase_id}
+                                            openMenuId={openMenuId}
+                                            onMenuToggle={(id) => setOpenMenuId(typeof id === 'number' ? id : null)}
+                                            actions={[
+                                                {
+                                                    label: 'Delete',
+                                                    icon: <Trash2 size={14} />,
+                                                    variant: 'danger',
+                                                    onClick: () => {
+                                                        const confirmed = window.confirm(`Delete purchase #${purchase.purchase_id}?`);
+                                                        if (!confirmed) return;
+                                                        handleDeletePurchase(purchase.purchase_id, queryClient);
+                                                    }
+                                                }
+                                            ]}
+                                        />
                                     </td>
                                 </tr>
                             ))

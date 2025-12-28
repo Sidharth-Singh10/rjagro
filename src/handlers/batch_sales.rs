@@ -1,7 +1,10 @@
 use crate::handlers::purchases::internal_error;
 use crate::handlers::purchases::update_account_balance;
 use crate::models::CreateBatchSale;
-use axum::{extract::State, Json};
+use axum::{
+    extract::{Path, State},
+    Json,
+};
 use chrono::Utc;
 use entity::batch_closure_summary;
 use entity::batch_sales;
@@ -161,4 +164,89 @@ pub async fn insert_batch_sales_ledger_entries<C: TransactionTrait + sea_orm::Co
     update_account_balance(txn, REVENUE_ACCOUNT_ID, Some(sale_value), false).await?;
 
     Ok(())
+}
+
+pub async fn delete_batch_sale(
+    State(db): State<DatabaseConnection>,
+    Path(sale_id): Path<i32>,
+) -> Result<reqwest::StatusCode, reqwest::StatusCode> {
+    let txn = db
+        .begin()
+        .await
+        .map_err(internal_error("begin transaction"))?;
+
+    // Fetch sale
+    let sale = batch_sales::Entity::find_by_id(sale_id)
+        .one(&txn)
+        .await
+        .map_err(internal_error("fetch batch sale"))?
+        .ok_or(reqwest::StatusCode::NOT_FOUND)?;
+
+    let batch_id = sale.batch_id;
+    let sale_value = sale.value;
+    let quantity = sale.quantity;
+
+    // 1. Reverse ledger entries effects on account balances
+    let entries = ledger_entries::Entity::find()
+        .filter(ledger_entries::Column::ReferenceTable.eq(Some("batch_sales".to_string())))
+        .filter(ledger_entries::Column::ReferenceId.eq(Some(sale_id)))
+        .all(&txn)
+        .await
+        .map_err(internal_error("fetch ledger entries"))?;
+
+    for entry in entries.iter() {
+        if let Some(debit) = entry.debit {
+            // reverse a previous debit by treating it as a credit
+            update_account_balance(&txn, entry.account_id, Some(debit), false).await?;
+        }
+        if let Some(credit) = entry.credit {
+            // reverse a previous credit by treating it as a debit
+            update_account_balance(&txn, entry.account_id, Some(credit), true).await?;
+        }
+    }
+
+    // Delete the ledger entries
+    ledger_entries::Entity::delete_many()
+        .filter(ledger_entries::Column::ReferenceTable.eq(Some("batch_sales".to_string())))
+        .filter(ledger_entries::Column::ReferenceId.eq(Some(sale_id)))
+        .exec(&txn)
+        .await
+        .map_err(internal_error("delete ledger entries"))?;
+
+    // 2. Revert batch financials
+    if let Some(batch) = batch_closure_summary::Entity::find()
+        .filter(batch_closure_summary::Column::BatchId.eq(batch_id))
+        .one(&txn)
+        .await
+        .map_err(internal_error("fetch batch_closure_summary"))?
+    {
+        let mut active: batch_closure_summary::ActiveModel = batch.into();
+
+        let current_revenue = active.revenue.unwrap();
+        let current_gross_profit = active.gross_profit.unwrap();
+        let current_count = active.available_chicken_count.unwrap();
+
+        active.revenue = Set(current_revenue - sale_value);
+        active.gross_profit = Set(current_gross_profit - sale_value);
+
+        let qty_to_add = quantity.to_i32().unwrap_or_default();
+        active.available_chicken_count = Set(current_count + qty_to_add);
+
+        active
+            .update(&txn)
+            .await
+            .map_err(internal_error("update batch_closure_summary"))?;
+    }
+
+    // 3. Delete the sale
+    batch_sales::Entity::delete_by_id(sale_id)
+        .exec(&txn)
+        .await
+        .map_err(internal_error("delete batch sale"))?;
+
+    txn.commit()
+        .await
+        .map_err(internal_error("commit transaction"))?;
+
+    Ok(reqwest::StatusCode::NO_CONTENT)
 }

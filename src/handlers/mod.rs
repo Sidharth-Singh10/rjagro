@@ -1,6 +1,7 @@
 pub mod batch_requirements;
 pub mod batch_sales;
 pub mod batches;
+pub mod bird_count_history;
 pub mod fetch_all;
 pub mod fetch_by_id;
 pub mod inserts;
