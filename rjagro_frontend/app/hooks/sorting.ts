@@ -153,5 +153,35 @@ export const TableConfigs = {
                     return item[key];
             }
         }
+    },
+    stockReturns: {
+        columns: {
+            'return_id': 'numeric',
+            'allocation_line_id': 'numeric',
+            'batch_id': 'numeric',
+            'return_qty': 'numeric',
+            'unit_cost': 'numeric',
+            'return_value': 'numeric',
+            'return_date': 'date',
+            'created_at': 'date'
+        },
+
+        getValueFn: (item: any, key: string): SortableValue => {
+            switch (key) {
+                case 'return_date':
+                case 'created_at':
+                    return new Date(item[key]);
+                case 'return_qty':
+                case 'unit_cost':
+                case 'return_value':
+                    return parseFloat(item[key]) || 0;
+                case 'return_id':
+                case 'allocation_line_id':
+                case 'batch_id':
+                    return parseInt(item[key]) || 0;
+                default:
+                    return item[key];
+            }
+        }
     }
 };

@@ -464,11 +464,11 @@ export interface CreateBatchClosure {
 export interface BatchSale {
   id: number;
   item_code: string;
-  item_name: string; 
+  item_name: string;
   batch_id: number;
-  farmer_name: string; 
+  farmer_name: string;
   trader_id: number;
-  trader_name: string; 
+  trader_name: string;
   avg_weight: number;
   rate: number;
   quantity: number;
@@ -489,13 +489,33 @@ export interface BatchSalePayload {
 
 export interface NewBatchSale {
   item_code: string;
-  item_name: string; 
+  item_name: string;
   batch_id: number | '';
-  farmer_name: string; 
+  farmer_name: string;
   trader_id: number | '';
-  trader_name: string; 
+  trader_name: string;
   avg_weight: number | '';
   rate: number | '';
   quantity: number | '';
   value: number | '';
+}
+
+export interface StockReturn {
+  return_id: number;
+  allocation_line_id: number;
+  batch_id: number;
+  return_qty: number;
+  unit_cost: number;
+  return_value: number;
+  return_date: string;
+  created_at: string;
+}
+
+export interface StockReturnPayload {
+  allocation_line_id: number;
+  batch_id: number;
+  return_qty: number;
+  unit_cost: number;
+  return_value: number;
+  return_date: string;
 }

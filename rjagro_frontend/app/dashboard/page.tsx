@@ -40,6 +40,8 @@ import BatchClosureSummaryTable from '../components/tables/batch_closure_summary
 import { fetchBatchSales, handleAddBatchSale } from '../api/batch_sales';
 import BatchSalesTable from '../components/tables/batch_sales';
 import { ItemCategory } from '../types/enums';
+import { fetchPaginatedStockReturns } from '../api/stock_returns';
+import StockReturnsTable from '../components/tables/stock_returns';
 
 const Dashboard = () => {
     const { user } = useAuth();
@@ -406,12 +408,6 @@ const Dashboard = () => {
         notes: ''
     });
 
-
-    const tabs = [
-        'Users', 'Ledger Accounts', 'Ledger Entries', 'Production Lines', 'Purchases', 'Items', 'Inventory', 'Inventory Movements', 'Stock Receipts', 'Batch Allocation Lines', 'Batches', 'Batch Requirements',
-        'Batch Allocations', 'Farmers', 'Traders', 'Suppliers', 'Batch Closures', 'Batch Sales', 'Bird Count History', 'Bird Sell History'
-    ];
-
     const onAddFarmerCommission = async (commission: CreateFarmerCommission) => {
         const payload: CreateFarmerCommission = {
             farmer_id: commission.farmer_id,
@@ -554,6 +550,17 @@ const Dashboard = () => {
         }
     };
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const tabs = [
+        'Users', 'Ledger Accounts', 'Ledger Entries', 'Production Lines', 'Purchases', 'Items', 'Inventory', 'Inventory Movements', 'Stock Receipts', 'Batch Allocation Lines', 'Batches', 'Batch Requirements',
+        'Batch Allocations', 'Farmers', 'Traders', 'Suppliers', 'Batch Closures', 'Batch Sales', 'Bird Count History', 'Bird Sell History', 'Stock Returns'
+    ];
+
+    const { data: stockReturns = [], isLoading: loadingStockReturns } = useQuery({
+        queryKey: ['stock_returns'],
+        queryFn: () => fetchPaginatedStockReturns(0, 50),
+        staleTime: 5 * 60 * 1000,
+    });
 
 
 
@@ -974,6 +981,13 @@ const Dashboard = () => {
                         }}
                     />
                 )}
+                {activeTab === 'Stock Returns' && (
+                    <StockReturnsTable
+                        stockReturns={stockReturns}
+                        loading={loading}
+                    
+                    />
+                )}
 
                 {activeTab !== 'Purchases' && activeTab !== 'Items' && activeTab !== 'Farmers' && activeTab !== 'Suppliers' &&
                     activeTab !== 'Traders' &&
@@ -989,7 +1003,8 @@ const Dashboard = () => {
                     activeTab !== 'Ledger Accounts' &&
                     activeTab !== 'Bird Count History' &&
                     activeTab !== 'Batch Closures' &&
-                    activeTab !== 'Batch Sales' && (
+                    activeTab !== 'Batch Sales' && 
+                    activeTab !== 'Stock Returns' && (
 
                         <div className="bg-white rounded-lg shadow p-8 text-center">
                             <h2 className="text-xl font-semibold text-gray-800 mb-2">{activeTab}</h2>
