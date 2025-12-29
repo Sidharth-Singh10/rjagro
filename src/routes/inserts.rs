@@ -3,6 +3,7 @@ use axum::{routing::post, Router};
 use entity::sea_orm_active_enums::UserRole;
 use sea_orm::DatabaseConnection;
 
+use crate::handlers::batch_requirements::create_stock_return;
 use crate::handlers::batch_sales::create_batch_sale;
 use crate::handlers::batches::create_batch;
 use crate::handlers::inserts::{
@@ -42,4 +43,5 @@ pub fn insert_routes() -> Router<DatabaseConnection> {
         .route("/bird_count_history", post(create_bird_count_history))
         .route("/bird_sell_history", post(create_bird_sell_history))
         .route("/farmer_commission", post(create_farmer_commission))
+        .route("/stock_returns", post(create_stock_return))
 }

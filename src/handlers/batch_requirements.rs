@@ -8,7 +8,7 @@ use entity::{
     batch_allocation_lines, batch_allocations, batches, bird_count_history, items, ledger_accounts,
     ledger_entries,
     sea_orm_active_enums::{ItemCategory, RequirementStatus},
-    stock_receipts,
+    stock_receipts, stock_returns,
 };
 use entity::{
     batch_requirements, inventory, inventory_movements, sea_orm_active_enums::MovementType,
@@ -21,7 +21,7 @@ use sea_orm::{
 use sea_orm::{DatabaseTransaction, IntoActiveModel, TransactionTrait};
 use uuid::Uuid;
 
-use crate::models::{ApprovePayload, ResponseMessage};
+use crate::models::{ApprovePayload, CreateStockReturn, ResponseMessage};
 
 pub async fn decline_batch_requirement_handler(
     Path(requirement_id): Path<i32>,
@@ -428,5 +428,284 @@ async fn approve_and_allocate(
     Ok(format!(
         "Requirement {} approved, allocation created, inventory updated, and movement logged",
         requirement_id
+    ))
+}
+
+pub async fn create_stock_return(
+    State(db): State<DatabaseConnection>,
+    Json(payload): Json<CreateStockReturn>,
+) -> impl IntoResponse {
+    // Start transaction
+    match db.begin().await {
+        Ok(txn) => {
+            let result = process_stock_return(payload, &txn).await;
+
+            match result {
+                Ok(msg) => {
+                    if let Err(e) = txn.commit().await {
+                        eprintln!("Transaction commit failed: {}", e);
+                        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                    }
+                    (StatusCode::CREATED, Json(ResponseMessage { message: msg })).into_response()
+                }
+                Err(e) => {
+                    eprintln!("Transaction failed: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to start transaction: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+async fn process_stock_return(
+    payload: CreateStockReturn,
+    txn: &DatabaseTransaction,
+) -> Result<String, String> {
+    // 1. Fetch the allocation line to verify and get details
+    let allocation_line = batch_allocation_lines::Entity::find_by_id(payload.allocation_line_id)
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch allocation line: {}", e))?
+        .ok_or_else(|| format!("Allocation line {} not found", payload.allocation_line_id))?;
+
+    // Validate return quantity doesn't exceed allocated quantity
+    if payload.return_qty > allocation_line.qty {
+        return Err(format!(
+            "Return quantity {} exceeds allocated quantity {}",
+            payload.return_qty, allocation_line.qty
+        ));
+    }
+
+    // 2. Fetch the allocation to get item details
+    let allocation = batch_allocations::Entity::find_by_id(allocation_line.allocation_id)
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch allocation: {}", e))?
+        .ok_or_else(|| format!("Allocation {} not found", allocation_line.allocation_id))?;
+
+    let requirement = entity::batch_requirements::Entity::find()
+        .filter(entity::batch_requirements::Column::RequirementId.eq(allocation.requirement_id))
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch requirement: {}", e))?
+        .ok_or_else(|| {
+            format!(
+                "Requirement not found for allocation {}",
+                allocation.allocation_id
+            )
+        })?;
+
+    let item_code = requirement.item_code.clone();
+
+    // 3. Insert stock return record
+    let stock_return = stock_returns::ActiveModel {
+        return_id: Default::default(),
+        allocation_line_id: Set(payload.allocation_line_id),
+        batch_id: Set(payload.batch_id),
+        return_qty: Set(payload.return_qty),
+        unit_cost: Set(payload.unit_cost),
+        return_value: Set(payload.return_value),
+        return_date: Set(payload.return_date),
+        created_at: Set(chrono::Utc::now().into()),
+    };
+
+    let return_model = stock_return
+        .insert(txn)
+        .await
+        .map_err(|e| format!("Failed to insert stock return: {}", e))?;
+
+    // 4. Update inventory (add back returned qty)
+    if let Some(inv) = inventory::Entity::find_by_id(item_code.clone())
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch inventory: {}", e))?
+    {
+        let mut active_inv: inventory::ActiveModel = inv.into();
+        let current = active_inv.current_qty.take().unwrap_or_default();
+
+        active_inv.current_qty = Set(current + payload.return_qty);
+        active_inv.last_updated = Set(chrono::Utc::now().into());
+
+        active_inv
+            .update(txn)
+            .await
+            .map_err(|e| format!("Failed to update inventory: {}", e))?;
+    } else {
+        return Err(format!("No inventory record found for item {}", item_code));
+    }
+
+    // 5. Insert inventory movement (IN - return)
+    let movement = inventory_movements::ActiveModel {
+        movement_id: Default::default(),
+        item_code: Set(item_code.clone()),
+        movement_type: Set(MovementType::Adjustment),
+        qty_change: Set(payload.return_qty),
+        reference_id: Set(Some(return_model.return_id)),
+        ..Default::default()
+    };
+
+    movement
+        .insert(txn)
+        .await
+        .map_err(|e| format!("Failed to insert inventory movement: {}", e))?;
+
+    // 6. Restore stock to the lot (FIFO reversal)
+    let receipt = stock_receipts::Entity::find_by_id(allocation_line.lot_id)
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch stock receipt: {}", e))?
+        .ok_or_else(|| format!("Stock receipt {} not found", allocation_line.lot_id))?;
+
+    let mut receipt_active: stock_receipts::ActiveModel = receipt.clone().into();
+    receipt_active.remaining_qty = Set(receipt.remaining_qty + payload.return_qty);
+    receipt_active
+        .update(txn)
+        .await
+        .map_err(|e| format!("Failed to update stock receipt: {}", e))?;
+
+    // 7. Fetch item to determine category for ledger accounts
+    let item = items::Entity::find_by_id(item_code.clone())
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch item: {}", e))?
+        .ok_or_else(|| format!("Item {} not found", item_code))?;
+
+    let (asset_account_id, expense_account_id) = match item.item_category {
+        ItemCategory::Medicine => (102_i32, 107_i32),
+        ItemCategory::Feed => (103_i32, 107_i32),
+        ItemCategory::Chicks => (104_i32, 107_i32),
+        ItemCategory::FinishedBirds => (105_i32, 107_i32),
+    };
+
+    // 8. Handle bird count reversal for Chicks category
+    // if let ItemCategory::Chicks = item.item_category {
+    //     let return_qty_i32: i32 = payload
+    //         .return_qty
+    //         .to_string()
+    //         .parse::<i32>()
+    //         .unwrap_or_default();
+
+    //     // Insert bird count history (negative adjustment)
+    //     let bird_history = bird_count_history::ActiveModel {
+    //         record_id: Default::default(),
+    //         batch_id: Set(payload.batch_id),
+    //         record_date: Set(payload.return_date),
+    //         deaths: Set(return_qty_i32),
+    //         additions: Set(0),
+    //         notes: Set(format!(
+    //             "{} birds returned on {} (Return #{})",
+    //             return_qty_i32, payload.return_date, return_model.return_id
+    //         )),
+    //         created_at: Set(chrono::Utc::now().into()),
+    //     };
+
+    //     bird_history
+    //         .insert(txn)
+    //         .await
+    //         .map_err(|e| format!("Failed to insert bird_count_history: {}", e))?;
+
+    //     // Update batches.current_bird_count (decrease)
+    //     if let Some(batch) = batches::Entity::find_by_id(payload.batch_id)
+    //         .one(txn)
+    //         .await
+    //         .map_err(|e| format!("Failed to fetch batch {}: {}", payload.batch_id, e))?
+    //     {
+    //         let current = batch.current_bird_count.unwrap_or(0);
+    //         let mut batch_active: batches::ActiveModel = batch.into();
+    //         batch_active.current_bird_count = Set(Some(current - return_qty_i32));
+    //         batch_active
+    //             .update(txn)
+    //             .await
+    //             .map_err(|e| format!("Failed to update batch bird count: {}", e))?;
+    //     }
+    // }
+
+    // 9. Create ledger entries (reverse the allocation entries)
+    let txn_group_id = Uuid::new_v4();
+
+    // Debit asset account (restore inventory value)
+    let debit_entry = ledger_entries::ActiveModel {
+        entry_id: Default::default(),
+        account_id: Set(asset_account_id),
+        debit: Set(Some(payload.return_value)),
+        credit: Set(None),
+        txn_date: Set(chrono::Utc::now().date_naive()),
+        reference_table: Set(Some("stock_returns".into())),
+        narration: Set(Some(format!(
+            "Stock return for allocation line {}",
+            payload.allocation_line_id
+        ))),
+        txn_group_id: Set(txn_group_id),
+        reference_id: Set(Some(return_model.return_id)),
+        created_at: Set(chrono::Utc::now().into()),
+        ..Default::default()
+    };
+
+    debit_entry
+        .insert(txn)
+        .await
+        .map_err(|e| format!("Failed to insert debit entry: {}", e))?;
+
+    // Credit expense account (reverse the expense)
+    let credit_entry = ledger_entries::ActiveModel {
+        entry_id: Default::default(),
+        account_id: Set(expense_account_id),
+        debit: Set(None),
+        credit: Set(Some(payload.return_value)),
+        txn_date: Set(chrono::Utc::now().date_naive()),
+        reference_table: Set(Some("stock_returns".into())),
+        narration: Set(Some(format!(
+            "Return reversal for allocation line {}",
+            payload.allocation_line_id
+        ))),
+        txn_group_id: Set(txn_group_id),
+        reference_id: Set(Some(return_model.return_id)),
+        created_at: Set(chrono::Utc::now().into()),
+        ..Default::default()
+    };
+
+    credit_entry
+        .insert(txn)
+        .await
+        .map_err(|e| format!("Failed to insert credit entry: {}", e))?;
+
+    // 10. Update ledger account balances
+    if let Some(asset_account) = ledger_accounts::Entity::find_by_id(asset_account_id)
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch asset account: {}", e))?
+    {
+        let mut asset_active: ledger_accounts::ActiveModel = asset_account.into();
+        let current_balance = asset_active.current_balance.take().unwrap_or_default();
+        asset_active.current_balance = Set(current_balance + payload.return_value);
+
+        asset_active
+            .update(txn)
+            .await
+            .map_err(|e| format!("Failed to update asset account balance: {}", e))?;
+    }
+
+    if let Some(expense_account) = ledger_accounts::Entity::find_by_id(expense_account_id)
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch expense account: {}", e))?
+    {
+        let mut expense_active: ledger_accounts::ActiveModel = expense_account.into();
+        let current_balance = expense_active.current_balance.take().unwrap_or_default();
+        expense_active.current_balance = Set(current_balance - payload.return_value);
+
+        expense_active
+            .update(txn)
+            .await
+            .map_err(|e| format!("Failed to update expense account balance: {}", e))?;
+    }
+
+    Ok(format!(
+        "Stock return {} created successfully. Inventory restored, ledger entries reversed, and movements logged.",
+        return_model.return_id
     ))
 }

@@ -236,3 +236,13 @@ pub struct CreateLedgerEntry {
     pub reference_id: Option<i32>,
     pub created_by: Option<i32>,
 }
+
+#[derive(Deserialize)]
+pub struct CreateStockReturn {
+    pub allocation_line_id: i32,
+    pub batch_id: i32,
+    pub return_qty: Decimal,
+    pub unit_cost: Decimal,
+    pub return_value: Decimal,
+    pub return_date: chrono::NaiveDate,
+}

@@ -111,7 +111,7 @@ enum StockReceipts {
 }
 
 #[derive(DeriveIden)]
-enum BatchAllocationLines {
+pub enum BatchAllocationLines {
     Table,
     AllocationLineId,
     AllocationId,
