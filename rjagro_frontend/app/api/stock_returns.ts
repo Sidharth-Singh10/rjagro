@@ -3,7 +3,7 @@ import { StockReturn, StockReturnPayload } from "../types/interfaces";
 import api from "../utils/api";
 
 export const fetchStockReturnsByBatch = async (batchId: number): Promise<StockReturn[]> => {
-    const response = await api.get(`/getall/stock_returns/batch/${batchId}`);
+    const response = await api.get(`/getbyid/stock_returns/${batchId}`);
     return response.data;
 };
 

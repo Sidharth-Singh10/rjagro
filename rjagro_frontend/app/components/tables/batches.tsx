@@ -11,12 +11,12 @@ import {
     FarmerCommissionHistory,
     SupervisorSimplified,
     Item,
-    BatchClosurePayload
+    BatchClosurePayload,
 } from '@/app/types/interfaces';
 import { useAuth } from '@/app/hooks/useAuth';
-import BatchDetailsModal from './modals/batches';
 import { useBatchesSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from './sortable_headers/header';
+import BatchDetailsModal from './modals/Batches/batch_details_modal';
 
 interface BatchesTableProps {
     batches: Batch[];
@@ -329,13 +329,12 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                                         {batch.current_bird_count}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                            calculateMortality(batch.initial_bird_count, batch.current_bird_count) > 10
+                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${calculateMortality(batch.initial_bird_count, batch.current_bird_count) > 10
                                                 ? 'bg-red-100 text-red-800'
                                                 : calculateMortality(batch.initial_bird_count, batch.current_bird_count) > 5
-                                                ? 'bg-yellow-100 text-yellow-800'
-                                                : 'bg-green-100 text-green-800'
-                                        }`}>
+                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                    : 'bg-green-100 text-green-800'
+                                            }`}>
                                             {calculateMortality(batch.initial_bird_count, batch.current_bird_count).toFixed(1)}%
                                         </span>
                                     </td>

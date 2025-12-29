@@ -985,7 +985,6 @@ const Dashboard = () => {
                     <StockReturnsTable
                         stockReturns={stockReturns}
                         loading={loading}
-                    
                     />
                 )}
 
@@ -1003,7 +1002,7 @@ const Dashboard = () => {
                     activeTab !== 'Ledger Accounts' &&
                     activeTab !== 'Bird Count History' &&
                     activeTab !== 'Batch Closures' &&
-                    activeTab !== 'Batch Sales' && 
+                    activeTab !== 'Batch Sales' &&
                     activeTab !== 'Stock Returns' && (
 
                         <div className="bg-white rounded-lg shadow p-8 text-center">
