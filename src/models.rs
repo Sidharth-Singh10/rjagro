@@ -246,3 +246,9 @@ pub struct CreateStockReturn {
     pub return_value: Decimal,
     pub return_date: chrono::NaiveDate,
 }
+
+#[derive(serde::Deserialize)]
+pub struct PaginationParams {
+    pub page: Option<u64>, // SeaORM uses 0-indexed pages
+    pub page_size: Option<u64>,
+}

@@ -1,13 +1,14 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::models::{
-    BatchRequirementResponse, BatchResponse, ProductionLineWithSupervisor, PurchaseWithItem,
-    UserSimplified,
+    BatchRequirementResponse, BatchResponse, PaginationParams, ProductionLineWithSupervisor,
+    PurchaseWithItem, UserSimplified,
 };
+use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use entity::{sea_orm_active_enums::UserRole, *};
-use sea_orm::ColumnTrait;
 use sea_orm::QueryOrder;
+use sea_orm::{ColumnTrait, PaginatorTrait};
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter};
 
 // USERS
@@ -468,6 +469,26 @@ pub async fn get_batch_sales_handler(State(db): State<DatabaseConnection>) -> im
         Err(e) => {
             eprintln!("Failed to fetch batch sales: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn get_paginated_returns_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<PaginationParams>,
+) -> Result<Json<Vec<stock_returns::Model>>, StatusCode> {
+    let query = stock_returns::Entity::find().order_by_desc(stock_returns::Column::ReturnDate);
+
+    let page_size = params.page_size.unwrap_or(25);
+    let page = params.page.unwrap_or(0);
+
+    let paginator = query.paginate(&db, page_size);
+
+    match paginator.fetch_page(page).await {
+        Ok(data) => Ok(Json(data)),
+        Err(e) => {
+            eprintln!("Pagination error: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
 }
