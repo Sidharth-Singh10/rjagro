@@ -190,11 +190,14 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             >
                                 <option value="">Select Item Code</option>
-                                {items.map((item) => (
-                                    <option key={item.item_code} value={item.item_code}>
-                                        {item.item_code} - {item.item_name}
-                                    </option>
-                                ))}
+                                {items
+                                    // Exlcluding Desi chicken here bruh
+                                    .filter((item) => item.item_code !== "DC101") 
+                                    .map((item) => (
+                                        <option key={item.item_code} value={item.item_code}>
+                                            {item.item_code} - {item.item_name}
+                                        </option>
+                                    ))}
                             </select>
                         </div>
 
