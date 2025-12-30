@@ -76,3 +76,16 @@ export const handleAddStockReturn = async (
         setLoading(false);
     }
 };
+
+interface StockReturnCostResponse {
+    allocation_line_id: number;
+    unit_cost: number;
+}
+
+export const fetchStockReturnUnitCost = async (
+    batchId: number,
+    itemCode: string
+): Promise<StockReturnCostResponse> => {
+    const response = await api.get(`getbyid/get_stock_return_unit_cost/bid/${batchId}/${encodeURIComponent(itemCode)}`);
+    return response.data;
+};

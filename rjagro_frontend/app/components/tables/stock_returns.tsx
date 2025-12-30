@@ -1,19 +1,26 @@
 'use client'
 import React, { useState } from 'react';
-import { Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight, Plus, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
 import { TableConfigs, useTableSorting } from '@/app/hooks/sorting';
 import TableActionsDropdown from '../utils/table_actions';
-import { Batch, BatchAllocation, BatchAllocationLine, StockReturn } from '@/app/types/interfaces';
+import { Batch, Item, StockReturn } from '@/app/types/interfaces';
+import StockReturnForm from './stock_returns/addform';
 
 interface StockReturnsTableProps {
     stockReturns: StockReturn[];
     loading: boolean;
+    items: Item[];
+    batches: Batch[];
 }
+
 const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
     stockReturns,
     loading,
+    items,
+    batches
 }) => {
+
+    const [showAddForm, setShowAddForm] = useState(false);
 
     const { sortedData, requestSort, getSortIcon } = useTableSorting(
         stockReturns,
@@ -21,7 +28,6 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
         TableConfigs.stockReturns?.getValueFn || ((item: any, key: string) => item[key])
     );
 
-    const queryClient = useQueryClient();
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
     const SortableHeader: React.FC<{
@@ -47,9 +53,27 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
 
     return (
         <div className="bg-white rounded-lg shadow">
+            {/* Header Section */}
             <div className="flex items-center justify-between p-4 border-b">
                 <h2 className="text-xl font-semibold text-gray-800">Stock Returns</h2>
+                <button
+                    onClick={() => setShowAddForm(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                    <Plus size={18} />
+                    Add Return
+                </button>
             </div>
+
+            {/* The New Form */}
+            {showAddForm && (
+                <StockReturnForm
+                    onClose={() => setShowAddForm(false)}
+                    onSuccess={() => setShowAddForm(false)} // Or keep open if desired
+                    items={items}
+                    batches={batches}
+                />
+            )}
 
             <div className="overflow-x-auto">
                 <table className="w-full">

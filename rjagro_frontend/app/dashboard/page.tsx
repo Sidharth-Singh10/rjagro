@@ -985,6 +985,8 @@ const Dashboard = () => {
                     <StockReturnsTable
                         stockReturns={stockReturns}
                         loading={loading}
+                        batches={batches}
+                        items={items}
                     />
                 )}
 
