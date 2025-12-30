@@ -654,6 +654,7 @@ const Dashboard = () => {
                     <PurchasesTable
                         purchases={purchases}
                         items={items}
+                        suppliers={suppliers}
                         loading={loading}
                         showAddForm={showAddForm}
                         newPurchase={newPurchase}

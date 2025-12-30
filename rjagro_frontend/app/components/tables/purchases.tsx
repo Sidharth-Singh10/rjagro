@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, Trash2 } from 'lucide-react';
 import { calculateTotalCost } from '../../utils/helper';
-import { Item, LedgerAccountType, NewPurchase, Purchase } from '@/app/types/interfaces';
+import { Item, LedgerAccountType, NewPurchase, Purchase, Supplier } from '@/app/types/interfaces';
 import { useQueryClient } from '@tanstack/react-query';
 import { handleDeletePurchase } from '@/app/api/purchases';
 import { INVENTORY_ACCOUNT_MAP, PAYMENT_ACCOUNT_MAP } from '@/app/types/constants';
@@ -19,6 +19,7 @@ interface ExtendedNewPurchase extends NewPurchase {
 interface PurchasesTableProps {
     purchases: Purchase[];
     items: Item[];
+    suppliers: Supplier[];
     loading: boolean;
     showAddForm: boolean;
     newPurchase: ExtendedNewPurchase;
@@ -31,6 +32,7 @@ interface PurchasesTableProps {
 const PurchasesTable: React.FC<PurchasesTableProps> = ({
     purchases,
     items,
+    suppliers,
     loading,
     showAddForm,
     newPurchase,
@@ -192,7 +194,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                 <option value="">Select Item Code</option>
                                 {items
                                     // Exlcluding Desi chicken here bruh
-                                    .filter((item) => item.item_code !== "DC101") 
+                                    .filter((item) => item.item_code !== "DC101")
                                     .map((item) => (
                                         <option key={item.item_code} value={item.item_code}>
                                             {item.item_code} - {item.item_name}
@@ -245,13 +247,18 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Supplier *
                             </label>
-                            <input
-                                type="text"
+                            <select
                                 value={newPurchase.supplier}
                                 onChange={(e) => setNewPurchase(prev => ({ ...prev, supplier: e.target.value }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                placeholder="Supplier name"
-                            />
+                            >
+                                <option value="">Select Supplier</option>
+                                {suppliers.map((supplier) => (
+                                    <option key={supplier.supplier_id} value={supplier.name}>
+                                        {supplier.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div>
