@@ -14,6 +14,7 @@ pub struct Model {
     pub payment_date: Date,
     pub payment_mode: Option<String>, // 'UPI', 'Cash', etc.
     pub reference_number: Option<String>,
+    pub txn_group_id: Option<Uuid>,
     #[sea_orm(column_type = "Text", nullable)]
     pub notes: Option<String>,
     pub created_at: DateTimeWithTimeZone,

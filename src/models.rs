@@ -253,6 +253,17 @@ pub struct CreateStockReturn {
 
 #[derive(serde::Deserialize)]
 pub struct PaginationParams {
-    pub page: Option<u64>, // SeaORM uses 0-indexed pages
+    pub page: Option<u64>,
     pub page_size: Option<u64>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CreateSupplierPayment {
+    pub supplier_id: i32,
+    pub amount: Decimal,
+    pub payment_date: NaiveDate,
+    pub payment_mode: Option<String>,
+    pub reference_number: Option<String>,
+    pub notes: Option<String>,
+    pub created_by: i32,
 }

@@ -9,6 +9,7 @@ use sea_orm::{Database, DatabaseConnection};
 use shuttle_runtime::SecretStore;
 use tracing::{error, info};
 mod auth;
+mod consts;
 mod handlers;
 mod models;
 mod routes;

@@ -1,0 +1,2 @@
+pub const LIABILITY_ACCOUNT_ID: i32 = 105;
+pub const CASH_ACCOUNT_ID: i32 = 101;
