@@ -323,7 +323,6 @@ async fn approve_and_allocate(
         reference_id: Set(Some(allocation_model.allocation_id)),
         created_by: Set(Some(payload.allocated_by)),
         created_at: Set(chrono::Utc::now().into()),
-        ..Default::default()
     };
 
     credit_entry.insert(txn).await.map_err(|e| {
@@ -346,7 +345,6 @@ async fn approve_and_allocate(
         created_by: Set(Some(payload.allocated_by)),
         created_at: Set(chrono::Utc::now().into()),
         txn_group_id: Set(txn_group_id),
-        ..Default::default()
     };
 
     debit_entry.insert(txn).await.map_err(|e| {

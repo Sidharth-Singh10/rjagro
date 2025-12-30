@@ -245,7 +245,6 @@ async fn create_batch_with_transaction(
         txn_group_id: Set(txn_group_id),
         created_by: Set(Some(payload.created_by)),
         created_at: Set(Utc::now().into()),
-        ..Default::default()
     };
 
     credit_entry
@@ -269,7 +268,6 @@ async fn create_batch_with_transaction(
         txn_group_id: Set(txn_group_id),
         created_by: Set(Some(payload.created_by)),
         created_at: Set(Utc::now().into()),
-        ..Default::default()
     };
 
     debit_entry

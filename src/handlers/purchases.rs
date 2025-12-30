@@ -58,8 +58,9 @@ async fn insert_purchase<C: TransactionTrait + sea_orm::ConnectionTrait>(
         total_cost: Set(payload.total_cost),
         quantity: Set(payload.quantity),
         purchase_date: Set(payload.purchase_date),
-        supplier: Set(payload.supplier.clone()),
+        supplier_id: Set(payload.supplier_id),
         created_by: Set(payload.created_by),
+        payment_type: Set(Some(payload.payment_type.clone())),
         ..Default::default()
     };
 
@@ -81,7 +82,7 @@ async fn insert_stock_receipt<C: TransactionTrait + sea_orm::ConnectionTrait>(
         remaining_qty: Set(payload.quantity),
         unit_cost: Set(payload.cost_per_unit),
         received_date: Set(payload.purchase_date),
-        supplier: Set(payload.supplier.clone()),
+        supplier: Set(payload.supplier_name.clone()),
         ..Default::default()
     };
 

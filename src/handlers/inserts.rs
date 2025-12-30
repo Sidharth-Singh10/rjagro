@@ -450,7 +450,7 @@ pub async fn create_ledger_entry(
             // try to rollback if fetch fails (best-effort)
             StatusCode::INTERNAL_SERVER_ERROR
         })?
-        .ok_or_else(|| StatusCode::NOT_FOUND)?;
+        .ok_or(StatusCode::NOT_FOUND)?;
 
     // 2. Compute delta depending on account type
     //    For Asset/Expense: delta = debit - credit

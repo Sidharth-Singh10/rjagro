@@ -23,6 +23,7 @@ pub mod purchases;
 pub mod sea_orm_active_enums;
 pub mod stock_receipts;
 pub mod stock_returns;
+pub mod supplier_payments;
 pub mod suppliers;
 pub mod traders;
 pub mod users;

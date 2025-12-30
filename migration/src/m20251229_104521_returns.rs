@@ -1,6 +1,8 @@
 use sea_orm_migration::prelude::*;
 
-use crate::{m20250810_161418_iteration1::Batches, m20250826_234204_stock_receipts::BatchAllocationLines};
+use crate::{
+    m20250810_161418_iteration1::Batches, m20250826_234204_stock_receipts::BatchAllocationLines,
+};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;

@@ -3,6 +3,8 @@
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
+use crate::sea_orm_active_enums::PaymentType;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "purchases")]
 pub struct Model {
@@ -15,7 +17,8 @@ pub struct Model {
     pub total_cost: Option<Decimal>,
     pub quantity: Decimal,
     pub purchase_date: Date,
-    pub supplier: Option<String>,
+    pub supplier_id: i32,
+    pub payment_type: Option<PaymentType>,
     pub created_by: Option<i32>,
 }
 
@@ -38,10 +41,12 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     Items,
+
+    // CHANGED: Updated mapping for Supplier ID
     #[sea_orm(
         belongs_to = "super::suppliers::Entity",
-        from = "Column::Supplier",
-        to = "super::suppliers::Column::Name",
+        from = "Column::SupplierId",        // New column in 'purchases'
+        to = "super::suppliers::Column::SupplierId", // Primary key in 'suppliers'
         on_update = "Cascade",
         on_delete = "NoAction"
     )]

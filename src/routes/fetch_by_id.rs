@@ -2,7 +2,7 @@ use axum::{routing::get, Router};
 use sea_orm::DatabaseConnection;
 
 use crate::handlers::fetch_by_id::{
-    get_stock_return_unit_cost, get_farmer_commission_history_by_id_handler,
+    get_farmer_commission_history_by_id_handler, get_stock_return_unit_cost,
     get_stock_returns_by_batch_id_handler,
 };
 

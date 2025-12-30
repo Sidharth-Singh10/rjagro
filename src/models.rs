@@ -1,6 +1,7 @@
 use chrono::NaiveDate;
 use entity::sea_orm_active_enums::{
-    BatchStatus, ItemCategory, LedgerAccountType, RequirementStatus, SupplierType, UserRole,
+    BatchStatus, ItemCategory, LedgerAccountType, PaymentType, RequirementStatus, SupplierType,
+    UserRole,
 };
 use sea_orm::prelude::{DateTimeWithTimeZone, Decimal};
 use sea_orm::FromQueryResult;
@@ -20,7 +21,8 @@ pub struct PurchaseWithItem {
     pub total_cost: Option<Decimal>,
     pub quantity: Decimal,
     pub purchase_date: NaiveDate,
-    pub supplier: Option<String>,
+    pub supplier_id: i32,
+    pub supplier_name: Option<String>,
     pub created_by: Option<i32>,
 }
 #[derive(serde::Deserialize)]
@@ -43,11 +45,13 @@ pub struct CreatePurchase {
     pub cost_per_unit: Decimal,
     pub total_cost: Option<Decimal>,
     pub purchase_date: chrono::NaiveDate,
-    pub supplier: Option<String>,
+    pub supplier_id: i32,
+    pub supplier_name: Option<String>,
     pub quantity: Decimal,
     pub created_by: Option<i32>,
     pub inventory_account_id: i32,
     pub payment_account_id: i32,
+    pub payment_type: PaymentType,
 }
 
 #[derive(Deserialize)]

@@ -7,9 +7,9 @@ use crate::models::{
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use entity::{sea_orm_active_enums::UserRole, *};
-use sea_orm::QueryOrder;
 use sea_orm::{ColumnTrait, PaginatorTrait};
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{DbBackend, QueryOrder, Statement};
 
 // USERS
 pub async fn get_users_handler(State(db): State<DatabaseConnection>) -> impl IntoResponse {
@@ -76,7 +76,8 @@ pub async fn get_purchases_handler(State(db): State<DatabaseConnection>) -> impl
                     total_cost: p.total_cost,
                     quantity: p.quantity,
                     purchase_date: p.purchase_date,
-                    supplier: p.supplier,
+                    supplier_id: p.supplier_id,
+                    supplier_name: None,
                     created_by: p.created_by,
                 })
                 .collect();
@@ -304,12 +305,45 @@ pub async fn get_traders_handler(State(db): State<DatabaseConnection>) -> impl I
     }
 }
 
-// SUPPLIERS
 pub async fn get_suppliers_handler(State(db): State<DatabaseConnection>) -> impl IntoResponse {
-    match suppliers::Entity::find().all(&db).await {
+    // 1. Construct the Raw SQL
+    // We use subqueries to safely calculate sums without joining duplicate rows
+    let sql = r#"
+        SELECT 
+            s.*,
+            (
+                -- Sum of all 'PAYABLE' (credit) purchases
+                COALESCE((
+                    SELECT SUM(total_cost) 
+                    FROM purchases 
+                    WHERE supplier_id = s.supplier_id 
+                      AND payment_type = 'PAYABLE'
+                ), 0) 
+                - 
+                -- Sum of all payments made
+                COALESCE((
+                    SELECT SUM(amount) 
+                    FROM supplier_payments 
+                    WHERE supplier_id = s.supplier_id
+                ), 0)
+            ) AS amount_due
+        FROM suppliers s
+        ORDER BY s.supplier_id ASC
+    "#;
+
+    // 2. Execute the query
+    // .into_json() automatically maps the result (including your new 'amount_due') to JSON
+    let result = suppliers::Entity::find()
+        .from_raw_sql(Statement::from_string(DbBackend::Postgres, sql.to_string()))
+        .into_json()
+        .all(&db)
+        .await;
+
+    // 3. Return response
+    match result {
         Ok(data) => Json(data).into_response(),
         Err(e) => {
-            eprintln!("Failed to fetch suppliers: {}", e);
+            eprintln!("Failed to fetch suppliers with balance: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
