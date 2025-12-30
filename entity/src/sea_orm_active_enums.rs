@@ -119,8 +119,8 @@ pub enum ItemCategory {
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "payment_type")]
 pub enum PaymentType {
-    #[sea_orm(string_value = "cash")]
+    #[sea_orm(string_value = "CASH")]
     Cash,
-    #[sea_orm(string_value = "payable")]
+    #[sea_orm(string_value = "PAYABLE")]
     Payable,
 }
