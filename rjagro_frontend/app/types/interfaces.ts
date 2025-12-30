@@ -65,6 +65,7 @@ export interface Supplier {
   bank_name: string;
   ifsc_code: string;
   created_at: string;
+  amount_due: string;
 }
 
 export interface SupplierPayload {

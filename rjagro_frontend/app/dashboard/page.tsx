@@ -8,7 +8,7 @@ import ItemsTable from '../components/tables/items';
 import { fetchFarmers, handleAddFarmer } from '../api/farmers';
 import FarmersTable from '../components/tables/farmers';
 import { fetchSuppliers, handleAddSupplier } from '../api/supplier';
-import SuppliersTable from '../components/tables/suppliers';
+import SuppliersTable from '../components/tables/suppliers/suppliers';
 import { fetchTraders, handleAddTrader } from '../api/traders';
 import TradersTable from '../components/tables/traders';
 import { fetchProductionLines, handleAddProductionLine } from '../api/production_line';
