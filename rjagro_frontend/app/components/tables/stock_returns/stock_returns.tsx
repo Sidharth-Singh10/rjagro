@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
 import { TableConfigs, useTableSorting } from '@/app/hooks/sorting';
-import TableActionsDropdown from '../utils/table_actions';
 import { Batch, Item, StockReturn } from '@/app/types/interfaces';
-import StockReturnForm from './stock_returns/addform';
+import StockReturnForm from './addform';
+import TableActionsDropdown from '../../utils/table_actions';
 
 interface StockReturnsTableProps {
     stockReturns: StockReturn[];

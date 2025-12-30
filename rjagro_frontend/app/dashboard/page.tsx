@@ -41,7 +41,7 @@ import { fetchBatchSales, handleAddBatchSale } from '../api/batch_sales';
 import BatchSalesTable from '../components/tables/batch_sales';
 import { ItemCategory } from '../types/enums';
 import { fetchPaginatedStockReturns } from '../api/stock_returns';
-import StockReturnsTable from '../components/tables/stock_returns';
+import StockReturnsTable from '../components/tables/stock_returns/stock_returns';
 
 const Dashboard = () => {
     const { user } = useAuth();
