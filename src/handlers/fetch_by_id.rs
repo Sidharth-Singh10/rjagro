@@ -11,6 +11,7 @@ use sea_orm::QuerySelect;
 use sea_orm::RelationTrait;
 use sea_orm::{prelude::Decimal, DatabaseConnection};
 use sea_orm::{ColumnTrait, JoinType};
+use serde_json::json;
 
 pub async fn get_farmer_commission_history_by_id_handler(
     State(db): State<DatabaseConnection>,
@@ -57,7 +58,7 @@ pub async fn get_stock_returns_by_batch_id_handler(
 pub async fn get_stock_return_unit_cost(
     State(db): State<DatabaseConnection>,
     Path((batch_id, item_code)): Path<(i32, String)>,
-) -> Result<Json<Decimal>, StatusCode> {
+) -> Result<Json<serde_json::Value>, StatusCode> {
     match batch_allocation_lines::Entity::find()
         .join(
             JoinType::InnerJoin,
@@ -67,16 +68,20 @@ pub async fn get_stock_return_unit_cost(
         .filter(stock_receipts::Column::ItemCode.eq(&item_code))
         .order_by_desc(batch_allocation_lines::Column::AllocationLineId)
         .select_only()
+        .column(batch_allocation_lines::Column::AllocationLineId)
         .column(batch_allocation_lines::Column::UnitCost)
-        .into_tuple::<Decimal>()
+        .into_tuple::<(i32, Decimal)>()
         .one(&db)
         .await
     {
-        Ok(Some(unit_cost)) => Ok(Json(unit_cost)),
+        Ok(Some((allocation_line_id, unit_cost))) => Ok(Json(json!({
+            "allocation_line_id": allocation_line_id,
+            "unit_cost": unit_cost
+        }))),
         Ok(None) => Err(StatusCode::NOT_FOUND),
         Err(e) => {
             eprintln!(
-                "Failed to fetch unit cost for batch {} and item {}: {}",
+                "Failed to fetch allocation line for batch {} and item {}: {}",
                 batch_id, item_code, e
             );
             Err(StatusCode::INTERNAL_SERVER_ERROR)
