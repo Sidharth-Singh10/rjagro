@@ -540,3 +540,13 @@ export interface SupplierPayment {
   notes: string,
   created_at: string,
 }
+
+export interface SupplierPaymentPayload {
+  supplier_id: number;
+  amount: number;
+  payment_date: string; // "YYYY-MM-DD"
+  payment_mode: string;
+  reference_number?: string;
+  notes?: string;
+  created_by: number;
+}

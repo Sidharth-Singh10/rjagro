@@ -25,3 +25,11 @@ export const getNetChange = (deaths: number, additions: number) => {
     isNeutral: net === 0
   };
 };
+
+export const formatINR = (value: string | number) => {
+  if (!value) return '';
+  return new Intl.NumberFormat('en-IN', {
+    maximumFractionDigits: 2,
+  }).format(Number(value));
+};
+

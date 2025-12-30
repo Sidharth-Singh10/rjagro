@@ -6,9 +6,10 @@ import { Supplier } from '@/app/types/interfaces';
 interface SupplierListProps {
     suppliers: Supplier[];
     loading: boolean;
+    onRowClick: (supplier: Supplier) => void;
 }
 
-export const SupplierList: React.FC<SupplierListProps> = ({ suppliers, loading }) => {
+export const SupplierList: React.FC<SupplierListProps> = ({ suppliers, loading, onRowClick }) => {
     return (
         <div className="overflow-x-auto">
             <table className="w-full">
@@ -36,7 +37,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({ suppliers, loading }
                         </tr>
                     ) : (
                         suppliers.map((s) => (
-                            <tr key={s.supplier_id} className="hover:bg-gray-50 transition-colors">
+                            <tr key={s.supplier_id} onClick={() => onRowClick(s)} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-4 py-4 text-sm text-gray-900">{s.supplier_id}</td>
                                 <td className="px-4 py-4 text-sm text-gray-900 font-medium">{s.name}</td>
                                 <td className="px-4 py-4 text-sm text-gray-900">{s.phone_number}</td>

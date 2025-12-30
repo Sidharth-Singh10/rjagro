@@ -1,8 +1,9 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import { Supplier, SupplierPayload } from '@/app/types/interfaces';
 import { SupplierForm } from './add_suppliers';
 import { SupplierList } from './supplier_list';
+import { SupplierDetailsModal } from './supplier_details_modal';
 
 
 interface SuppliersTableProps {
@@ -24,6 +25,14 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
     setNewSupplier,
     handleAddSupplier,
 }) => {
+    const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleRowClick = (supplier: Supplier) => {
+
+        setSelectedSupplierId(Number(supplier.supplier_id));
+        setIsModalOpen(true);
+    };
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             {/* Header Section */}
@@ -52,6 +61,13 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({
             <SupplierList
                 suppliers={suppliers}
                 loading={loading}
+                onRowClick={handleRowClick}
+            />
+
+            <SupplierDetailsModal
+                isOpen={isModalOpen}
+                supplierId={selectedSupplierId}
+                onClose={() => setIsModalOpen(false)}
             />
         </div>
     );

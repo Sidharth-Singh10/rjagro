@@ -1,4 +1,4 @@
-import { Supplier, SupplierPayable, SupplierPayload, SupplierPayment } from "../types/interfaces";
+import { Supplier, SupplierPayable, SupplierPayload, SupplierPayment, SupplierPaymentPayload } from "../types/interfaces";
 import api from "../utils/api";
 import { toast } from "react-toastify";
 
@@ -45,3 +45,32 @@ export const fetchSupplierPayments = async (supplierId: number): Promise<Supplie
   const response = await api.get(`/getbyid/supplier_payments/${supplierId}`);
   return response.data;
 }
+
+
+export const handleAddSupplierPayment = async (
+  payload: SupplierPaymentPayload,
+  setLoading: (loading: boolean) => void,
+  onSuccess?: () => void
+) => {
+  if (!payload.supplier_id || !payload.amount || !payload.payment_date) {
+    toast.error("Please fill in all required payment fields");
+    return;
+  }
+
+  // forgot to invalidate cache here?
+  setLoading(true);
+
+  try {
+    await api.post('/insert/supplier_payment', payload);
+
+    toast.success("Payment recorded successfully!");
+
+    if (onSuccess) onSuccess();
+
+  } catch (error) {
+    console.error("Error recording payment:", error);
+    toast.error("Error recording payment");
+  } finally {
+    setLoading(false);
+  }
+};
