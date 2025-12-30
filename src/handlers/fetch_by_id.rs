@@ -2,13 +2,15 @@ use axum::{
     extract::{Path, State},
     Json,
 };
-use entity::{farmer_commission_history, stock_returns};
+use entity::{batch_allocation_lines, farmer_commission_history, stock_receipts, stock_returns};
 use reqwest::StatusCode;
-use sea_orm::ColumnTrait;
-use sea_orm::DatabaseConnection;
 use sea_orm::EntityTrait;
 use sea_orm::QueryFilter;
 use sea_orm::QueryOrder;
+use sea_orm::QuerySelect;
+use sea_orm::RelationTrait;
+use sea_orm::{prelude::Decimal, DatabaseConnection};
+use sea_orm::{ColumnTrait, JoinType};
 
 pub async fn get_farmer_commission_history_by_id_handler(
     State(db): State<DatabaseConnection>,
@@ -46,6 +48,36 @@ pub async fn get_stock_returns_by_batch_id_handler(
             eprintln!(
                 "Failed to fetch stock returns for batch {}: {}",
                 batch_id, e
+            );
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+pub async fn get_stock_return_unit_cost(
+    State(db): State<DatabaseConnection>,
+    Path((batch_id, item_code)): Path<(i32, String)>,
+) -> Result<Json<Decimal>, StatusCode> {
+    match batch_allocation_lines::Entity::find()
+        .join(
+            JoinType::InnerJoin,
+            batch_allocation_lines::Relation::StockReceipts.def(),
+        )
+        .filter(batch_allocation_lines::Column::BatchId.eq(batch_id))
+        .filter(stock_receipts::Column::ItemCode.eq(&item_code))
+        .order_by_desc(batch_allocation_lines::Column::AllocationLineId)
+        .select_only()
+        .column(batch_allocation_lines::Column::UnitCost)
+        .into_tuple::<Decimal>()
+        .one(&db)
+        .await
+    {
+        Ok(Some(unit_cost)) => Ok(Json(unit_cost)),
+        Ok(None) => Err(StatusCode::NOT_FOUND),
+        Err(e) => {
+            eprintln!(
+                "Failed to fetch unit cost for batch {} and item {}: {}",
+                batch_id, item_code, e
             );
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }

@@ -7,6 +7,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub allocation_line_id: i32,
     pub allocation_id: i32,
+    pub batch_id: Option<i32>,
     pub lot_id: i32,
     pub qty: Decimal,
     pub unit_cost: Decimal,

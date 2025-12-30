@@ -205,6 +205,7 @@ async fn approve_and_allocate(
         let line = batch_allocation_lines::ActiveModel {
             allocation_line_id: Default::default(),
             allocation_id: Set(allocation_model.allocation_id),
+            batch_id: Set(Some(requirement.batch_id)),
             lot_id: Set(r.lot_id),
             qty: Set(take),
             unit_cost: Set(r.unit_cost),

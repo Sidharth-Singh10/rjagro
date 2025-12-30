@@ -184,6 +184,7 @@ async fn create_batch_with_transaction(
         let line = batch_allocation_lines::ActiveModel {
             allocation_line_id: Default::default(),
             allocation_id: Set(allocation_model.allocation_id),
+            batch_id: Set(Some(batch_model.batch_id)),
             lot_id: Set(receipt.lot_id),
             qty: Set(take),
             unit_cost: Set(receipt.unit_cost),
