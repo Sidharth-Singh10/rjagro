@@ -267,3 +267,13 @@ pub struct CreateSupplierPayment {
     pub notes: Option<String>,
     pub created_by: i32,
 }
+
+
+#[derive(Serialize)]
+pub struct SupplierPayable {
+    pub purchase_id: i32,
+    pub purchase_date: NaiveDate,
+    pub item_code: String,
+    pub quantity: Decimal,
+    pub total_cost: Option<Decimal>,
+}

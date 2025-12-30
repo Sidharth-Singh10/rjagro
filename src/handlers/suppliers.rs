@@ -1,13 +1,19 @@
 use crate::{
     consts::{CASH_ACCOUNT_ID, LIABILITY_ACCOUNT_ID},
     handlers::purchases::{internal_error, update_account_balance},
-    models::CreateSupplierPayment,
+    models::{CreateSupplierPayment, SupplierPayable},
 };
-use axum::{extract::State, Json};
+use axum::{
+    extract::{Path, State},
+    Json,
+};
 use chrono::Utc;
-use entity::{ledger_entries, supplier_payments};
+use entity::{ledger_entries, purchases, sea_orm_active_enums::PaymentType, supplier_payments};
 use reqwest::StatusCode;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, Set, TransactionTrait};
+use sea_orm::ColumnTrait;
+use sea_orm::QueryFilter;
+use sea_orm::QueryOrder;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set, TransactionTrait};
 use uuid::Uuid;
 
 pub async fn create_supplier_payment(
@@ -116,3 +122,53 @@ async fn process_payment_ledger<C: TransactionTrait + sea_orm::ConnectionTrait>(
 
     Ok(())
 }
+
+pub async fn get_supplier_payables(
+    State(db): State<DatabaseConnection>,
+    Path(supplier_id): Path<i32>,
+) -> Result<Json<Vec<SupplierPayable>>, StatusCode> {
+
+    let payables = purchases::Entity::find()
+        .filter(purchases::Column::SupplierId.eq(supplier_id))
+        .filter(purchases::Column::PaymentType.eq(PaymentType::Payable))
+        .order_by_desc(purchases::Column::PurchaseDate)
+        .all(&db)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to fetch supplier payables: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let response: Vec<SupplierPayable> = payables
+        .into_iter()
+        .map(|p| SupplierPayable {
+            purchase_id: p.purchase_id,
+            purchase_date: p.purchase_date,
+            item_code: p.item_code,
+            quantity: p.quantity,
+            total_cost: p.total_cost,
+        })
+        .collect();
+
+    Ok(Json(response))
+}
+
+
+pub async fn get_supplier_payments_byid_handler(
+    State(db): State<DatabaseConnection>,
+    Path(id): Path<i32>,
+) -> Result<Json<Vec<supplier_payments::Model>>, StatusCode> {
+    tracing::info!("Fetching payments for supplier ID: {}", id);
+    match supplier_payments::Entity::find()
+        .filter(supplier_payments::Column::SupplierId.eq(id))
+        .order_by_desc(supplier_payments::Column::PaymentDate)
+        .all(&db)
+        .await
+    {
+        Ok(data) => Ok(Json(data)),
+        Err(e) => {
+            eprintln!("Failed to fetch supplier payments: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}   

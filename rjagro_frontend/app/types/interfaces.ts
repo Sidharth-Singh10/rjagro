@@ -520,3 +520,23 @@ export interface StockReturnPayload {
   return_value: number;
   return_date: string;
 }
+
+export interface SupplierPayable {
+  purchase_id: number;
+  purchase_date: string;
+  item_code: string;
+  quantity: string;
+  total_cost: string;
+}
+
+export interface SupplierPayment {
+  payment_id: number,
+  supplier_id: number,
+  amount: number,
+  payment_date: string,
+  payment_mode: string,
+  reference_number: string,
+  txn_group_id: string,
+  notes: string,
+  created_at: string,
+}
