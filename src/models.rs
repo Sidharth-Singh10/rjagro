@@ -20,6 +20,7 @@ pub struct PurchaseWithItem {
     pub cost_per_unit: Decimal,
     pub total_cost: Option<Decimal>,
     pub quantity: Decimal,
+    pub payment_type: Option<PaymentType>,
     pub purchase_date: NaiveDate,
     pub supplier_id: i32,
     pub supplier_name: Option<String>,
@@ -46,7 +47,7 @@ pub struct CreatePurchase {
     pub total_cost: Option<Decimal>,
     pub purchase_date: chrono::NaiveDate,
     pub supplier_id: i32,
-    pub supplier_name: Option<String>,
+    pub supplier: Option<String>,
     pub quantity: Decimal,
     pub created_by: Option<i32>,
     pub inventory_account_id: i32,
@@ -268,7 +269,6 @@ pub struct CreateSupplierPayment {
     pub created_by: i32,
 }
 
-
 #[derive(Serialize)]
 pub struct SupplierPayable {
     pub purchase_id: i32,
@@ -276,4 +276,13 @@ pub struct SupplierPayable {
     pub item_code: String,
     pub quantity: Decimal,
     pub total_cost: Option<Decimal>,
+}
+
+#[derive(Debug, FromQueryResult, Serialize)]
+pub struct SupplierLedgerEntry {
+    pub date: NaiveDate,
+    pub description: String,
+    pub reference: String,
+    pub amount: Decimal,
+    pub entry_type: Option<String>,
 }

@@ -4,3 +4,9 @@ export enum ItemCategory {
   Chicks = "Chicks",
   FinishedBirds = "FinishedBirds",
 }
+
+export enum EntryType {
+  Settlement = "SETTLEMENT",
+  Payable = "PAYABLE",
+  Cash = "CASH",
+}

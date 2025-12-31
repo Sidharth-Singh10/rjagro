@@ -8,7 +8,7 @@ export interface Item {
 }
 
 export interface Purchase {
-  payment_method: string;
+  payment_type: string;
   purchase_id: number;
   item_code: string;
   item_name: string;
@@ -27,7 +27,8 @@ export interface NewPurchase {
   cost_per_unit: number | '';
   quantity: number | '';
   supplier: string;
-  payment_method?: string;
+  payment_type: string;
+  supplier_id?: number;
   payment_account?: LedgerAccountType;
   inventory_account_id?: number;
   payment_account_id?: number;
@@ -380,8 +381,10 @@ export interface PurchasePayload {
   total_cost: number;
   purchase_date: string;
   supplier: string;
+  supplier_id?: number;
   quantity: number;
   created_by: number;
+  payment_type: string;
   payment_account: LedgerAccountType;
   inventory_account_id?: number;
   payment_account_id?: number;
@@ -550,3 +553,12 @@ export interface SupplierPaymentPayload {
   notes?: string;
   created_by: number;
 }
+
+export interface SupplierLedgerEntry {
+  date: string,
+  description: string,
+  reference: string,
+  amount: string,
+  entry_type: string,
+}
+

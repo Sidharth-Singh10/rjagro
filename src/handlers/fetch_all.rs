@@ -76,6 +76,7 @@ pub async fn get_purchases_handler(State(db): State<DatabaseConnection>) -> impl
                     total_cost: p.total_cost,
                     quantity: p.quantity,
                     purchase_date: p.purchase_date,
+                    payment_type: p.payment_type,
                     supplier_id: p.supplier_id,
                     supplier_name: None,
                     created_by: p.created_by,

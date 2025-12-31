@@ -12,7 +12,7 @@ pub struct Model {
     #[sea_orm(column_type = "Decimal(Some((18, 2)))")]
     pub amount: Decimal,
     pub payment_date: Date,
-    pub payment_mode: Option<String>, // 'UPI', 'Cash', etc.
+    pub payment_mode: Option<String>, 
     pub reference_number: Option<String>,
     pub txn_group_id: Option<Uuid>,
     #[sea_orm(column_type = "Text", nullable)]

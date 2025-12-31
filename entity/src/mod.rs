@@ -25,5 +25,6 @@ pub mod stock_receipts;
 pub mod stock_returns;
 pub mod supplier_payments;
 pub mod suppliers;
+pub mod trader_payments;
 pub mod traders;
 pub mod users;

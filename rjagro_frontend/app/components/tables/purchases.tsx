@@ -47,7 +47,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
         cost_per_unit: '',
         quantity: '',
         supplier: '',
-        payment_method: '',
+        payment_type: '',
         payment_account: undefined,
         category: '',
         inventory_account_id: undefined,
@@ -74,13 +74,17 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
     };
 
     const handlePaymentMethodChange = (paymentMethod: string) => {
-        const paymentAccount = paymentMethod === 'Cash' ? LedgerAccountType.Asset : LedgerAccountType.Liability;
+        const paymentAccount = paymentMethod === 'CASH' ? LedgerAccountType.Asset : LedgerAccountType.Liability;
         const paymentAccountId = PAYMENT_ACCOUNT_MAP[paymentMethod as keyof typeof PAYMENT_ACCOUNT_MAP];
+
+        console.log('Payment Method:', paymentMethod);
+        console.log('Payment Account:', paymentAccount);
+        console.log('Payment Account ID:', paymentAccountId);
 
         setNewPurchase(prev => ({
             ...prev,
-            payment_method: paymentMethod,
-            payment_account: paymentAccount as LedgerAccountType | undefined,
+            payment_type: paymentMethod,
+            payment_account: paymentAccount,
             payment_account_id: paymentAccountId
         }));
     };
@@ -249,7 +253,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                             </label>
                             <select
                                 value={newPurchase.supplier}
-                                onChange={(e) => setNewPurchase(prev => ({ ...prev, supplier: e.target.value }))}
+                                onChange={(e) => setNewPurchase(prev => ({ ...prev, supplier: e.target.value, supplier_id: suppliers.find(s => s.name === e.target.value)?.supplier_id }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             >
                                 <option value="">Select Supplier</option>
@@ -266,11 +270,12 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                 Payment Method *
                             </label>
                             <select
-                                value={newPurchase.payment_method || ''}
+                                value={newPurchase.payment_type || ''}
                                 onChange={(e) => handlePaymentMethodChange(e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             >
                                 <option value="">Select Payment Method</option>
+                                // hardcoded values here do not change
                                 <option value="Cash">Cash</option>
                                 <option value="Payable">Payable</option>
                             </select>
@@ -291,7 +296,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                         <div className="flex items-end">
                             <button
                                 onClick={handleSubmit}
-                                disabled={!newPurchase.category || !newPurchase.payment_method}
+                                disabled={!newPurchase.category || !newPurchase.payment_type}
                                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Save size={18} />
@@ -314,7 +319,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                             <SortableHeader columnKey="quantity">Quantity</SortableHeader>
                             <SortableHeader columnKey="purchase_date">Purchase Date</SortableHeader>
                             <SortableHeader columnKey="supplier">Supplier</SortableHeader>
-                            <SortableHeader columnKey="payment_method">Payment Method</SortableHeader>
+                            <SortableHeader columnKey="payment_method">Payment Type</SortableHeader>
                             <SortableHeader columnKey="created_by">Created By</SortableHeader>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
@@ -362,7 +367,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                         {purchase.supplier}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {purchase.payment_method || 'N/A'}
+                                        {purchase.payment_type || 'N/A'}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {purchase.created_by}

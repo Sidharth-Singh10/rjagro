@@ -64,7 +64,8 @@ const Dashboard = () => {
         cost_per_unit: '',
         quantity: '',
         supplier: '',
-        payment_method: '',
+        payment_type: '',
+        supplier_id: undefined,
         payment_account: undefined,
         inventory_account_id: undefined,
         payment_account_id: undefined
@@ -77,9 +78,12 @@ const Dashboard = () => {
         quantity: Number(newPurchase.quantity),
         purchase_date: new Date().toISOString().slice(0, 10),
         supplier: newPurchase.supplier,
+        supplier_id: newPurchase.supplier_id,
         payment_account: newPurchase.payment_account ?? LedgerAccountType.Asset,
+
         // fix this shit
         created_by: user ? user.user_id : 9999,
+        payment_type: newPurchase.payment_type,
         inventory_account_id: newPurchase.inventory_account_id!,
         payment_account_id: newPurchase.payment_account_id!
     };

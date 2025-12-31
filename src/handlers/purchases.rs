@@ -82,7 +82,7 @@ async fn insert_stock_receipt<C: TransactionTrait + sea_orm::ConnectionTrait>(
         remaining_qty: Set(payload.quantity),
         unit_cost: Set(payload.cost_per_unit),
         received_date: Set(payload.purchase_date),
-        supplier: Set(payload.supplier_name.clone()),
+        supplier: Set(payload.supplier.clone()),
         ..Default::default()
     };
 

@@ -1,16 +1,15 @@
 use crate::{
     consts::{CASH_ACCOUNT_ID, LIABILITY_ACCOUNT_ID},
-    handlers::purchases::{internal_error, update_account_balance},
-    models::{CreateSupplierPayment, SupplierPayable},
+    handlers::{purchases::{internal_error, update_account_balance}, suppliers},
+    models::{CreateSupplierPayment, SupplierLedgerEntry, SupplierPayable},
 };
 use axum::{
-    extract::{Path, State},
-    Json,
+    Json, extract::{Path, State}, response::IntoResponse
 };
 use chrono::Utc;
 use entity::{ledger_entries, purchases, sea_orm_active_enums::PaymentType, supplier_payments};
 use reqwest::StatusCode;
-use sea_orm::ColumnTrait;
+use sea_orm::{ColumnTrait, DbBackend, Statement};
 use sea_orm::QueryFilter;
 use sea_orm::QueryOrder;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set, TransactionTrait};
@@ -172,3 +171,63 @@ pub async fn get_supplier_payments_byid_handler(
         }
     }
 }   
+
+
+pub async fn get_supplier_ledger_handler(
+    State(db): State<DatabaseConnection>,
+    Path(supplier_id): Path<i32>,
+) -> impl IntoResponse {
+    
+    // SQL Breakdown:
+    // 1. Select PURCHASES. Cast payment_type enum to text. 
+    //    We treat Purchase Cost as POSITIVE (+).
+    // 2. UNION ALL
+    // 3. Select SUPPLIER_PAYMENTS. 
+    //    We treat Settlements as NEGATIVE (-) to offset the debt.
+    
+    let sql = r#"
+        SELECT 
+            purchase_date AS date,
+            CONCAT('Purchase - ', item_code) AS description,
+            CONCAT('PID-', purchase_id) AS reference,
+            total_cost AS amount,
+            CAST(payment_type AS TEXT) AS entry_type
+        FROM purchases 
+        WHERE supplier_id = $1
+
+        UNION ALL
+
+        SELECT 
+            payment_date AS date,
+            CONCAT('Payment - ', COALESCE(payment_mode, 'Unknown')) AS description,
+            COALESCE(reference_number, CONCAT('SPID-', payment_id)) AS reference,
+            (amount) AS amount, -- Make payments negative
+            'SETTLEMENT' AS entry_type
+        FROM supplier_payments 
+        WHERE supplier_id = $1
+
+        ORDER BY date DESC, reference DESC
+    "#;
+
+    let result = entity::suppliers::Entity::find() // The entity here is just an anchor, doesn't matter much for raw sql
+        .from_raw_sql(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            sql,
+            vec![supplier_id.into()],
+        ))
+        .into_model::<SupplierLedgerEntry>()
+        .all(&db)
+        .await;
+
+    match result {
+        Ok(ledger) => {
+            // Optional: If you want to calculate a "Running Balance" in Rust before sending:
+            // You can iterate over `ledger` (reversed) to sum up values.
+            Json(ledger).into_response()
+        },
+        Err(e) => {
+            eprintln!("Ledger Error: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
