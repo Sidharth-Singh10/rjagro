@@ -1,8 +1,5 @@
 'use client'
-import React, { useMemo, useState, useEffect } from 'react';
-import { X, Save, IndianRupee, Lock } from 'lucide-react';
-import { Batch, BatchAllocation, BatchAllocationLine, BatchClosurePayload, BatchRequirement, CreateFarmerCommission, FarmerCommissionHistory } from '@/app/types/interfaces';
-import { useAuth } from '@/app/hooks/useAuth';
+import { Batch, BatchAllocation, BatchClosurePayload, BatchRequirement, CreateFarmerCommission, FarmerCommissionHistory } from '@/app/types/interfaces';
 
 
 export interface BatchDetailsModalProps {

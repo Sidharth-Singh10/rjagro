@@ -275,7 +275,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             >
                                 <option value="">Select Payment Method</option>
-                                // hardcoded values here do not change
+                                {/* hardcoded values here do not change */}
                                 <option value="Cash">Cash</option>
                                 <option value="Payable">Payable</option>
                             </select>

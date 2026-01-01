@@ -99,7 +99,6 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
                         <div className="p-8 max-w-2xl mx-auto">
                             <PaymentForm
                                 supplierId={supplierId}
-                                queryClient={queryClient}
                                 onSuccess={() => {
                                     refreshData();
                                     setViewMode('list');
@@ -166,9 +165,8 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
     );
 };
 
-const PaymentForm = ({ supplierId, queryClient, onSuccess, onCancel }: {
+const PaymentForm = ({ supplierId, onSuccess, onCancel }: {
     supplierId: number,
-    queryClient: any,
     onSuccess: () => void,
     onCancel: () => void
 }) => {

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { X, CreditCard, Receipt, Plus, ArrowLeft, Save, BookOpen, TrendingUp, TrendingDown } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { X, CreditCard, Receipt, Plus, ArrowLeft, Save, BookOpen, TrendingUp } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatINR } from '@/app/utils/helper';
 import { EntryType } from '@/app/types/enums';
@@ -27,8 +27,7 @@ export const TraderDetailsModal: React.FC<TraderDetailsModalProps> = ({ traderId
     const [ledger, setLedger] = useState<TraderLedgerEntry[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Refresh data function
-    const refreshData = async () => {
+    const refreshData = useCallback(async () => {
         if (!traderId) return;
         setLoading(true);
         try {
@@ -45,14 +44,14 @@ export const TraderDetailsModal: React.FC<TraderDetailsModalProps> = ({ traderId
         } finally {
             setLoading(false);
         }
-    };
+    }, [traderId]);
 
     useEffect(() => {
         if (!isOpen || !traderId) return;
         refreshData();
         setViewMode('list');
         setActiveTab('receivable');
-    }, [traderId, isOpen]);
+    }, [traderId, isOpen, refreshData]);
 
     if (!isOpen || !traderId) return null;
 
@@ -99,7 +98,6 @@ export const TraderDetailsModal: React.FC<TraderDetailsModalProps> = ({ traderId
                         <div className="p-8 max-w-2xl mx-auto">
                             <PaymentForm
                                 traderId={traderId}
-                                queryClient={queryClient}
                                 onSuccess={() => {
                                     refreshData();
                                     setViewMode('list');
@@ -166,9 +164,8 @@ export const TraderDetailsModal: React.FC<TraderDetailsModalProps> = ({ traderId
 };
 
 // --- Sub Components ---
-const PaymentForm = ({ traderId, queryClient, onSuccess, onCancel }: {
+const PaymentForm = ({ traderId, onSuccess, onCancel }: {
     traderId: number,
-    queryClient: any,
     onSuccess: () => void,
     onCancel: () => void
 }) => {
