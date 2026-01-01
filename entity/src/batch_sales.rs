@@ -1,6 +1,8 @@
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
+use crate::sea_orm_active_enums::PaymentType;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "batch_sales")]
 pub struct Model {
@@ -14,6 +16,7 @@ pub struct Model {
     pub rate: Decimal,
     pub quantity: Decimal,
     pub value: Decimal,
+    pub payment_type: PaymentType,
     pub created_at: DateTimeWithTimeZone,
 }
 

@@ -123,4 +123,6 @@ pub enum PaymentType {
     Cash,
     #[sea_orm(string_value = "PAYABLE")]
     Payable,
+    #[sea_orm(string_value = "RECEIVABLE")]
+    Receivable,
 }

@@ -512,7 +512,8 @@ const Dashboard = () => {
         avg_weight: '',
         rate: '',
         quantity: '',
-        value: ''
+        value: '',
+        payment_type: ''
     });
 
     const { data: batchSales = [], isLoading: loadingBatchSales } = useQuery({
@@ -966,6 +967,7 @@ const Dashboard = () => {
                                 rate: Number(newBatchSale.rate),
                                 quantity: Number(newBatchSale.quantity),
                                 value: Number(newBatchSale.value),
+                                payment_type: newBatchSale.payment_type,
                                 created_by: user ? user.user_id : 9999
                             };
                             handleAddBatchSale(payload, queryClient, setLoading, () => {
@@ -979,7 +981,8 @@ const Dashboard = () => {
                                     avg_weight: '',
                                     rate: '',
                                     quantity: '',
-                                    value: ''
+                                    value: '',
+                                    payment_type: ''
                                 });
                                 setShowAddForm(false);
                             });

@@ -488,6 +488,7 @@ export interface BatchSalePayload {
   rate: number;
   quantity: number;
   value: number;
+  payment_type: string;
   created_by: number;
 }
 
@@ -502,6 +503,7 @@ export interface NewBatchSale {
   rate: number | '';
   quantity: number | '';
   value: number | '';
+  payment_type: string;
 }
 
 export interface StockReturn {

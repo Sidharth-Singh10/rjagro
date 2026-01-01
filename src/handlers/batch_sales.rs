@@ -1,3 +1,6 @@
+use crate::consts::CASH_ACCOUNT_ID;
+use crate::consts::RECEIVABLE_ACCOUNT_ID;
+use crate::consts::REVENUE_ACCOUNT_ID;
 use crate::handlers::purchases::internal_error;
 use crate::handlers::purchases::update_account_balance;
 use crate::models::CreateBatchSale;
@@ -9,6 +12,7 @@ use chrono::Utc;
 use entity::batch_closure_summary;
 use entity::batch_sales;
 use entity::ledger_entries;
+use entity::sea_orm_active_enums::PaymentType;
 use num_traits::ToPrimitive;
 use reqwest::StatusCode;
 use sea_orm::prelude::Decimal;
@@ -20,9 +24,6 @@ use sea_orm::EntityTrait;
 use sea_orm::QueryFilter;
 use sea_orm::TransactionTrait;
 use uuid::Uuid;
-
-const CASH_ACCOUNT_ID: i32 = 101;
-const REVENUE_ACCOUNT_ID: i32 = 108;
 
 pub async fn create_batch_sale(
     State(db): State<DatabaseConnection>,
@@ -41,6 +42,7 @@ pub async fn create_batch_sale(
         rate: Set(payload.rate),
         quantity: Set(payload.quantity),
         value: Set(payload.value),
+        payment_type: Set(payload.payment_type),
         ..Default::default()
     };
 
@@ -113,9 +115,21 @@ pub async fn insert_batch_sales_ledger_entries<C: TransactionTrait + sea_orm::Co
     // txn_date: use naive date (match your ledger_entries txn_date type)
     let txn_date = Utc::now().date_naive();
 
+    let debit_account_id = match sale.payment_type {
+        PaymentType::Cash => CASH_ACCOUNT_ID,
+        PaymentType::Receivable => RECEIVABLE_ACCOUNT_ID,
+        _ => {
+            eprintln!(
+                "Invalid or unsupported payment type: {:?}",
+                sale.payment_type
+            );
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
+
     // --- Debit: Cash account (Asset) ---
     let debit_entry = ledger_entries::ActiveModel {
-        account_id: Set(CASH_ACCOUNT_ID),
+        account_id: Set(debit_account_id),
         debit: Set(Some(sale_value)),
         credit: Set(None),
         txn_date: Set(txn_date),
@@ -158,7 +172,7 @@ pub async fn insert_batch_sales_ledger_entries<C: TransactionTrait + sea_orm::Co
 
     // --- Update account balances ---
     // Cash account increases (Asset): pass is_debit = true
-    update_account_balance(txn, CASH_ACCOUNT_ID, Some(sale_value), true).await?;
+    update_account_balance(txn, debit_account_id, Some(sale_value), true).await?;
 
     // Revenue account increases (Revenue): pass is_debit = false (credit increases revenue)
     update_account_balance(txn, REVENUE_ACCOUNT_ID, Some(sale_value), false).await?;

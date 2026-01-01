@@ -1,2 +1,4 @@
 pub const LIABILITY_ACCOUNT_ID: i32 = 105;
 pub const CASH_ACCOUNT_ID: i32 = 101;
+pub const REVENUE_ACCOUNT_ID: i32 = 108;
+pub const RECEIVABLE_ACCOUNT_ID: i32 = 110;

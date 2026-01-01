@@ -239,6 +239,22 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Payment Type *
+              </label>
+              <select
+                value={newBatchSale.payment_type}
+                onChange={(e) => {
+                  setNewBatchSale(prev => ({ ...prev, payment_type: e.target.value }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="Cash">Cash</option>
+                <option value="Receivable">Receivable</option>
+              </select>
+            </div>
+
             <div className="flex items-end col-span-2">
               <button
                 onClick={handleAddBatchSale}
