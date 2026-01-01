@@ -9,4 +9,5 @@ export enum EntryType {
   Settlement = "SETTLEMENT",
   Payable = "PAYABLE",
   Cash = "CASH",
+  Receivable = "RECEIVABLE",
 }

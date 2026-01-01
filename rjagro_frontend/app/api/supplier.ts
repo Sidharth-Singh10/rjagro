@@ -46,6 +46,7 @@ export const fetchSupplierPayments = async (supplierId: number): Promise<Supplie
   return response.data;
 }
 
+// fix `any` later
 export const fetchSupplierLedger  = async (supplierId: number): Promise<any[]> => {
   const response = await api.get(`/getbyid/supplier_ledger/${supplierId}`);
   return response.data;

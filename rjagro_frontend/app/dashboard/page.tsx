@@ -10,7 +10,7 @@ import FarmersTable from '../components/tables/farmers';
 import { fetchSuppliers, handleAddSupplier } from '../api/supplier';
 import SuppliersTable from '../components/tables/suppliers/suppliers';
 import { fetchTraders, handleAddTrader } from '../api/traders';
-import TradersTable from '../components/tables/traders';
+import TradersTable from '../components/tables/traders/traders';
 import { fetchProductionLines, handleAddProductionLine } from '../api/production_line';
 import ProductionLinesTable from '../components/tables/production_lines';
 import { fetchSupervisors } from '../api/supervisors';

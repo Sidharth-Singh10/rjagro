@@ -1,60 +1,60 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { X, CreditCard, Receipt, Plus, ArrowLeft, Save, BookOpen } from 'lucide-react';
+import { X, CreditCard, Receipt, Plus, ArrowLeft, Save, BookOpen, TrendingUp, TrendingDown } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { SupplierLedgerEntry, SupplierPayable, SupplierPayment } from '@/app/types/interfaces';
-import { fetchSupplierLedger, fetchSupplierPayables, fetchSupplierPayments, handleAddSupplierPayment } from '@/app/api/supplier';
 import { formatINR } from '@/app/utils/helper';
 import { EntryType } from '@/app/types/enums';
+import { TraderLedgerEntry, TraderPayment, TraderReceivable } from '@/app/types/interfaces';
+import { fetchTraderLedger, fetchTraderPayments, fetchTraderReceivable, handleAddTraderPayment } from '@/app/api/traders';
 
-interface SupplierDetailsModalProps {
-    supplierId: number | null;
+interface TraderDetailsModalProps {
+    traderId: number | null;
     isOpen: boolean;
     onClose: () => void;
 }
 
-type TabType = 'payable' | 'paid' | 'ledger'; 
+type TabType = 'receivable' | 'received' | 'ledger';
 type ViewMode = 'list' | 'form';
 
-export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supplierId, isOpen, onClose }) => {
+export const TraderDetailsModal: React.FC<TraderDetailsModalProps> = ({ traderId, isOpen, onClose }) => {
     const queryClient = useQueryClient();
-    const [activeTab, setActiveTab] = useState<TabType>('payable');
+    const [activeTab, setActiveTab] = useState<TabType>('receivable');
     const [viewMode, setViewMode] = useState<ViewMode>('list');
 
-    const [payables, setPayables] = useState<SupplierPayable[]>([]);
-    const [payments, setPayments] = useState<SupplierPayment[]>([]);
-    const [ledger, setLedger] = useState<SupplierLedgerEntry[]>([]); // New State
+    const [receivables, setReceivables] = useState<TraderReceivable[]>([]);
+    const [payments, setPayments] = useState<TraderPayment[]>([]);
+    const [ledger, setLedger] = useState<TraderLedgerEntry[]>([]);
     const [loading, setLoading] = useState(false);
 
     // Refresh data function
     const refreshData = async () => {
-        if (!supplierId) return;
+        if (!traderId) return;
         setLoading(true);
         try {
-
-            const [payablesData, paymentsData, ledgerData] = await Promise.all([
-                fetchSupplierPayables(supplierId),
-                fetchSupplierPayments(supplierId),
-                fetchSupplierLedger(supplierId)
+            const [receivablesData, paymentsData, ledgerData] = await Promise.all([
+                fetchTraderReceivable(traderId),
+                fetchTraderPayments(traderId),
+                fetchTraderLedger(traderId)
             ]);
-            setPayables(payablesData);
+            setReceivables(receivablesData);
             setPayments(paymentsData);
             setLedger(ledgerData);
         } catch (err) {
-            console.error("Failed to fetch supplier details", err);
+            console.error("Failed to fetch trader details", err);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (!isOpen || !supplierId) return;
+        if (!isOpen || !traderId) return;
         refreshData();
         setViewMode('list');
-    }, [supplierId, isOpen]);
+        setActiveTab('receivable');
+    }, [traderId, isOpen]);
 
-    if (!isOpen || !supplierId) return null;
+    if (!isOpen || !traderId) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -64,9 +64,9 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
                 <div className="flex justify-between items-center p-6 border-b bg-white z-10">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">
-                            {viewMode === 'list' ? 'Supplier Details' : 'Record New Payment'}
+                            {viewMode === 'list' ? 'Trader Details' : 'Record Payment Receipt'}
                         </h2>
-                        <p className="text-sm text-gray-500">ID: #{supplierId}</p>
+                        <p className="text-sm text-gray-500">ID: #{traderId}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         {viewMode === 'list' ? (
@@ -75,7 +75,7 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
                                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                             >
                                 <Plus size={18} />
-                                Record Payment
+                                Receive Payment
                             </button>
                         ) : (
                             <button
@@ -98,12 +98,12 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
                     {viewMode === 'form' ? (
                         <div className="p-8 max-w-2xl mx-auto">
                             <PaymentForm
-                                supplierId={supplierId}
+                                traderId={traderId}
                                 queryClient={queryClient}
                                 onSuccess={() => {
                                     refreshData();
                                     setViewMode('list');
-                                    setActiveTab('paid');
+                                    setActiveTab('received');
                                 }}
                                 onCancel={() => setViewMode('list')}
                             />
@@ -113,26 +113,25 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
                             {/* Tabs Navigation */}
                             <div className="flex border-b bg-white sticky top-0 z-10">
                                 <button
-                                    onClick={() => setActiveTab('payable')}
-                                    className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'payable'
+                                    onClick={() => setActiveTab('receivable')}
+                                    className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'receivable'
                                         ? 'border-blue-600 text-blue-600 bg-blue-50/50'
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
-                                    <Receipt size={18} />
-                                    Payable
+                                    <TrendingUp size={18} />
+                                    Receivables (Sales)
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('paid')}
-                                    className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'paid'
+                                    onClick={() => setActiveTab('received')}
+                                    className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'received'
                                         ? 'border-green-600 text-green-600 bg-green-50/50'
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
                                     <CreditCard size={18} />
-                                    Settlements
+                                    Payments Received
                                 </button>
-                                {/* NEW LEDGER TAB */}
                                 <button
                                     onClick={() => setActiveTab('ledger')}
                                     className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'ledger'
@@ -152,8 +151,8 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
                                     </div>
                                 ) : (
                                     <>
-                                        {activeTab === 'payable' && <PayablesTable data={payables} />}
-                                        {activeTab === 'paid' && <PaymentsTable data={payments} />}
+                                        {activeTab === 'receivable' && <ReceivablesTable data={receivables} />}
+                                        {activeTab === 'received' && <PaymentsTable data={payments} />}
                                         {activeTab === 'ledger' && <LedgerTable data={ledger} />}
                                     </>
                                 )}
@@ -166,8 +165,9 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
     );
 };
 
-const PaymentForm = ({ supplierId, queryClient, onSuccess, onCancel }: {
-    supplierId: number,
+// --- Sub Components ---
+const PaymentForm = ({ traderId, queryClient, onSuccess, onCancel }: {
+    traderId: number,
     queryClient: any,
     onSuccess: () => void,
     onCancel: () => void
@@ -191,22 +191,23 @@ const PaymentForm = ({ supplierId, queryClient, onSuccess, onCancel }: {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const payload = {
-            supplier_id: supplierId,
+            trader_id: traderId,
             amount: Number(formData.amount),
             payment_date: formData.payment_date,
             payment_mode: formData.payment_mode,
             reference_number: formData.reference_number,
             notes: formData.notes,
-            created_by: 1
+            created_by: 1 // Adjust based on your auth context
         };
-        await handleAddSupplierPayment(payload, setLoading, onSuccess);
+        await handleAddTraderPayment(payload, setLoading, onSuccess);
     };
 
     return (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Record Payment from Trader</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="col-span-2 md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount Received</label>
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span className="text-gray-500 sm:text-sm">₹</span>
@@ -215,7 +216,7 @@ const PaymentForm = ({ supplierId, queryClient, onSuccess, onCancel }: {
                             type="text"
                             inputMode="decimal"
                             required
-                            className="pl-7 block w-full text-black rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                            className="pl-7 block w-full text-black rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
                             value={formatINR(formData.amount)}
                             onChange={handleAmountChange}
                             placeholder="0.00"
@@ -223,19 +224,19 @@ const PaymentForm = ({ supplierId, queryClient, onSuccess, onCancel }: {
                     </div>
                 </div>
                 <div className="col-span-2 md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Date</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Receipt Date</label>
                     <input
                         type="date"
                         required
-                        className="block w-full text-black rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                        className="block w-full text-black rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
                         value={formData.payment_date}
                         onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
                     />
                 </div>
                 <div className="col-span-2 md:col-span-1">
-                    <label className="block text-sm  font-medium text-gray-700 mb-1">Payment Mode</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Mode</label>
                     <select
-                        className="block w-full rounded-md text-black border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                        className="block w-full rounded-md text-black border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
                         value={formData.payment_mode}
                         onChange={(e) => setFormData({ ...formData, payment_mode: e.target.value })}
                     >
@@ -249,7 +250,7 @@ const PaymentForm = ({ supplierId, queryClient, onSuccess, onCancel }: {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Reference No / ID</label>
                     <input
                         type="text"
-                        className="block w-full rounded-md text-black border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                        className="block w-full rounded-md text-black border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
                         placeholder="e.g. TXN-12345"
                         value={formData.reference_number}
                         onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
@@ -259,7 +260,7 @@ const PaymentForm = ({ supplierId, queryClient, onSuccess, onCancel }: {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
                     <textarea
                         rows={3}
-                        className="block w-full rounded-md text-black border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                        className="block w-full rounded-md text-black border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
                         placeholder="Additional details..."
                         value={formData.notes}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -269,34 +270,36 @@ const PaymentForm = ({ supplierId, queryClient, onSuccess, onCancel }: {
             <div className="mt-8 flex justify-end gap-3 pt-4 border-t">
                 <button type="button" onClick={onCancel} disabled={loading} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">Cancel</button>
                 <button type="submit" disabled={loading} className="inline-flex justify-center items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                    {loading ? <>Processing...</> : <><Save size={16} /> Save Payment</>}
+                    {loading ? <>Processing...</> : <><Save size={16} /> Save Receipt</>}
                 </button>
             </div>
         </form>
     );
 };
 
-const PayablesTable = ({ data }: { data: SupplierPayable[] }) => (
-    data.length === 0 ? <EmptyState message="No payable transactions found." /> :
+const ReceivablesTable = ({ data }: { data: TraderReceivable[] }) => (
+    data.length === 0 ? <EmptyState message="No receivable transactions (sales) found." /> :
         <div className="bg-white border rounded-lg overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
             <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-500 font-medium border-b">
                     <tr>
-                        <th className="px-4 py-3">Purchase ID</th>
+                        <th className="px-4 py-3">Sale ID</th>
                         <th className="px-4 py-3">Date</th>
+                        {/* Assuming TraderReceivable has similar fields to SupplierPayable */}
                         <th className="px-4 py-3">Item Code</th>
                         <th className="px-4 py-3 text-right">Qty</th>
-                        <th className="px-4 py-3 text-right">Total Cost</th>
+                        <th className="px-4 py-3 text-right">Total Amount</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                    {data.map((row) => (
-                        <tr key={row.purchase_id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-medium text-gray-900">#{row.purchase_id}</td>
-                            <td className="px-4 py-3 text-gray-600">{new Date(row.purchase_date).toLocaleDateString()}</td>
+                    {data.map((row, idx) => (
+                        // Using index as fallback key if sale_id is missing, adjust based on actual interface
+                        <tr key={row.id || idx} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium text-gray-900">#{row.id}</td>
+                            <td className="px-4 py-3 text-gray-600">{new Date(row.sale_date).toLocaleDateString()}</td>
                             <td className="px-4 py-3 text-gray-600">{row.item_code}</td>
                             <td className="px-4 py-3 text-gray-900 text-right">{row.quantity}</td>
-                            <td className="px-4 py-3 text-red-600 font-medium text-right">{row.total_cost}</td>
+                            <td className="px-4 py-3 text-blue-600 font-medium text-right">{row.total_cost}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -304,13 +307,13 @@ const PayablesTable = ({ data }: { data: SupplierPayable[] }) => (
         </div>
 );
 
-const PaymentsTable = ({ data }: { data: SupplierPayment[] }) => (
-    data.length === 0 ? <EmptyState message="No payments found." /> :
+const PaymentsTable = ({ data }: { data: TraderPayment[] }) => (
+    data.length === 0 ? <EmptyState message="No payments received found." /> :
         <div className="bg-white border rounded-lg overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
             <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-500 font-medium border-b">
                     <tr>
-                        <th className="px-4 py-3">Payment ID</th>
+                        <th className="px-4 py-3">Receipt ID</th>
                         <th className="px-4 py-3">Date</th>
                         <th className="px-4 py-3">Mode</th>
                         <th className="px-4 py-3">Ref No</th>
@@ -323,7 +326,7 @@ const PaymentsTable = ({ data }: { data: SupplierPayment[] }) => (
                         <tr key={row.payment_id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 font-medium text-gray-900">#{row.payment_id}</td>
                             <td className="px-4 py-3 text-gray-600">{new Date(row.payment_date).toLocaleDateString()}</td>
-                            <td className="px-4 py-3"><span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 capitalize">{row.payment_mode}</span></td>
+                            <td className="px-4 py-3"><span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 capitalize">{row.payment_mode}</span></td>
                             <td className="px-4 py-3 text-gray-600 font-mono text-xs">{row.reference_number || '-'}</td>
                             <td className="px-4 py-3 text-gray-600 max-w-xs truncate" title={row.notes}>{row.notes || '-'}</td>
                             <td className="px-4 py-3 text-green-600 font-medium text-right">{row.amount}</td>
@@ -334,7 +337,7 @@ const PaymentsTable = ({ data }: { data: SupplierPayment[] }) => (
         </div>
 );
 
-const LedgerTable = ({ data }: { data: SupplierLedgerEntry[] }) => (
+const LedgerTable = ({ data }: { data: TraderLedgerEntry[] }) => (
     data.length === 0 ? <EmptyState message="No ledger entries found." /> :
         <div className="bg-white border rounded-lg overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
             <table className="w-full text-sm text-left">
@@ -344,21 +347,16 @@ const LedgerTable = ({ data }: { data: SupplierLedgerEntry[] }) => (
                         <th className="px-4 py-3">Description</th>
                         <th className="px-4 py-3">Ref</th>
                         <th className="px-4 py-3">Type</th>
-                        {/* Split Amount into Liability and Cash */}
-                        <th className="px-4 py-3 text-right">Liability</th>
-                        <th className="px-4 py-3 text-right">Cash</th>
+                        <th className="px-4 py-3 text-right">Billed (Dr)</th>
+                        <th className="px-4 py-3 text-right">Received (Cr)</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                     {data.map((row, index) => {
-                        // Determine where the amount goes based on EntryType
-                        const isLiability = row.entry_type === EntryType.Payable;
-                        const isCash = row.entry_type === EntryType.Cash || row.entry_type === EntryType.Settlement;
-                        if (index == 3)
-                        {
-                            console.log(row);
-                            console.log(isLiability, isCash);
-                        }
+
+                        const isReceivable = row.entry_type === EntryType.Receivable || row.entry_type === 'SALE';
+                        const isPayment = row.entry_type === EntryType.Cash || row.entry_type === EntryType.Settlement;
+
                         return (
                             <tr key={index} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
@@ -367,22 +365,22 @@ const LedgerTable = ({ data }: { data: SupplierLedgerEntry[] }) => (
                                 <td className="px-4 py-3 font-medium text-gray-900">{row.description}</td>
                                 <td className="px-4 py-3 text-gray-500 font-mono text-xs">{row.reference || '-'}</td>
                                 <td className="px-4 py-3">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${isCash
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${isPayment
                                         ? 'bg-green-50 text-green-700 border-green-200'
-                                        : 'bg-red-50 text-red-700 border-red-200'
+                                        : 'bg-blue-50 text-blue-700 border-blue-200'
                                         }`}>
                                         {row.entry_type || ''}
                                     </span>
                                 </td>
 
-                                {/* Liability Column: Only shows if type is PAYABLE */}
-                                <td className="px-4 py-3 font-medium text-right text-red-600">
-                                    {isLiability ? row.amount : '-'}
+                                {/* Billed Column (Debits) */}
+                                <td className="px-4 py-3 font-medium text-right text-blue-600">
+                                    {isReceivable ? row.amount : '-'}
                                 </td>
 
-                                {/* Cash Column: Shows if type is CASH or SETTLEMENT */}
+                                {/* Received Column (Credits) */}
                                 <td className="px-4 py-3 font-medium text-right text-green-600">
-                                    {isCash ? row.amount : '-'}
+                                    {isPayment ? row.amount : '-'}
                                 </td>
                             </tr>
                         );

@@ -88,6 +88,7 @@ export enum SupplierType {
 export interface Trader {
   trader_id: number;
   name: string;
+  amount_due: string;
   phone_number: string;
   address: string;
   bank_account_no: string;
@@ -564,3 +565,41 @@ export interface SupplierLedgerEntry {
   entry_type: string,
 }
 
+export interface TraderReceivable {
+  id: number,
+  batch_id: number,
+  item_code: string,
+  quantity: number,
+  total_cost: number,
+  sale_date: string,
+}
+
+export interface TraderPayment {
+  payment_id: number,
+  trader_id: number,
+  amount: number,
+  payment_date: string,
+  payment_mode: string,
+  reference_number: string,
+  txn_group_id: string,
+  notes: string,
+  created_at: string,
+}
+
+export interface TraderPaymentPayload {
+  trader_id: number;
+  amount: number;
+  payment_date: string; // "YYYY-MM-DD"
+  payment_mode: string;
+  reference_number?: string;
+  notes?: string;
+  created_by: number;
+}
+
+export interface TraderLedgerEntry {
+  date: string,
+  description: string,
+  reference: string,
+  amount: string,
+  entry_type: string,
+}
