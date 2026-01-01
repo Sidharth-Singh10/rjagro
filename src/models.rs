@@ -287,3 +287,33 @@ pub struct SupplierLedgerEntry {
     pub amount: Decimal,
     pub entry_type: Option<String>,
 }
+
+#[derive(Serialize)]
+pub struct TraderReceivable {
+    pub id: i32,
+    pub batch_id: i32,
+    pub item_code: String,
+    pub quantity: Decimal,
+    pub total_cost: Decimal,
+    pub sale_date: NaiveDate,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CreateTraderPayment {
+    pub trader_id: i32,
+    pub amount: Decimal,
+    pub payment_date: NaiveDate,
+    pub payment_mode: Option<String>,
+    pub reference_number: Option<String>,
+    pub notes: Option<String>,
+    pub created_by: i32,
+}
+
+#[derive(Debug, FromQueryResult, Serialize)]
+pub struct TraderLedgerEntry {
+    pub date: NaiveDate,
+    pub description: String,
+    pub reference: String,
+    pub amount: Decimal,
+    pub entry_type: Option<String>,
+}

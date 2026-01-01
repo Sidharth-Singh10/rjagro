@@ -17,6 +17,7 @@ pub struct Model {
     pub quantity: Decimal,
     pub value: Decimal,
     pub payment_type: PaymentType,
+    pub sale_date: Date,
     pub created_at: DateTimeWithTimeZone,
 }
 

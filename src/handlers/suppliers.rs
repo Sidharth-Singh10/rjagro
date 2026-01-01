@@ -1,18 +1,20 @@
 use crate::{
     consts::{CASH_ACCOUNT_ID, LIABILITY_ACCOUNT_ID},
-    handlers::{purchases::{internal_error, update_account_balance}, suppliers},
+    handlers::purchases::{internal_error, update_account_balance},
     models::{CreateSupplierPayment, SupplierLedgerEntry, SupplierPayable},
 };
 use axum::{
-    Json, extract::{Path, State}, response::IntoResponse
+    extract::{Path, State},
+    response::IntoResponse,
+    Json,
 };
 use chrono::Utc;
 use entity::{ledger_entries, purchases, sea_orm_active_enums::PaymentType, supplier_payments};
 use reqwest::StatusCode;
-use sea_orm::{ColumnTrait, DbBackend, Statement};
 use sea_orm::QueryFilter;
 use sea_orm::QueryOrder;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set, TransactionTrait};
+use sea_orm::{ColumnTrait, DbBackend, Statement};
 use uuid::Uuid;
 
 pub async fn create_supplier_payment(
@@ -126,7 +128,6 @@ pub async fn get_supplier_payables(
     State(db): State<DatabaseConnection>,
     Path(supplier_id): Path<i32>,
 ) -> Result<Json<Vec<SupplierPayable>>, StatusCode> {
-
     let payables = purchases::Entity::find()
         .filter(purchases::Column::SupplierId.eq(supplier_id))
         .filter(purchases::Column::PaymentType.eq(PaymentType::Payable))
@@ -152,7 +153,6 @@ pub async fn get_supplier_payables(
     Ok(Json(response))
 }
 
-
 pub async fn get_supplier_payments_byid_handler(
     State(db): State<DatabaseConnection>,
     Path(id): Path<i32>,
@@ -170,21 +170,19 @@ pub async fn get_supplier_payments_byid_handler(
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
-}   
-
+}
 
 pub async fn get_supplier_ledger_handler(
     State(db): State<DatabaseConnection>,
     Path(supplier_id): Path<i32>,
 ) -> impl IntoResponse {
-    
     // SQL Breakdown:
-    // 1. Select PURCHASES. Cast payment_type enum to text. 
+    // 1. Select PURCHASES. Cast payment_type enum to text.
     //    We treat Purchase Cost as POSITIVE (+).
     // 2. UNION ALL
-    // 3. Select SUPPLIER_PAYMENTS. 
+    // 3. Select SUPPLIER_PAYMENTS.
     //    We treat Settlements as NEGATIVE (-) to offset the debt.
-    
+
     let sql = r#"
         SELECT 
             purchase_date AS date,
@@ -224,7 +222,7 @@ pub async fn get_supplier_ledger_handler(
             // Optional: If you want to calculate a "Running Balance" in Rust before sending:
             // You can iterate over `ledger` (reversed) to sum up values.
             Json(ledger).into_response()
-        },
+        }
         Err(e) => {
             eprintln!("Ledger Error: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()

@@ -6,7 +6,10 @@ use crate::handlers::{
         get_farmer_commission_history_by_id_handler, get_stock_return_unit_cost,
         get_stock_returns_by_batch_id_handler,
     },
-    suppliers::{get_supplier_ledger_handler, get_supplier_payables, get_supplier_payments_byid_handler},
+    suppliers::{
+        get_supplier_ledger_handler, get_supplier_payables, get_supplier_payments_byid_handler,
+    },
+    traders::{get_trader_ledger_handler, get_trader_payments, get_trader_receivables},
 };
 
 pub fn fetch_by_id() -> Router<DatabaseConnection> {
@@ -29,4 +32,7 @@ pub fn fetch_by_id() -> Router<DatabaseConnection> {
             get(get_supplier_payments_byid_handler),
         )
         .route("/supplier_ledger/{id}", get(get_supplier_ledger_handler))
+        .route("/trader_receivables/{id}", get(get_trader_receivables))
+        .route("/trader_payments/{id}", get(get_trader_payments))
+        .route("/trader_ledger/{id}", get(get_trader_ledger_handler))
 }

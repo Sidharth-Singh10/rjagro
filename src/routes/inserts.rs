@@ -10,6 +10,7 @@ use crate::handlers::inserts::{
     create_batch_closure_summary, create_farmer_commission, create_ledger_entry,
 };
 use crate::handlers::suppliers::create_supplier_payment;
+use crate::handlers::traders::create_trader_payment;
 use crate::{
     auth::middleware::{require_roles_middleware, RequireRoles},
     handlers::{
@@ -46,4 +47,5 @@ pub fn insert_routes() -> Router<DatabaseConnection> {
         .route("/farmer_commission", post(create_farmer_commission))
         .route("/stock_returns", post(create_stock_return))
         .route("/supplier_payment", post(create_supplier_payment))
+        .route("/trader_payment", post(create_trader_payment))
 }

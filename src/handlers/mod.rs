@@ -7,4 +7,5 @@ pub mod fetch_by_id;
 pub mod inserts;
 pub mod purchases;
 pub mod suppliers;
+pub mod traders;
 pub mod visibility;

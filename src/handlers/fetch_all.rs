@@ -297,10 +297,39 @@ pub async fn get_farmers_handler(State(db): State<DatabaseConnection>) -> impl I
 
 // TRADERS
 pub async fn get_traders_handler(State(db): State<DatabaseConnection>) -> impl IntoResponse {
-    match traders::Entity::find().all(&db).await {
+    let sql = r#"
+        SELECT 
+            t.*,
+            (
+                -- Sum of all Credit Sales (Receivables)
+                COALESCE((
+                    SELECT SUM(value) 
+                    FROM batch_sales 
+                    WHERE trader_id = t.trader_id 
+                      AND payment_type = 'RECEIVABLE'
+                ), 0) 
+                - 
+                -- Sum of all payments received
+                COALESCE((
+                    SELECT SUM(amount) 
+                    FROM trader_payments 
+                    WHERE trader_id = t.trader_id
+                ), 0)
+            ) AS amount_due
+        FROM traders t
+        ORDER BY t.trader_id ASC
+    "#;
+
+    let result = traders::Entity::find()
+        .from_raw_sql(Statement::from_string(DbBackend::Postgres, sql.to_string()))
+        .into_json()
+        .all(&db)
+        .await;
+
+    match result {
         Ok(data) => Json(data).into_response(),
         Err(e) => {
-            eprintln!("Failed to fetch traders: {}", e);
+            eprintln!("Failed to fetch traders with balance: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
