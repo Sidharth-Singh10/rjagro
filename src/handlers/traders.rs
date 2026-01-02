@@ -2,16 +2,16 @@ use crate::consts::{CASH_ACCOUNT_ID, RECEIVABLE_ACCOUNT_ID};
 use crate::handlers::purchases::{internal_error, update_account_balance};
 use crate::models::{CreateTraderPayment, TraderLedgerEntry, TraderReceivable};
 use axum::extract::{Path, State};
-use axum::Json;
 use axum::response::IntoResponse;
+use axum::Json;
 use chrono::Utc;
 use entity::sea_orm_active_enums::PaymentType;
 use entity::{batch_sales, ledger_entries, trader_payments};
 use reqwest::StatusCode;
-use sea_orm::{ActiveModelTrait, DbBackend, Statement};
 use sea_orm::ActiveValue::Set;
 use sea_orm::QueryFilter;
 use sea_orm::QueryOrder;
+use sea_orm::{ActiveModelTrait, DbBackend, Statement};
 use sea_orm::{ColumnTrait, TransactionTrait};
 use sea_orm::{DatabaseConnection, EntityTrait};
 use uuid::Uuid;
@@ -174,7 +174,7 @@ pub async fn get_trader_ledger_handler(
     Path(trader_id): Path<i32>,
 ) -> impl IntoResponse {
     // SQL Breakdown:
-    // 1. Select BATCH_SALES. 
+    // 1. Select BATCH_SALES.
     //    We treat Sales Value as POSITIVE (+) (Trader owes us money).
     // 2. UNION ALL
     // 3. Select TRADER_PAYMENTS.
@@ -204,7 +204,7 @@ pub async fn get_trader_ledger_handler(
         ORDER BY date DESC, reference DESC
     "#;
 
-    // We can use any entity as the anchor for raw_sql, 
+    // We can use any entity as the anchor for raw_sql,
     // but batch_sales is semantically appropriate here.
     let result = batch_sales::Entity::find()
         .from_raw_sql(Statement::from_sql_and_values(

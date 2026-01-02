@@ -1,5 +1,9 @@
 use axum::{
-    body::Body, extract::State, http::{Request, StatusCode}, middleware::Next, response::Response
+    body::Body,
+    extract::State,
+    http::{Request, StatusCode},
+    middleware::Next,
+    response::Response,
 };
 use std::collections::HashSet;
 
