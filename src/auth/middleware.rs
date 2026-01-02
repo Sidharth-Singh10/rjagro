@@ -1,18 +1,12 @@
 use axum::{
-    body::Body,
-    extract::State,
-    http::{Request, StatusCode},
-    middleware::Next,
-    response::Response,
+    body::Body, extract::State, http::{Request, StatusCode}, middleware::Next, response::Response
 };
-use shuttle_runtime::SecretStore;
-use std::{collections::HashSet, sync::Arc};
+use std::collections::HashSet;
 
 use crate::auth::jwt::verify_jwt; // now using your verify_jwt function
 use entity::sea_orm_active_enums::UserRole;
 
 pub async fn auth_middleware(
-    State(secret_store): State<Arc<SecretStore>>,
     mut req: Request<Body>,
     next: Next,
 ) -> Result<Response, (StatusCode, &'static str)> {
@@ -38,9 +32,8 @@ pub async fn auth_middleware(
     let claims = match token {
         Some(token) => {
             println!("Token: {}", token);
-            let jwt_secret = secret_store
-                .get("JWT_SECRET")
-                .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "JWT_SECRET missing"))?;
+            let jwt_secret = std::env::var("JWT_SECRET")
+                .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "JWT_SECRET missing"))?;
 
             match verify_jwt(token, &jwt_secret) {
                 Ok(claims) => claims,
