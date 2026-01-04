@@ -26,3 +26,10 @@ jobs:
           context: .
           push: true
           tags: sidharthsingh7/rjagro_backend:latest
+      - name: Trigger VPS deploy webhook
+        if: success()
+        run: |
+          curl -X POST \
+          "http://${{ secrets.VPS_LINK}?token=${{ secrets.WEBHOOK_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"image_tag\":\"latest\"}"
