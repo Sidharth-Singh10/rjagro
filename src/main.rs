@@ -27,8 +27,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Starting application...");
 
-    let database_url =
-        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set in environment");
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL missing")
+        .trim()
+        .to_string();
 
     // Connect to DB
     let db: DatabaseConnection = match Database::connect(&database_url).await {
@@ -41,10 +43,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             panic!("Database connection failed: {:?}", e);
         }
     };
-
-    // 3. Run migrations
-    // Migrator::up(&db, None).await.expect("Migration failed");
-    // Migrator::fresh(&db).await.expect("failllled");
 
     let cors = CorsLayer::new()
         .allow_origin("https://rjagro.vercel.app".parse::<HeaderValue>().unwrap())
