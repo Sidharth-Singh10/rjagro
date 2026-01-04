@@ -276,9 +276,6 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                             <SortableHeader columnKey="deaths" className="text-red-500">
                                 Deaths
                             </SortableHeader>
-                            <SortableHeader columnKey="additions" className="text-green-500">
-                                Additions
-                            </SortableHeader>
                             <SortableHeader columnKey="net_change" className="text-gray-500">
                                 Net Change
                             </SortableHeader>
@@ -327,12 +324,6 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                                             <span className="inline-flex items-center gap-1 text-red-700">
                                                 <TrendingDown size={14} />
                                                 {record.deaths}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-4 whitespace-nowrap text-sm">
-                                            <span className="inline-flex items-center gap-1 text-green-700">
-                                                <TrendingUp size={14} />
-                                                {record.additions}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
