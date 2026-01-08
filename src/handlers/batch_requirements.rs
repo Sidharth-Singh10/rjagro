@@ -641,6 +641,7 @@ async fn process_stock_return(
         txn_group_id: Set(txn_group_id),
         reference_id: Set(Some(return_model.return_id)),
         created_at: Set(chrono::Utc::now().into()),
+        created_by: Set(Some(1)),
         ..Default::default()
     };
 
@@ -664,6 +665,7 @@ async fn process_stock_return(
         txn_group_id: Set(txn_group_id),
         reference_id: Set(Some(return_model.return_id)),
         created_at: Set(chrono::Utc::now().into()),
+        created_by: Set(Some(1)),
         ..Default::default()
     };
 
