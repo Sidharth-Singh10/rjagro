@@ -558,7 +558,7 @@ const Dashboard = () => {
 
     const tabs = [
         'Users', 'Ledger Accounts', 'Ledger Entries', 'Production Lines', 'Purchases', 'Items', 'Inventory', 'Inventory Movements', 'Stock Receipts', 'Batch Allocation Lines', 'Batches', 'Batch Requirements',
-        'Batch Allocations', 'Farmers', 'Traders', 'Suppliers', 'Batch Closures', 'Batch Sales', 'Bird Count History', 'Bird Sell History', 'Stock Returns'
+        'Batch Allocations', 'Farmers', 'Traders', 'Suppliers', 'Batch Closures', 'Batch Sales', 'Bird Count History', 'Stock Returns'
     ];
 
     const { data: stockReturns = [], isLoading: loadingStockReturns } = useQuery({

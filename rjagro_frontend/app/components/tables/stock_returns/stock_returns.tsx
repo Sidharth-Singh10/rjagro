@@ -121,10 +121,10 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                                         {stockReturn.return_qty}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {stockReturn.unit_cost.toFixed(2)}
+                                        {stockReturn.unit_cost}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {stockReturn.return_value.toFixed(2)}
+                                        {stockReturn.return_value}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {stockReturn.return_date}
