@@ -729,6 +729,8 @@ const Dashboard = () => {
                     <BatchesTable
                         batches={batches}
                         farmers={farmers}
+                        allocationLines={allocationLines}
+                        stockReturns={stockReturns}
                         supervisors={supervisors}
                         items={items}
                         loading={loading}

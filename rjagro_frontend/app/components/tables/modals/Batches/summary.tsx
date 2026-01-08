@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from "react";
-import { Lock } from "lucide-react";
+import { Lock, ArrowDownRight } from "lucide-react";
 import { SummaryTabProps } from "./utils";
 import { BatchClosurePayload } from "@/app/types/interfaces";
 
@@ -23,7 +23,6 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({
         gross_profit: 0
     });
 
-    // Update gross profit when expenses or revenue change
     useEffect(() => {
         setBatchClosureData(prev => ({
             ...prev,
@@ -33,152 +32,121 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({
 
     const handleCloseBatch = async () => {
         if (!onCloseBatch) return;
-        try {
-            await onCloseBatch(batchClosureData);
-            setShowCloseBatchForm(false);
-        } catch (error) {
-            console.error('Error closing batch:', error);
-        }
+        await onCloseBatch(batchClosureData);
+        setShowCloseBatchForm(false);
     };
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="text-center">
-                    <h4 className="text-lg font-semibold text-gray-800 mb-2">Allocation Summary</h4>
-                    <p className="text-sm text-gray-600">Overview of all allocated values for this batch</p>
-                </div>
+            <div className="flex justify-between items-center">
+                <h4 className="text-lg font-bold text-gray-800">Net Cost Summary</h4>
                 {batch.status !== 'Closed' && (
                     <button
                         onClick={() => setShowCloseBatchForm(!showCloseBatchForm)}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                     >
-                        <Lock size={18} />
-                        {showCloseBatchForm ? 'Cancel Close' : 'Close Batch'}
+                        <Lock size={16} /> {showCloseBatchForm ? 'Cancel' : 'Close Batch'}
                     </button>
                 )}
             </div>
 
-            {/* Individual category totals including farmer commission */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                {(['Feed', 'Chicks', 'Medicine'] as const).map((category) => (
-                    <div key={category} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
-                        <div className="text-center">
-                            <div className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-1">
-                                {category}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {(['Feed', 'Chicks', 'Medicine'] as const).map((cat) => {
+                    const data = byCategory[cat];
+                    return (
+                        <div key={cat} className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                            <div className="text-center">
+                                <div className="text-xs font-bold text-gray-500 uppercase">{cat} (Net)</div>
+                                <div className="text-xl font-bold text-gray-900 mt-1">₹{data.netTotal.toFixed(2)}</div>
                             </div>
-                            <div className="text-xl font-bold text-gray-900">
-                                ₹{byCategory[category].total.toFixed(2)}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                                {byCategory[category].rows.length} items
+                            <div className="mt-3 pt-3 border-t border-gray-100 text-xs space-y-1">
+                                <div className="flex justify-between text-gray-600">
+                                    <span>Allocated:</span>
+                                    <span>₹{data.allocatedTotal.toFixed(2)}</span>
+                                </div>
+                                {data.returnedTotal > 0 && (
+                                    <div className="flex justify-between text-red-600 font-medium">
+                                        <span className="flex items-center gap-1"><ArrowDownRight size={10} /> Returned:</span>
+                                        <span>- ₹{data.returnedTotal.toFixed(2)}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
 
-                {/* Farmer Commission Card */}
-                <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+                {/* Commission Card */}
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl shadow-sm">
                     <div className="text-center">
-                        <div className="text-xs font-medium text-green-600 uppercase tracking-wider mb-1">
-                            Farmer Commission
-                        </div>
-                        <div className="text-xl font-bold text-green-900">
-                            ₹{farmerCommissionData.total.toFixed(2)}
-                        </div>
-                        <div className="text-xs text-green-600 mt-1">
-                            {farmerCommissionData.history.length} payments
+                        <div className="text-xs font-bold text-green-600 uppercase">Commission</div>
+                        <div className="text-xl font-bold text-green-900 mt-1">₹{farmerCommissionData.total.toFixed(2)}</div>
+                        <div className="text-xs text-green-600 mt-3 pt-3 border-t border-green-200">
+                            {farmerCommissionData.history.length} Payments
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Grand total including farmer commission */}
-            <div className="p-6 bg-gradient-to-r from-green-100 to-blue-100 rounded-xl border-2 border-green-200">
-                <div className="text-center">
-                    <div className="text-sm font-medium text-gray-700 mb-2">GRAND TOTAL (Including Commission)</div>
-                    <div className="text-3xl font-bold text-green-900">
-                        ₹{totalExpenses.toFixed(2)}
-                    </div>
-                    <div className="text-sm text-gray-600 mt-2">
-                        Total allocations: {byCategory.Feed.rows.length + byCategory.Chicks.rows.length + byCategory.Medicine.rows.length} |
-                        Commission payments: {farmerCommissionData.history.length}
-                    </div>
+            <div className="p-6 bg-gray-900 text-white rounded-xl flex justify-between items-center">
+                <div>
+                    <div className="text-sm text-gray-400">TOTAL BATCH COST</div>
+                    <div className="text-3xl font-bold">₹{totalExpenses.toFixed(2)}</div>
+                </div>
+                <div className="text-right text-sm text-gray-400">
+                    Calculated as:<br />(Allocations - Returns) + Commission
                 </div>
             </div>
 
             {/* Close Batch Form */}
             {showCloseBatchForm && (
-                <div className="p-4 bg-red-50 rounded-xl border border-red-200">
-                    <h5 className="text-md font-medium text-red-800 mb-4">Close Batch - Final Summary</h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl animate-in fade-in slide-in-from-top-2">
+                    <h3 className="font-bold text-red-800 mb-4">Finalize Batch Closure</h3>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Final Available Chicken Count *
-                            </label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Available Birds</label>
                             <input
                                 type="number"
+                                className="w-full p-2 border rounded text-black"
                                 value={batchClosureData.available_chicken_count}
-                                onChange={(e) => setBatchClosureData(prev => ({
-                                    ...prev,
-                                    available_chicken_count: Number(e.target.value)
-                                }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
-                                placeholder="Final chicken count"
+                                onChange={e => setBatchClosureData({ ...batchClosureData, available_chicken_count: Number(e.target.value) })}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Revenue (₹)
-                            </label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Total Revenue (₹)</label>
                             <input
                                 type="number"
-                                step="0.01"
+                                className="w-full p-2 border rounded text-black"
                                 value={batchClosureData.revenue}
-                                onChange={(e) => setBatchClosureData(prev => ({
-                                    ...prev,
-                                    revenue: Number(e.target.value)
-                                }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
-                                placeholder="Total revenue from batch"
+                                onChange={e => setBatchClosureData({ ...batchClosureData, revenue: Number(e.target.value) })}
                             />
                         </div>
                     </div>
 
-                    {/* Calculated Summary */}
-                    <div className="mt-4 p-3 bg-white rounded-lg border">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <span className="text-gray-600">Total Expenses:</span>
-                                <span className="float-right font-semibold text-red-600">₹{totalExpenses.toFixed(2)}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-600">Revenue:</span>
-                                <span className="float-right font-semibold text-green-600">₹{batchClosureData.revenue.toFixed(2)}</span>
-                            </div>
-                            <div className="col-span-2 border-t pt-2">
-                                <span className="text-gray-800 font-medium">Gross Profit:</span>
-                                <span className={`float-right font-bold ${(batchClosureData.revenue - totalExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    ₹{(batchClosureData.revenue - totalExpenses).toFixed(2)}
-                                </span>
-                            </div>
+                    <div className="bg-white p-3 rounded border mb-4 text-sm">
+                        <div className="flex justify-between mb-1">
+                            <span>Revenue:</span>
+                            <span className="text-green-600 font-bold">₹{batchClosureData.revenue.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between mb-1 border-b pb-1">
+                            <span>Total Cost:</span>
+                            <span className="text-red-600 font-bold">- ₹{totalExpenses.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between mt-2 text-base font-bold">
+                            <span>Gross Profit:</span>
+                            <span className={(batchClosureData.revenue - totalExpenses) >= 0 ? "text-green-600" : "text-red-600"}>
+                                ₹{(batchClosureData.revenue - totalExpenses).toFixed(2)}
+                            </span>
                         </div>
                     </div>
 
-                    <div className="flex gap-3 mt-4">
+                    <div className="flex justify-end gap-2">
+                        <button onClick={() => setShowCloseBatchForm(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded">Cancel</button>
                         <button
                             onClick={handleCloseBatch}
                             disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
                         >
-                            <Lock size={16} />
-                            {loading ? 'Closing...' : 'Confirm Close Batch'}
-                        </button>
-                        <button
-                            onClick={() => setShowCloseBatchForm(false)}
-                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-                        >
-                            Cancel
+                            {loading ? 'Closing...' : 'Confirm Close'}
                         </button>
                     </div>
                 </div>

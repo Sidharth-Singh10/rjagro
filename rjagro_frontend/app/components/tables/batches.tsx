@@ -12,6 +12,8 @@ import {
     SupervisorSimplified,
     Item,
     BatchClosurePayload,
+    StockReturn,
+    BatchAllocationLine,
 } from '@/app/types/interfaces';
 import { useAuth } from '@/app/hooks/useAuth';
 import { useBatchesSorting } from '@/app/hooks/custom_sorting';
@@ -24,6 +26,8 @@ interface BatchesTableProps {
     supervisors: SupervisorSimplified[];
     items: Item[];
     batchAllocations: BatchAllocation[];
+    stockReturns: StockReturn[];
+    allocationLines: BatchAllocationLine[];
     requirements: BatchRequirement[];
     loading: boolean;
     showAddForm: boolean;
@@ -44,6 +48,8 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
     setShowAddForm, setNewBatch,
     handleAddBatch,
     batchAllocations,
+    allocationLines,
+    stockReturns,
     requirements,
     commissionHistory = [],
     onAddCommission,
@@ -330,10 +336,10 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${calculateMortality(batch.initial_bird_count, batch.current_bird_count) > 10
-                                                ? 'bg-red-100 text-red-800'
-                                                : calculateMortality(batch.initial_bird_count, batch.current_bird_count) > 5
-                                                    ? 'bg-yellow-100 text-yellow-800'
-                                                    : 'bg-green-100 text-green-800'
+                                            ? 'bg-red-100 text-red-800'
+                                            : calculateMortality(batch.initial_bird_count, batch.current_bird_count) > 5
+                                                ? 'bg-yellow-100 text-yellow-800'
+                                                : 'bg-green-100 text-green-800'
                                             }`}>
                                             {calculateMortality(batch.initial_bird_count, batch.current_bird_count).toFixed(1)}%
                                         </span>
@@ -363,6 +369,8 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                     onClose={closeModal}
                     batch={selectedBatch}
                     batchAllocations={batchAllocations}
+                    allocationLines={allocationLines}
+                    stockReturns={stockReturns}
                     requirements={requirements}
                     commissionHistory={commissionHistory}
                     onAddCommission={onAddCommission}

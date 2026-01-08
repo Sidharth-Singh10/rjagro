@@ -1,5 +1,5 @@
 'use client'
-import { Batch, BatchAllocation, BatchClosurePayload, BatchRequirement, CreateFarmerCommission, FarmerCommissionHistory } from '@/app/types/interfaces';
+import { Batch, BatchAllocation, BatchAllocationLine, BatchClosurePayload, BatchRequirement, CreateFarmerCommission, FarmerCommissionHistory, StockReturn } from '@/app/types/interfaces';
 
 
 export interface BatchDetailsModalProps {
@@ -7,12 +7,21 @@ export interface BatchDetailsModalProps {
     onClose: () => void;
     batch: Batch;
     batchAllocations: BatchAllocation[];
+    allocationLines: BatchAllocationLine[];
     requirements: BatchRequirement[];
+    stockReturns: StockReturn[];
     commissionHistory?: FarmerCommissionHistory[];
     onAddCommission?: (commission: CreateFarmerCommission) => Promise<void>;
     commissionLoading?: boolean;
     onCloseBatch?: (batchClosure: BatchClosurePayload) => Promise<void>;
     batchClosureLoading?: boolean;
+}
+
+export interface CategoryData {
+    rows: any[];
+    allocatedTotal: number;
+    returnedTotal: number;
+    netTotal: number;
 }
 
 export interface AllocationsTabProps {
@@ -31,7 +40,11 @@ export interface FarmerCommissionTabProps {
 
 export interface SummaryTabProps {
     batch: Batch;
-    byCategory: any;
+    byCategory: {
+        Feed: CategoryData;
+        Chicks: CategoryData;
+        Medicine: CategoryData;
+    };
     farmerCommissionData: { history: FarmerCommissionHistory[]; total: number };
     totalExpenses: number;
     onCloseBatch?: (batchClosure: BatchClosurePayload) => Promise<void>;
