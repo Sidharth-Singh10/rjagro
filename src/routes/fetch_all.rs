@@ -13,6 +13,7 @@ use crate::{
         get_production_lines_handler, get_purchases_handler, get_stock_receipts_handler,
         get_supervisors_handler, get_suppliers_handler, get_traders_handler, get_users_handler,
     },
+    pdf::draw_header::generate_pdf_handler,
 };
 use entity::sea_orm_active_enums::UserRole;
 
@@ -54,4 +55,5 @@ pub fn fetch_all() -> Router<DatabaseConnection> {
             get(get_all_farmer_commission_history_handler),
         )
         .route("/stock_returns", get(get_paginated_returns_handler))
+        .route("/growing_charges", get(generate_pdf_handler))
 }

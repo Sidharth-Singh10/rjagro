@@ -8,6 +8,7 @@ mod auth;
 mod consts;
 mod handlers;
 mod models;
+mod pdf;
 mod routes;
 use crate::auth::login::login_handler;
 use crate::handlers::visibility::get_visibility_handler;
@@ -45,8 +46,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let cors = CorsLayer::new()
-        .allow_origin("https://rjagro.vercel.app".parse::<HeaderValue>().unwrap())
-        // .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
+        // .allow_origin("https://rjagro.vercel.app".parse::<HeaderValue>().unwrap())
+        .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
         .allow_methods([
             Method::GET,
             Method::POST,
@@ -74,7 +75,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(db)
         .layer(cors);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
     axum::serve(listener, router).await.unwrap();
 
     Ok(())
