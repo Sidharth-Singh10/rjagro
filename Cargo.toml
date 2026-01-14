@@ -25,3 +25,6 @@ uuid = { version = "1.18.0", features = ["v4"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3"
 num-traits = "0.2.19"
+printpdf = { version = "0.8.2", features = ["ico","png"] }
+image = "0.24.7"
+
