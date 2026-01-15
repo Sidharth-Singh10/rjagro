@@ -1,7 +1,9 @@
 mod bank_details;
 mod basic_details;
 mod batch_info;
+mod builder;
 mod consts;
 pub mod draw_header;
 mod expanded_details;
 mod footer;
+mod view_models;

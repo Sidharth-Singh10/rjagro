@@ -1,11 +1,16 @@
-use axum::response::{IntoResponse, Response};
+use axum::{
+    extract::{Path, State},
+    response::{IntoResponse, Response},
+};
 use printpdf::*;
-use reqwest::{header, Body};
+use reqwest::{header, Body, StatusCode};
+use sea_orm::DatabaseConnection;
 
 use crate::pdf::{
     bank_details::draw_remark_and_bank_section,
     basic_details::draw_growing_charges_section,
     batch_info::{draw_batch_info_section, draw_batch_sales_info_section},
+    builder::{build_batch_info, build_batch_sales_info, build_farmer_details},
     consts::{COMPANY_ADDRESS, COMPANY_TITLE, MARGIN, PAGE_HEIGHT, PAGE_WIDTH},
     expanded_details::{draw_batch_expenses_section, draw_rearing_charges_section},
     footer::draw_dynamic_footer_section,
@@ -86,7 +91,22 @@ pub fn draw_header(ops: &mut Vec<Op>, logo_image_id: XObjectId, logo_dims: (u32,
     ops.push(Op::RestoreGraphicsState);
 }
 
-pub async fn generate_pdf_handler() -> impl IntoResponse {
+pub async fn generate_pdf_handler(
+    State(db): State<DatabaseConnection>,
+    Path(batch_id): Path<i32>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let farmer_details = build_farmer_details(&db, batch_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let batch_info = build_batch_info(&db, batch_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let batch_sales_info = build_batch_sales_info(&db, batch_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     // 1. Create the PDF Document
     let mut doc = PdfDocument::new("Image Example");
 
@@ -111,13 +131,14 @@ pub async fn generate_pdf_handler() -> impl IntoResponse {
 
     // 6. Draw Growing Charges Section
     // Note: We capture the returned 'end_y' in case we need to draw something below this later
-    let growing_charges_end_y = draw_growing_charges_section(&mut ops, start_y_mm);
+    let growing_charges_end_y = draw_growing_charges_section(&mut ops, start_y_mm, farmer_details);
 
     let section_gap = 5.0;
     let split_section_start_y = growing_charges_end_y - section_gap;
 
-    let batch_info_end_y = draw_batch_info_section(&mut ops, split_section_start_y);
-    let batch_sales_end_y = draw_batch_sales_info_section(&mut ops, split_section_start_y);
+    let batch_info_end_y = draw_batch_info_section(&mut ops, split_section_start_y, batch_info);
+    let batch_sales_end_y =
+        draw_batch_sales_info_section(&mut ops, split_section_start_y, batch_sales_info);
 
     let expenses_start_y2 = batch_info_end_y - section_gap;
     let expenses_start_y = batch_sales_end_y - section_gap;
@@ -137,13 +158,12 @@ pub async fn generate_pdf_handler() -> impl IntoResponse {
         .save(&PdfSaveOptions::default(), &mut Vec::new());
 
     // 8. Return Response
-    Response::builder()
+    Ok(Response::builder()
         .header(header::CONTENT_TYPE, "application/pdf")
         .header(
             header::CONTENT_DISPOSITION,
             "attachment; filename=\"invoice_header.pdf\"",
         )
         .body(Body::from(pdf_bytes))
-        .unwrap()
-        .into_response()
+        .unwrap())
 }

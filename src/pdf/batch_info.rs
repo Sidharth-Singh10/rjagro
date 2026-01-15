@@ -1,8 +1,15 @@
 use printpdf::*;
 
-use crate::pdf::consts::{MARGIN, PAGE_WIDTH};
+use crate::pdf::{
+    consts::{MARGIN, PAGE_WIDTH},
+    view_models::{BatchInformation, BatchSalesInfo},
+};
 
-pub fn draw_batch_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
+pub fn draw_batch_info_section(
+    ops: &mut Vec<Op>,
+    start_y_mm: f32,
+    batch_info: BatchInformation,
+) -> f32 {
     // --- LAYOUT CONSTANTS ---
     let gap_between_columns = 5.0; // Space between this box and the Sales box
     let full_content_width = PAGE_WIDTH - (MARGIN * 2.0);
@@ -150,7 +157,7 @@ pub fn draw_batch_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
     );
     draw_text_absolute(":", sep_x, row1_y, BuiltinFont::HelveticaBold, 11.0);
     draw_text_absolute(
-        "15-November-25",
+        &batch_info.get_chick_place_date(),
         val_x,
         row1_y,
         BuiltinFont::Helvetica,
@@ -168,7 +175,7 @@ pub fn draw_batch_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
     );
     draw_text_absolute(":", sep_x, row2_y, BuiltinFont::HelveticaBold, 11.0);
     draw_text_absolute(
-        "25-December-25",
+        &batch_info.get_final_liq_date(),
         val_x,
         row2_y,
         BuiltinFont::Helvetica,
@@ -188,7 +195,13 @@ pub fn draw_batch_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
     // Note: The screenshot shows the number aligned right, but standard text is left-aligned here.
     // If you need strict right alignment for numbers, you'd calculate text width.
     // For now, left aligned at value column is standard.
-    draw_text_absolute("40", val_x, row3_y, BuiltinFont::Helvetica, 11.0);
+    draw_text_absolute(
+        &batch_info.get_age_liq(),
+        val_x,
+        row3_y,
+        BuiltinFont::Helvetica,
+        11.0,
+    );
 
     // -- ROW 4: AVG. LIFTING AGE --
     let row4_y = row3_y - row_height_mm;
@@ -201,13 +214,24 @@ pub fn draw_batch_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
     );
     draw_text_absolute(":", sep_x, row4_y, BuiltinFont::HelveticaBold, 11.0);
     // Value is empty in screenshot
+    draw_text_absolute(
+        &batch_info.avg_lift_age(),
+        val_x,
+        row4_y,
+        BuiltinFont::Helvetica,
+        11.0,
+    );
 
     // Return the bottom Y coordinate so the next element can be placed below if needed
     // OR return the same start_y if the next element (Batch Sales) starts at the same height.
     end_y_mm
 }
 
-pub fn draw_batch_sales_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
+pub fn draw_batch_sales_info_section(
+    ops: &mut Vec<Op>,
+    start_y_mm: f32,
+    batch_sales: BatchSalesInfo,
+) -> f32 {
     // --- LAYOUT CONSTANTS ---
     let gap_between_columns = 5.0;
     let full_content_width = PAGE_WIDTH - (MARGIN * 2.0);
@@ -363,7 +387,13 @@ pub fn draw_batch_sales_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 
     // In the image, numbers are right-aligned. Here we are placing them at a fixed X.
     // If you need strict right alignment, you would calculate: (right_edge - text_width).
     // For now, placing them at val_x is consistent with your existing code.
-    draw_text_absolute("2655", val_x, row1_y, BuiltinFont::Helvetica, 11.0);
+    draw_text_absolute(
+        &batch_sales.get_total_birds(),
+        val_x,
+        row1_y,
+        BuiltinFont::Helvetica,
+        11.0,
+    );
 
     // -- ROW 2: TOTAL WEIGHT --
     let row2_y = row1_y - row_height_mm;
@@ -375,7 +405,13 @@ pub fn draw_batch_sales_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 
         11.0,
     );
     draw_text_absolute(":", sep_x, row2_y, BuiltinFont::HelveticaBold, 11.0);
-    draw_text_absolute("5284.65", val_x, row2_y, BuiltinFont::Helvetica, 11.0);
+    draw_text_absolute(
+        &batch_sales.get_total_weight(),
+        val_x,
+        row2_y,
+        BuiltinFont::Helvetica,
+        11.0,
+    );
 
     // -- ROW 3: AVG WEIGHT --
     let row3_y = row2_y - row_height_mm;
@@ -387,7 +423,13 @@ pub fn draw_batch_sales_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 
         11.0,
     );
     draw_text_absolute(":", sep_x, row3_y, BuiltinFont::HelveticaBold, 11.0);
-    draw_text_absolute("1.99", val_x, row3_y, BuiltinFont::Helvetica, 11.0);
+    draw_text_absolute(
+        &batch_sales.get_avg_weight(),
+        val_x,
+        row3_y,
+        BuiltinFont::Helvetica,
+        11.0,
+    );
 
     // -- ROW 4: AVG SELLING RATE --
     let row4_y = row3_y - row_height_mm;
@@ -399,13 +441,25 @@ pub fn draw_batch_sales_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 
         11.0,
     );
     draw_text_absolute(":", sep_x, row4_y, BuiltinFont::HelveticaBold, 11.0);
-    draw_text_absolute("0", val_x, row4_y, BuiltinFont::Helvetica, 11.0);
+    draw_text_absolute(
+        &batch_sales.get_avg_selling_rate(),
+        val_x,
+        row4_y,
+        BuiltinFont::Helvetica,
+        11.0,
+    );
 
     // -- ROW 5: F.C.R. --
     let row5_y = row4_y - row_height_mm;
     draw_text_absolute("F.C.R.", label_x, row5_y, BuiltinFont::HelveticaBold, 11.0);
     draw_text_absolute(":", sep_x, row5_y, BuiltinFont::HelveticaBold, 11.0);
-    draw_text_absolute("1.77", val_x, row5_y, BuiltinFont::Helvetica, 11.0);
+    draw_text_absolute(
+        &batch_sales.get_fcr(),
+        val_x,
+        row5_y,
+        BuiltinFont::Helvetica,
+        11.0,
+    );
 
     // -- ROW 6: CONVERTED F.C.R. --
     let row6_y = row5_y - row_height_mm;
@@ -418,6 +472,14 @@ pub fn draw_batch_sales_info_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 
     );
     draw_text_absolute(":", sep_x, row6_y, BuiltinFont::HelveticaBold, 11.0);
     // Value is empty in screenshot
+
+    draw_text_absolute(
+        &batch_sales.get_converted_fcr(),
+        val_x,
+        row6_y,
+        BuiltinFont::Helvetica,
+        11.0,
+    );
 
     end_y_mm
 }

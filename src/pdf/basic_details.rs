@@ -1,7 +1,14 @@
-use crate::pdf::consts::{MARGIN, PAGE_WIDTH};
+use crate::pdf::{
+    consts::{MARGIN, PAGE_WIDTH},
+    view_models::FarmerDetails,
+};
 use printpdf::*;
 
-pub fn draw_growing_charges_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
+pub fn draw_growing_charges_section(
+    ops: &mut Vec<Op>,
+    start_y_mm: f32,
+    farmer_details: FarmerDetails,
+) -> f32 {
     // --- LAYOUT CONSTANTS ---
     let section_width_mm = PAGE_WIDTH - (MARGIN * 2.0);
     let left_x_mm = MARGIN;
@@ -162,7 +169,7 @@ pub fn draw_growing_charges_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
         11.0,
     );
     draw_text_absolute(
-        "RAKESH RAO",
+        &farmer_details.farmer_name,
         col1_val_x,
         row2_y,
         BuiltinFont::Helvetica,
@@ -179,7 +186,7 @@ pub fn draw_growing_charges_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
         11.0,
     );
     draw_text_absolute(
-        "9696485488",
+        &farmer_details.phone_number,
         col1_val_x,
         row3_y,
         BuiltinFont::Helvetica,
@@ -206,7 +213,7 @@ pub fn draw_growing_charges_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
         11.0,
     );
     draw_text_absolute(
-        "27-December-25",
+        &farmer_details.date.to_string(),
         col1_val_x,
         row4_y,
         BuiltinFont::Helvetica,
@@ -221,7 +228,13 @@ pub fn draw_growing_charges_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
         11.0,
     );
     draw_text_absolute(":", col2_sep_x, row4_y, BuiltinFont::HelveticaBold, 11.0);
-    draw_text_absolute("8", col2_val_x, row4_y, BuiltinFont::Helvetica, 11.0);
+    draw_text_absolute(
+        &farmer_details.get_batch_id(),
+        col2_val_x,
+        row4_y,
+        BuiltinFont::Helvetica,
+        11.0,
+    );
 
     end_y_mm
 }
