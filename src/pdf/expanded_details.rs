@@ -1,7 +1,14 @@
-use crate::pdf::consts::{MARGIN, PAGE_WIDTH};
+use crate::pdf::{
+    consts::{MARGIN, PAGE_WIDTH},
+    view_models::BatchExpenses,
+};
 use printpdf::*;
 
-pub fn draw_batch_expenses_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
+pub fn draw_batch_expenses_section(
+    ops: &mut Vec<Op>,
+    start_y_mm: f32,
+    batch_expenses: BatchExpenses,
+) -> f32 {
     // --- LAYOUT CONSTANTS ---
     let gap_between_columns = 5.0;
     let full_content_width = PAGE_WIDTH - (MARGIN * 2.0);
@@ -137,31 +144,61 @@ pub fn draw_batch_expenses_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
     let mut current_y = (start_y_mm - header_height_mm) - 5.0;
 
     let rows = vec![
-        ("NET CHICKS", "2854"),
-        ("CHICKS COST", "99890"),
-        ("CUM. MORTALITY", "199"),
-        ("TOTAL MORTALITY %", "6.97"),
-        ("1ST WEEK MORTALITY", ""), // Empty in image
-        ("1ST WEEK MORTALITY %", ""),
-        ("1ST WEEK MORT. DEDUCT", ""),
-        ("AFTER 7 DAYS MORT.", ""),
-        ("AFTER 30 DAYS MORT.", ""),
-        ("CULLS", ""),
-        ("FEED CONSUMED(KG)", "9350"),
-        ("FEED COST( 41 PER KG)", "383350"), // Note the space inside parens matches image
-        ("MEDICINE COST", "4000"),
-        ("MEDICINE COST/BIRD", "1.40"),
-        ("ADMIN. COST", "14270"),
-        ("GROSS PRODUCTION COST", "501510"),
-        ("ACT. PRODUCTION COST/KG", "94.90"),
-        ("STD. PRODUCTION COST/KG", "87"),
+        ("NET CHICKS", batch_expenses.get_net_chicks()),
+        ("CHICKS COST", batch_expenses.get_chicks_cost()),
+        ("CUM. MORTALITY", batch_expenses.get_cum_mortality()),
+        (
+            "TOTAL MORTALITY %",
+            batch_expenses.get_total_mortality_per(),
+        ),
+        (
+            "1ST WEEK MORTALITY",
+            batch_expenses.get_first_week_mortality(),
+        ),
+        (
+            "1ST WEEK MORTALITY %",
+            batch_expenses.get_first_week_mortality_per(),
+        ),
+        (
+            "1ST WEEK MORT. DEDUCT",
+            batch_expenses.get_first_week_mortality_deduction(),
+        ),
+        (
+            "AFTER 7 DAYS MORT.",
+            batch_expenses.get_after_seven_days_mortality(),
+        ),
+        (
+            "AFTER 30 DAYS MORT.",
+            batch_expenses.get_after_thirty_days_mortality(),
+        ),
+        ("CULLS", batch_expenses.get_culls()),
+        ("FEED CONSUMED(KG)", batch_expenses.get_feed_consumed_kg()),
+        ("FEED COST( 41 PER KG)", batch_expenses.get_feed_cost()),
+        ("MEDICINE COST", batch_expenses.get_medicine_cost()),
+        (
+            "MEDICINE COST/BIRD",
+            batch_expenses.get_medicine_cost_per_bird(),
+        ),
+        ("ADMIN. COST", batch_expenses.get_admin_cost()),
+        (
+            "GROSS PRODUCTION COST",
+            batch_expenses.get_gross_production_cost(),
+        ),
+        (
+            "ACT. PRODUCTION COST/KG",
+            batch_expenses.get_actual_production_cost_per_kg(),
+        ),
+        (
+            "STD. PRODUCTION COST/KG",
+            batch_expenses.get_standard_production_cost_per_kg(),
+        ),
     ];
 
     for (label, value) in rows {
         draw_text_absolute(label, label_x, current_y, BuiltinFont::HelveticaBold, 11.0);
         draw_text_absolute(":", sep_x, current_y, BuiltinFont::HelveticaBold, 11.0);
         if !value.is_empty() {
-            draw_text_absolute(value, val_x, current_y, BuiltinFont::Helvetica, 11.0);
+            draw_text_absolute(&value, val_x, current_y, BuiltinFont::Helvetica, 11.0);
         }
         current_y -= row_height_mm;
     }

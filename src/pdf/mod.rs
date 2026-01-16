@@ -3,6 +3,7 @@ mod basic_details;
 mod batch_info;
 mod builder;
 mod consts;
+mod contexts;
 pub mod draw_header;
 mod expanded_details;
 mod footer;

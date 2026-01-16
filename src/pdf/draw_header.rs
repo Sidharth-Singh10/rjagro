@@ -1,6 +1,7 @@
 use axum::{
-    extract::{Path, State},
+    extract::State,
     response::{IntoResponse, Response},
+    Json,
 };
 use printpdf::*;
 use reqwest::{header, Body, StatusCode};
@@ -10,10 +11,14 @@ use crate::pdf::{
     bank_details::draw_remark_and_bank_section,
     basic_details::draw_growing_charges_section,
     batch_info::{draw_batch_info_section, draw_batch_sales_info_section},
-    builder::{build_batch_info, build_batch_sales_info, build_farmer_details},
+    builder::{
+        build_batch_info, build_batch_sales_info, build_farmer_details, calculate_batch_expenses,
+    },
     consts::{COMPANY_ADDRESS, COMPANY_TITLE, MARGIN, PAGE_HEIGHT, PAGE_WIDTH},
+    contexts::BatchExpensesCalculationContext,
     expanded_details::{draw_batch_expenses_section, draw_rearing_charges_section},
     footer::draw_dynamic_footer_section,
+    view_models::Inputs,
 };
 
 pub fn draw_header(ops: &mut Vec<Op>, logo_image_id: XObjectId, logo_dims: (u32, u32)) {
@@ -93,8 +98,9 @@ pub fn draw_header(ops: &mut Vec<Op>, logo_image_id: XObjectId, logo_dims: (u32,
 
 pub async fn generate_pdf_handler(
     State(db): State<DatabaseConnection>,
-    Path(batch_id): Path<i32>,
+    Json(input): Json<Inputs>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let batch_id = input.batch_id;
     let farmer_details = build_farmer_details(&db, batch_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -106,6 +112,14 @@ pub async fn generate_pdf_handler(
     let batch_sales_info = build_batch_sales_info(&db, batch_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let expenses_ctx =
+        BatchExpensesCalculationContext::load(batch_id, batch_sales_info.clone(), input, &db)
+            .await
+            .map_err(|e| e.to_string())
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let batch_expenses = calculate_batch_expenses(expenses_ctx);
 
     // 1. Create the PDF Document
     let mut doc = PdfDocument::new("Image Example");
@@ -143,7 +157,7 @@ pub async fn generate_pdf_handler(
     let expenses_start_y2 = batch_info_end_y - section_gap;
     let expenses_start_y = batch_sales_end_y - section_gap;
 
-    let expenses_end_y = draw_batch_expenses_section(&mut ops, expenses_start_y2);
+    let expenses_end_y = draw_batch_expenses_section(&mut ops, expenses_start_y2, batch_expenses);
     let _rearing_end_y = draw_rearing_charges_section(&mut ops, expenses_start_y);
 
     let bank_details_start_y = expenses_end_y - 5.0;

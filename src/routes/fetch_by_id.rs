@@ -1,4 +1,4 @@
-use axum::{routing::get, Router};
+use axum::{Router, routing::{get, post}};
 use sea_orm::DatabaseConnection;
 
 use crate::{handlers::{
@@ -35,5 +35,5 @@ pub fn fetch_by_id() -> Router<DatabaseConnection> {
         .route("/trader_receivables/{id}", get(get_trader_receivables))
         .route("/trader_payments/{id}", get(get_trader_payments))
         .route("/trader_ledger/{id}", get(get_trader_ledger_handler))
-        .route("/growing_charges/{id}", get(generate_pdf_handler))
+        .route("/growing_charges", post(generate_pdf_handler))
 }
