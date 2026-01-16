@@ -128,3 +128,48 @@ export const fetchBatchClosures = async (): Promise<BatchClosure[]> => {
     const response = await api.get("/getall/batch_closure_summary");
     return response.data;
 };
+
+export const downloadGrowingChargesPdf = async (
+    batchId: number,
+    birdShortage: number | string,
+    setLoading?: (loading: boolean) => void
+) => {
+    if (!batchId) {
+        toast.error("Invalid Batch ID");
+        return;
+    }
+
+    if (setLoading) setLoading(true);
+    toast.info("Generating PDF...");
+
+    try {
+        const response = await api.post(
+            "/getbyid/growing_charges",
+            {
+                batch_id: batchId,
+                bird_shortage: birdShortage,
+            },
+            {
+                responseType: 'blob',
+            }
+        );
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+
+        link.setAttribute('download', `Growing_Charges_Batch_${batchId}.pdf`);
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+
+        toast.success("PDF downloaded successfully!");
+    } catch (error) {
+        console.error("Error downloading PDF:", error);
+        toast.error("Failed to download PDF");
+    } finally {
+        if (setLoading) setLoading(false);
+    }
+};

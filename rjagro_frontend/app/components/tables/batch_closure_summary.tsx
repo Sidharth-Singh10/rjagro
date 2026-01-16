@@ -1,10 +1,18 @@
-import React from 'react';
-import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+    Edit,
+    Filter,
+    ChevronLeft,
+    ChevronRight,
+    Plus,
+    MoreVertical,
+    FileText
+} from 'lucide-react';
 
-import { BatchClosure, CreateBatchClosure, Batch } from '../../types/interfaces';
+import { BatchClosure, Batch } from '../../types/interfaces';
+import { downloadGrowingChargesPdf } from '@/app/api/batches';
 
 interface BatchClosureWithJoins extends BatchClosure {
-    // Additional fields that might come from joins
     farmer_name?: string;
     line_name?: string;
     supervisor_name?: string;
@@ -24,6 +32,29 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
     loading,
     setShowAddForm,
 }) => {
+    // State to track which row has the menu open
+    const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setOpenMenuId(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    const handleDownloadGC = async (batchId: number) => {
+        await downloadGrowingChargesPdf(batchId, 0);
+        setOpenMenuId(null);
+    };
+
     const calculateMortality = (initial: number, available: number) => {
         if (initial === 0) return 0;
         return ((initial - available) / initial * 100);
@@ -53,71 +84,41 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-h-[400px]"> {/* Added min-h to allow dropdowns to scroll if needed */}
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                ID
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Batch ID
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Farmer
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Duration
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Initial Count
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Available Count
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Revenue
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Gross Profit
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Profit Margin %
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch ID</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Farmer</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Initial</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gross Profit</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Margin %</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={11} className="px-4 py-8 text-center text-gray-500">
-                                    Loading...
-                                </td>
+                                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">Loading...</td>
                             </tr>
                         ) : batchClosures.length === 0 ? (
                             <tr>
-                                <td colSpan={11} className="px-4 py-8 text-center text-gray-500">
-                                    No batch closure summaries found
-                                </td>
+                                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">No batch closure summaries found</td>
                             </tr>
                         ) : (
                             batchClosures.map((closure) => (
                                 <tr key={closure.id} className="hover:bg-gray-50">
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.id}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">#{closure.batch_id}</td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {closure.id}
-                                    </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        #{closure.batch_id}
-                                    </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {
-                                            (() => {
-                                                const batch = batches.find(b => b.batch_id === closure.batch_id);
-                                                return batch?.farmer_name || 'N/A';
-                                            })()
-                                        }
+                                        {(() => {
+                                            const batch = batches.find(b => b.batch_id === closure.batch_id);
+                                            return batch?.farmer_name || 'N/A';
+                                        })()}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         <div className="text-xs">
@@ -125,16 +126,9 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
                                             <div className="text-gray-500">to {closure.end_date}</div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {closure.initial_chicken_count.toLocaleString()}
-                                    </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {closure.available_chicken_count.toLocaleString()}
-                                    </td>
-
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                        ₹{closure.revenue.toLocaleString()}
-                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.initial_chicken_count.toLocaleString()}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.available_chicken_count.toLocaleString()}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">₹{closure.revenue.toLocaleString()}</td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                                         <span className={closure.gross_profit >= 0 ? 'text-green-600' : 'text-red-600'}>
                                             ₹{closure.gross_profit.toLocaleString()}
@@ -150,10 +144,50 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
                                             {calculateProfitMargin(closure.revenue, closure.gross_profit).toFixed(1)}%
                                         </span>
                                     </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <button className="text-blue-600 hover:text-blue-800">
-                                            <Edit size={16} />
-                                        </button>
+
+                                    {/* --- Actions Column with Dropdown --- */}
+                                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                        <div className="relative inline-block text-left">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenMenuId(openMenuId === closure.id ? null : closure.id);
+                                                }}
+                                                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+                                            >
+                                                <MoreVertical size={18} />
+                                            </button>
+
+                                            {openMenuId === closure.id && (
+                                                <div
+                                                    ref={menuRef}
+                                                    className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                                                >
+                                                    <div className="py-1" role="menu">
+                                                        {/* Edit Option */}
+                                                        <button
+                                                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                            onClick={() => {
+                                                                console.log("Edit clicked", closure.id);
+                                                                setOpenMenuId(null);
+                                                            }}
+                                                        >
+                                                            <Edit size={16} className="mr-2" />
+                                                            Edit
+                                                        </button>
+
+                                                        {/* Download GC Option */}
+                                                        <button
+                                                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                            onClick={() => handleDownloadGC(closure.batch_id)}
+                                                        >
+                                                            <FileText size={16} className="mr-2 text-blue-600" />
+                                                            Download GC
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))
