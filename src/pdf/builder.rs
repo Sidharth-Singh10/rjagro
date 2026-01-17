@@ -201,7 +201,7 @@ pub fn calculate_batch_expenses(ctx: BatchExpensesCalculationContext) -> BatchEx
         .map(|(ret, _)| ret.return_qty)
         .sum();
 
-    let feed_consumed_kg = feed_allocated - feed_returned;
+    let feed_consumed_kg = (feed_allocated - feed_returned) * Decimal::from(50);
 
     // Feed Cost (Fixed rate 41 per kg as per prompt)
     let feed_cost = feed_consumed_kg * Decimal::from(41);
