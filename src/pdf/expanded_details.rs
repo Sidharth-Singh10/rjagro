@@ -1,6 +1,6 @@
 use crate::pdf::{
     consts::{MARGIN, PAGE_WIDTH},
-    view_models::BatchExpenses,
+    view_models::{BatchExpenses, RearingCharges},
 };
 use printpdf::*;
 
@@ -206,7 +206,11 @@ pub fn draw_batch_expenses_section(
     end_y_mm
 }
 
-pub fn draw_rearing_charges_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
+pub fn draw_rearing_charges_section(
+    ops: &mut Vec<Op>,
+    start_y_mm: f32,
+    rearing_charges: RearingCharges,
+) -> f32 {
     // --- LAYOUT CONSTANTS ---
     let gap_between_columns = 5.0;
     let full_content_width = PAGE_WIDTH - (MARGIN * 2.0);
@@ -338,26 +342,53 @@ pub fn draw_rearing_charges_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
     let mut current_y = (start_y_mm - header_height_mm) - 5.0;
 
     let rows = vec![
-        ("REARING CHARGES/KG", "4.05"),
-        ("STD. REARING CHARGES/KG", "4.05"),
-        ("PROD.COST INCENTIVES", "0"),
-        ("REARING CHARGES/BIRD", "8.06"),
-        ("TOTAL REARING CHARGES", "21404.475"),
-        ("F.C.R. DEDUCT/EARNING", "0"),
-        ("MORTALITY DEDUCT/EARNING", "0"),
-        ("OTHER DEDUCTION", "0"),
-        ("BIRD SHORTAGE COST", "0"),
-        ("F.C.R INCENTIVES", "0"),
-        ("MARKET INCENTIVES", "0"),
-        ("CHARGES PAYABLE", "21404.475"),
-        ("T.D.S. (%)", "0"),
-        ("NET GROWING CHARGES", "21404.475"),
+        (
+            "REARING CHARGES/KG",
+            rearing_charges.get_rearing_charges_per_kg(),
+        ),
+        (
+            "STD. REARING CHARGES/KG",
+            rearing_charges.get_std_rearing_charges_per_kg(),
+        ),
+        (
+            "PROD.COST INCENTIVES",
+            rearing_charges.get_prod_cost_incentives(),
+        ),
+        (
+            "REARING CHARGES/BIRD",
+            rearing_charges.get_rearing_charges_per_bird(),
+        ),
+        (
+            "TOTAL REARING CHARGES",
+            rearing_charges.get_total_rearing_charges(),
+        ),
+        (
+            "F.C.R. DEDUCT/EARNING",
+            rearing_charges.get_fcr_deduct_earning(),
+        ),
+        (
+            "MORTALITY DEDUCT/EARNING",
+            rearing_charges.get_mortality_deduct_earning(),
+        ),
+        ("OTHER DEDUCTION", rearing_charges.get_other_deduction()),
+        (
+            "BIRD SHORTAGE COST",
+            rearing_charges.get_bird_shortage_cost(),
+        ),
+        ("F.C.R INCENTIVES", rearing_charges.get_fcr_incentives()),
+        ("MARKET INCENTIVES", rearing_charges.get_market_incentives()),
+        ("CHARGES PAYABLE", rearing_charges.get_charges_payable()),
+        ("T.D.S. (%)", rearing_charges.get_tds_percentage()),
+        (
+            "NET GROWING CHARGES",
+            rearing_charges.get_net_growing_charges(),
+        ),
     ];
 
     for (label, value) in rows {
         draw_text_absolute(label, label_x, current_y, BuiltinFont::HelveticaBold, 11.0);
         draw_text_absolute(":", sep_x, current_y, BuiltinFont::HelveticaBold, 11.0);
-        draw_text_absolute(value, val_x, current_y, BuiltinFont::Helvetica, 11.0);
+        draw_text_absolute(&value, val_x, current_y, BuiltinFont::Helvetica, 11.0);
         current_y -= row_height_mm;
     }
 

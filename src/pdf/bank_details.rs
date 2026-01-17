@@ -1,8 +1,15 @@
 use printpdf::*;
 
-use crate::pdf::consts::{MARGIN, PAGE_WIDTH};
+use crate::pdf::{
+    consts::{MARGIN, PAGE_WIDTH},
+    view_models::PaymentInformation,
+};
 
-pub fn draw_remark_and_bank_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
+pub fn draw_remark_and_bank_section(
+    ops: &mut Vec<Op>,
+    start_y_mm: f32,
+    payment_info: PaymentInformation,
+) -> f32 {
     // --- LAYOUT CONSTANTS ---
     let gap_between_columns = 5.0;
     let full_content_width = PAGE_WIDTH - (MARGIN * 2.0);
@@ -141,7 +148,7 @@ pub fn draw_remark_and_bank_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
         10.0,
     );
     draw_text_absolute(
-        "21404.5 INR Only",
+        &payment_info.get_total_payable_amount(),
         left_box_x + 2.0,
         remark_content_y - 6.0,
         BuiltinFont::Helvetica,
@@ -165,17 +172,17 @@ pub fn draw_remark_and_bank_section(ops: &mut Vec<Op>, start_y_mm: f32) -> f32 {
 
     let mut current_y = (start_y_mm - header_height_mm) - 5.0;
     let bank_rows = vec![
-        ("NAME", "RAKESH RAO"),
-        ("A/C NO.", ""),
-        ("IFSC CODE", ""),
-        ("A/C TYPE", ""),
+        ("NAME", payment_info.get_account_holder_name()),
+        ("A/C NO.", payment_info.get_account_number()),
+        ("IFSC CODE", payment_info.get_ifsc_code()),
+        ("A/C TYPE", payment_info.get_account_type()),
     ];
 
     for (label, val) in bank_rows {
         draw_text_absolute(label, col1_x, current_y, BuiltinFont::HelveticaBold, 11.0);
         draw_text_absolute(":", sep_x, current_y, BuiltinFont::HelveticaBold, 11.0);
         if !val.is_empty() {
-            draw_text_absolute(val, col2_x, current_y, BuiltinFont::Helvetica, 11.0);
+            draw_text_absolute(&val, col2_x, current_y, BuiltinFont::Helvetica, 11.0);
         }
         current_y -= row_height_mm;
     }

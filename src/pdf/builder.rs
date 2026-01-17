@@ -1,5 +1,7 @@
 use crate::pdf::contexts::BatchExpensesCalculationContext;
-use crate::pdf::view_models::{BatchExpenses, BatchSalesInfo};
+use crate::pdf::view_models::{
+    BatchExpenses, BatchSalesInfo, Inputs, PaymentInformation, RearingCharges,
+};
 use crate::pdf::view_models::{BatchInformation, FarmerDetails};
 use chrono::{Duration, Local};
 use entity::{batch_closure_summary, batch_sales, batches, bird_count_history, farmers};
@@ -108,13 +110,14 @@ pub async fn build_batch_sales_info(
     let total_weight = sales.iter().map(|s| s.avg_weight).sum();
 
     // C. Average Weight: Total Weight / Total Birds
-    let avg_weight = total_weight / total_birds_sold;
+    let avg_weight: Decimal =
+        (Decimal::from(total_weight) / Decimal::from(total_birds_sold)).round_dp(2);
 
     // D. Average Selling Rate: Revenue / Total Weight
     let avg_selling_rate = if let Some(s) = summary {
-        s.revenue / total_weight
+        (Decimal::from(s.revenue) / Decimal::from(total_weight)).round_dp(2)
     } else {
-        Decimal::from_f32(0.0).unwrap() // Default value when summary is None
+        Decimal::from_f32(0.0).unwrap()
     };
 
     Ok(BatchSalesInfo {
@@ -241,7 +244,6 @@ pub fn calculate_batch_expenses(ctx: BatchExpensesCalculationContext) -> BatchEx
         zero
     };
 
-    // 9. Return Struct
     BatchExpenses {
         net_chicks,
         chicks_cost,
@@ -263,4 +265,111 @@ pub fn calculate_batch_expenses(ctx: BatchExpensesCalculationContext) -> BatchEx
         // Create Default
         standard_production_cost_per_kg: Decimal::from(87), // Hardcoded 87
     }
+}
+
+pub async fn build_rearing_charges(
+    batch_expenses: &BatchExpenses,
+    batch_sales: &BatchSalesInfo,
+    inputs: &Inputs,
+) -> Result<RearingCharges, DbErr> {
+    let base_rate = Decimal::from(8);
+    let diff_cost = batch_expenses.actual_production_cost_per_kg
+        - batch_expenses.standard_production_cost_per_kg;
+
+    // refactor thisss
+    let penalty_or_bonus = diff_cost
+        * Decimal::try_from(0.5)
+            .map_err(|e| DbErr::Custom(format!("Failed to convert 0.5 to Decimal: {}", e)))?;
+
+    let std_rearing_charges_per_kg = base_rate - penalty_or_bonus;
+
+    // 2. Production Cost Incentives (Hardcoded to None)
+    let prod_cost_incentives: Option<Decimal> = None;
+    let prod_cost_incentives_val = prod_cost_incentives.unwrap_or(Decimal::ZERO);
+
+    // 3. Rearing Charges per KG
+    // Formula: STD + PROD.COST INCENTIVES
+    let rearing_charges_per_kg = std_rearing_charges_per_kg + prod_cost_incentives_val;
+
+    // 4. Total Rearing Charges
+    // Formula: rate_per_kg * total_weight
+    let total_rearing_charges = (Decimal::from(rearing_charges_per_kg)
+        * Decimal::from(batch_sales.total_weight))
+    .round_dp(2);
+
+    // 5. Rearing Charges per Bird
+    // Formula: total_rearing / total_birds_sold
+    let rearing_charges_per_bird = (Decimal::from(total_rearing_charges)
+        / Decimal::from(batch_sales.total_birds_sold))
+    .round_dp(2);
+
+    // 6. Hardcoded Nones
+    let fcr_deduct_earning: Option<Decimal> = None;
+    let mortality_deduct_earning: Option<Decimal> = None;
+
+    // 7. Input mappings
+    let other_deduction = inputs.other_deduction;
+    let bird_shortage_cost = inputs.bird_shortage_cost;
+    let fcr_incentives = inputs.fcr_incentive;
+    let market_incentives = inputs.market_incentive;
+    let tds_percentage = inputs.tds_per;
+
+    // 8. Calculate Charges Payable (Net before TDS)
+    // Sum = (Total Rearing + Incentives) - (Deductions)
+    let charges_payable = total_rearing_charges + fcr_incentives + market_incentives
+        - other_deduction
+        - bird_shortage_cost;
+    // Note: fcr/mortality deductions are None, so ignored here.
+
+    // 9. Calculate Net Growing Charges
+    // Formula: payable - (tds% * payable)
+    // Note: Assuming tds_percentage is a rate (e.g. 0.01 for 1%) or user handles the scale.
+    // If inputs.tds_per is 2.0 (representing 2%), this logic might need division by 100.
+    // Based strictly on the prompt: (tds_percentage * charges_payable)
+    let tds_amount = tds_percentage * charges_payable;
+    let net_growing_charges = charges_payable - tds_amount;
+
+    Ok(RearingCharges {
+        rearing_charges_per_kg,
+        std_rearing_charges_per_kg,
+        prod_cost_incentives,
+        rearing_charges_per_bird,
+        total_rearing_charges,
+        fcr_deduct_earning,
+        mortality_deduct_earning,
+        other_deduction,
+        bird_shortage_cost,
+        fcr_incentives,
+        market_incentives,
+        charges_payable,
+        tds_percentage,
+        net_growing_charges,
+    })
+}
+
+pub async fn build_payment_info(
+    batch_expenses: &RearingCharges,
+    db: &DatabaseConnection,
+    batch_id: i32,
+) -> Result<PaymentInformation, DbErr> {
+    let result = batches::Entity::find_by_id(batch_id)
+        .find_also_related(farmers::Entity)
+        .one(db)
+        .await?;
+
+    let (_batch, farmer_opt) =
+        result.ok_or_else(|| DbErr::Custom(format!("Batch with ID {} not found", batch_id)))?;
+
+    let farmer = farmer_opt
+        .ok_or_else(|| DbErr::Custom("Associated farmer not found for this batch".to_owned()))?;
+
+    let payment_info = PaymentInformation {
+        total_payable_amount: batch_expenses.net_growing_charges,
+        account_holder_name: farmer.name,
+        account_number: farmer.bank_account_no,
+        ifsc_code: farmer.ifsc_code,
+        account_type: None,
+    };
+
+    Ok(payment_info)
 }

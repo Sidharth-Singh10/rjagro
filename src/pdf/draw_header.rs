@@ -12,7 +12,8 @@ use crate::pdf::{
     basic_details::draw_growing_charges_section,
     batch_info::{draw_batch_info_section, draw_batch_sales_info_section},
     builder::{
-        build_batch_info, build_batch_sales_info, build_farmer_details, calculate_batch_expenses,
+        build_batch_info, build_batch_sales_info, build_farmer_details, build_payment_info,
+        build_rearing_charges, calculate_batch_expenses,
     },
     consts::{COMPANY_ADDRESS, COMPANY_TITLE, MARGIN, PAGE_HEIGHT, PAGE_WIDTH},
     contexts::BatchExpensesCalculationContext,
@@ -113,13 +114,25 @@ pub async fn generate_pdf_handler(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let expenses_ctx =
-        BatchExpensesCalculationContext::load(batch_id, batch_sales_info.clone(), input, &db)
-            .await
-            .map_err(|e| e.to_string())
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let expenses_ctx = BatchExpensesCalculationContext::load(
+        batch_id,
+        batch_sales_info.clone(),
+        input.clone(),
+        &db,
+    )
+    .await
+    .map_err(|e| e.to_string())
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let batch_expenses = calculate_batch_expenses(expenses_ctx);
+
+    let rearing_charges = build_rearing_charges(&batch_expenses, &batch_sales_info, &input)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let payment_info = build_payment_info(&rearing_charges, &db, batch_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // 1. Create the PDF Document
     let mut doc = PdfDocument::new("Image Example");
@@ -158,10 +171,11 @@ pub async fn generate_pdf_handler(
     let expenses_start_y = batch_sales_end_y - section_gap;
 
     let expenses_end_y = draw_batch_expenses_section(&mut ops, expenses_start_y2, batch_expenses);
-    let _rearing_end_y = draw_rearing_charges_section(&mut ops, expenses_start_y);
+    let _rearing_end_y = draw_rearing_charges_section(&mut ops, expenses_start_y, rearing_charges);
 
     let bank_details_start_y = expenses_end_y - 5.0;
-    let remark_bank_end_y = draw_remark_and_bank_section(&mut ops, bank_details_start_y);
+    let remark_bank_end_y =
+        draw_remark_and_bank_section(&mut ops, bank_details_start_y, payment_info);
     draw_dynamic_footer_section(&mut ops, remark_bank_end_y);
 
     // 6. Apply the operations to the actual layer

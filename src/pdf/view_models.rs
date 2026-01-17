@@ -184,8 +184,127 @@ impl BatchExpenses {
     }
 }
 
-#[derive(Deserialize)]
+pub struct RearingCharges {
+    pub rearing_charges_per_kg: Decimal,
+    pub std_rearing_charges_per_kg: Decimal,
+    pub prod_cost_incentives: Option<Decimal>,
+    pub rearing_charges_per_bird: Decimal,
+    pub total_rearing_charges: Decimal,
+    pub fcr_deduct_earning: Option<Decimal>,
+    pub mortality_deduct_earning: Option<Decimal>,
+    pub other_deduction: Decimal,
+    pub bird_shortage_cost: Decimal,
+    pub fcr_incentives: Decimal,
+    pub market_incentives: Decimal,
+    pub charges_payable: Decimal,
+    pub tds_percentage: Decimal,
+    pub net_growing_charges: Decimal,
+}
+
+impl RearingCharges {
+    fn format_opt(&self, val: &Option<Decimal>) -> String {
+        match val {
+            Some(v) => v.to_string(),
+            None => "N/A".to_string(),
+        }
+    }
+
+    pub fn get_rearing_charges_per_kg(&self) -> String {
+        self.rearing_charges_per_kg.to_string()
+    }
+
+    pub fn get_std_rearing_charges_per_kg(&self) -> String {
+        self.std_rearing_charges_per_kg.to_string()
+    }
+
+    pub fn get_prod_cost_incentives(&self) -> String {
+        self.format_opt(&self.prod_cost_incentives)
+    }
+
+    pub fn get_rearing_charges_per_bird(&self) -> String {
+        self.rearing_charges_per_bird.to_string()
+    }
+
+    pub fn get_total_rearing_charges(&self) -> String {
+        self.total_rearing_charges.to_string()
+    }
+
+    // --- Deductions & Earnings ---
+    pub fn get_fcr_deduct_earning(&self) -> String {
+        self.format_opt(&self.fcr_deduct_earning)
+    }
+
+    pub fn get_mortality_deduct_earning(&self) -> String {
+        self.format_opt(&self.mortality_deduct_earning)
+    }
+
+    pub fn get_other_deduction(&self) -> String {
+        self.other_deduction.to_string()
+    }
+
+    pub fn get_bird_shortage_cost(&self) -> String {
+        self.bird_shortage_cost.to_string()
+    }
+
+    pub fn get_fcr_incentives(&self) -> String {
+        self.fcr_incentives.to_string()
+    }
+
+    pub fn get_market_incentives(&self) -> String {
+        self.market_incentives.to_string()
+    }
+
+    // --- Final Calculations ---
+    pub fn get_charges_payable(&self) -> String {
+        self.charges_payable.to_string()
+    }
+
+    pub fn get_tds_percentage(&self) -> String {
+        self.tds_percentage.to_string()
+    }
+
+    pub fn get_net_growing_charges(&self) -> String {
+        self.net_growing_charges.to_string()
+    }
+}
+
+// confirm once to make a few fields optional to show 'N/A'
+#[derive(Clone, Deserialize)]
 pub struct Inputs {
     pub batch_id: i32,
     pub bird_shortage: Decimal,
+    pub other_deduction: Decimal,
+    pub bird_shortage_cost: Decimal,
+    pub fcr_incentive: Decimal,
+    pub market_incentive: Decimal,
+    pub tds_per: Decimal,
+}
+
+pub struct PaymentInformation {
+    pub total_payable_amount: Decimal,
+    pub account_holder_name: String,
+    pub account_number: String,
+    pub ifsc_code: String,
+    pub account_type: Option<String>,
+}
+
+impl PaymentInformation {
+    pub fn get_total_payable_amount(&self) -> String {
+        format!("{} INR Only", self.total_payable_amount)
+    }
+    pub fn get_account_holder_name(&self) -> String {
+        self.account_holder_name.to_string()
+    }
+    pub fn get_account_number(&self) -> String {
+        self.account_number.to_string()
+    }
+    pub fn get_ifsc_code(&self) -> String {
+        self.ifsc_code.to_string()
+    }
+    pub fn get_account_type(&self) -> String {
+        match &self.account_type {
+            Some(num) => num.to_string(),
+            None => "N/A".to_string(),
+        }
+    }
 }
