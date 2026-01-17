@@ -611,3 +611,14 @@ export interface GrowingChargesInputs {
   market_incentive: number;
   tds_per: number;
 }
+
+
+export interface AllocatedRequirement {
+  requirement_id: number;
+  item_code: string;
+  requested_qty: string;
+  allocation_id: number;
+  allocated_qty: string;
+  allocated_value: string;
+  allocation_date: string;
+}

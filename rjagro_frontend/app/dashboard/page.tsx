@@ -949,7 +949,6 @@ const Dashboard = () => {
                 {activeTab === 'Batch Sales' && (
                     <BatchSalesTable
                         batchSales={batchSales}
-                        items={items}
                         batches={batches}
                         traders={traders}
                         loading={loading}

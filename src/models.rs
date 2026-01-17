@@ -317,3 +317,17 @@ pub struct TraderLedgerEntry {
     pub amount: Decimal,
     pub entry_type: Option<String>,
 }
+
+#[derive(Debug, Serialize, FromQueryResult)]
+pub struct AllocatedRequirementDTO {
+    // Fields from BatchRequirements
+    pub requirement_id: i32,
+    pub item_code: String,
+    pub requested_qty: Decimal, // Mapped via column_as
+
+    // Fields from BatchAllocations
+    pub allocation_id: i32,
+    pub allocated_qty: Decimal,
+    pub allocated_value: Decimal,
+    pub allocation_date: NaiveDate,
+}

@@ -1,8 +1,10 @@
 'use client'
+import { fetchAllocationsByBatchId } from "@/app/api/batch_allocations";
 import { fetchBatchSalesByBatchId } from "@/app/api/batch_sales";
 import { fetchBatchById } from "@/app/api/batches";
 import { BatchHeader } from "@/app/components/batch_details/header";
 import { KPICard } from "@/app/components/batch_details/kpi_grid";
+import AllocatedRequirementTable from "@/app/components/batch_details/tabs/allocated_view";
 import BatchSalesTable from "@/app/components/batch_details/tabs/sales_view";
 import { useAllBatches, useTraders } from "@/app/hooks/use_common_data";
 import { useQuery } from "@tanstack/react-query";
@@ -28,9 +30,15 @@ export default function BatchDetailsPage() {
         enabled: !!batchId
     });
 
+    const { data: allocations = [], isLoading: isAllocationsLoading } = useQuery({
+        queryKey: ["allocations_new", batchId],
+        queryFn: () => fetchAllocationsByBatchId(batchId),
+        enabled: !!batchId
+    });
+
+
 
     const { data: traders = [], isLoading: isTradersLoading } = useTraders();
-    const { data: allBatches = [] } = useAllBatches();
 
     if (isLoading) return <div className="p-10 text-center">Loading Batch Details...</div>;
     if (!batch) return <div className="p-10 text-center">Batch not found</div>;
@@ -96,8 +104,10 @@ export default function BatchDetailsPage() {
 
                     {activeTab === 'allocations' && (
                         <div className="text-center text-gray-500 ">
-                            <p>Import your <code>&lt;BatchAllocationsTable /&gt;</code> here.</p>
-                            <p className="text-sm">Filter it by <code>batch_id === {batchId}</code></p>
+                            <AllocatedRequirementTable
+                                allocations={allocations}
+                                loading={isAllocationsLoading}
+                            />
                         </div>
                     )}
 

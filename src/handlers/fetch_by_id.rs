@@ -4,8 +4,9 @@ use axum::{
     Json,
 };
 use entity::{
-    batch_allocation_lines, batch_sales, batches, farmer_commission_history, farmers,
-    stock_receipts, stock_returns, users,
+    batch_allocation_lines, batch_allocations, batch_requirements, batch_sales, batches,
+    farmer_commission_history, farmers, sea_orm_active_enums::RequirementStatus, stock_receipts,
+    stock_returns, users,
 };
 use reqwest::StatusCode;
 use sea_orm::EntityTrait;
@@ -17,7 +18,7 @@ use sea_orm::{prelude::Decimal, DatabaseConnection};
 use sea_orm::{ColumnTrait, JoinType};
 use serde_json::json;
 
-use crate::models::BatchResponse;
+use crate::models::{AllocatedRequirementDTO, BatchResponse};
 
 pub async fn get_farmer_commission_history_by_id_handler(
     State(db): State<DatabaseConnection>,
@@ -156,6 +157,45 @@ pub async fn get_sales_by_batch_id_handler(
         Err(e) => {
             eprintln!("Failed to fetch sales for batch {}: {}", batch_id, e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn get_accepted_allocations_handler(
+    State(db): State<DatabaseConnection>,
+    Path(batch_id): Path<i32>,
+) -> impl IntoResponse {
+    let results = batch_requirements::Entity::find()
+        .filter(batch_requirements::Column::BatchId.eq(batch_id))
+        .filter(batch_requirements::Column::Status.eq(RequirementStatus::Accept))
+        .join(
+            JoinType::InnerJoin,
+            batch_requirements::Relation::BatchAllocations.def(),
+        )
+        .select_only()
+        .column(batch_requirements::Column::RequirementId)
+        .column(batch_requirements::Column::ItemCode)
+        .column_as(batch_requirements::Column::Quantity, "requested_qty") // Alias to match DTO field
+        .column(batch_allocations::Column::AllocationId)
+        .column(batch_allocations::Column::AllocatedQty)
+        .column(batch_allocations::Column::AllocatedValue)
+        .column(batch_allocations::Column::AllocationDate)
+        .into_model::<AllocatedRequirementDTO>()
+        .all(&db)
+        .await;
+
+    match results {
+        Ok(data) => Json(data).into_response(),
+        Err(e) => {
+            eprintln!(
+                "Failed to fetch accepted allocations for batch {}: {}",
+                batch_id, e
+            );
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Database error: {}", e),
+            )
+                .into_response()
         }
     }
 }
