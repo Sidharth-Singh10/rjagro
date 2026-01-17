@@ -471,9 +471,7 @@ export interface BatchSale {
   item_code: string;
   item_name: string;
   batch_id: number;
-  farmer_name: string;
   trader_id: number;
-  trader_name: string;
   avg_weight: number;
   rate: number;
   quantity: number;

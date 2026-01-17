@@ -4,8 +4,8 @@ use axum::{
     Json,
 };
 use entity::{
-    batch_allocation_lines, batches, farmer_commission_history, farmers, stock_receipts,
-    stock_returns, users,
+    batch_allocation_lines, batch_sales, batches, farmer_commission_history, farmers,
+    stock_receipts, stock_returns, users,
 };
 use reqwest::StatusCode;
 use sea_orm::EntityTrait;
@@ -138,6 +138,24 @@ pub async fn get_batch_by_id_handler(
                 )
                     .into_response()
             }
+        }
+    }
+}
+
+pub async fn get_sales_by_batch_id_handler(
+    State(db): State<DatabaseConnection>,
+    Path(batch_id): Path<i32>,
+) -> impl IntoResponse {
+    let sales_result = batch_sales::Entity::find()
+        .filter(batch_sales::Column::BatchId.eq(batch_id))
+        .all(&db)
+        .await;
+
+    match sales_result {
+        Ok(sales) => Json(sales).into_response(),
+        Err(e) => {
+            eprintln!("Failed to fetch sales for batch {}: {}", batch_id, e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
 }

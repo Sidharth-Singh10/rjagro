@@ -8,7 +8,6 @@ import { handleDeleteBatchSale } from '@/app/api/batch_sales';
 
 interface BatchSalesTableProps {
   batchSales: BatchSale[];
-  items: Item[];
   batches: Batch[];
   traders: Trader[];
   loading: boolean;
@@ -24,7 +23,6 @@ interface BatchSalesTableProps {
 
 const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
   batchSales,
-  items,
   batches,
   traders,
   loading,
@@ -32,7 +30,6 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
   newBatchSale,
   setShowAddForm,
   setNewBatchSale,
-  handleItemCodeSelect,
   handleBatchSelect,
   handleTraderSelect,
   handleAddBatchSale,
@@ -336,10 +333,7 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
                     Batch #{sale.batch_id}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.farmer_name}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.trader_name}
+                    {traders.find((t) => t.trader_id === sale.trader_id)?.name || "Unknown Trader"}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                     {sale.avg_weight}
