@@ -7,6 +7,11 @@ export const fetchBatches = async (): Promise<Batch[]> => {
     return response.data;
 };
 
+export const fetchBatchById = async (batchId: number): Promise<Batch> => {
+    const response = await api.get(`/getbyid/batches/${batchId}`);
+    return response.data;
+};
+
 export const handleAddBatch = async (
     payload: BatchPayload,
     queryClient: any,

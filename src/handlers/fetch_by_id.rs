@@ -1,8 +1,12 @@
 use axum::{
     extract::{Path, State},
+    response::IntoResponse,
     Json,
 };
-use entity::{batch_allocation_lines, farmer_commission_history, stock_receipts, stock_returns};
+use entity::{
+    batch_allocation_lines, batches, farmer_commission_history, farmers, stock_receipts,
+    stock_returns, users,
+};
 use reqwest::StatusCode;
 use sea_orm::EntityTrait;
 use sea_orm::QueryFilter;
@@ -12,6 +16,8 @@ use sea_orm::RelationTrait;
 use sea_orm::{prelude::Decimal, DatabaseConnection};
 use sea_orm::{ColumnTrait, JoinType};
 use serde_json::json;
+
+use crate::models::BatchResponse;
 
 pub async fn get_farmer_commission_history_by_id_handler(
     State(db): State<DatabaseConnection>,
@@ -85,6 +91,53 @@ pub async fn get_stock_return_unit_cost(
                 batch_id, item_code, e
             );
             Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+pub async fn get_batch_by_id_handler(
+    State(db): State<DatabaseConnection>,
+    Path(batch_id): Path<i32>,
+) -> impl IntoResponse {
+    let batch_with_relations = batches::Entity::find_by_id(batch_id)
+        .find_also_related(users::Entity)
+        .find_also_related(farmers::Entity)
+        .one(&db)
+        .await;
+
+    match batch_with_relations {
+        Err(e) => {
+            eprintln!("Failed to fetch batch: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+
+        Ok(Some((batch, user_opt, farmer_opt))) => {
+            if let (Some(user), Some(farmer)) = (user_opt, farmer_opt) {
+                let response = BatchResponse {
+                    batch_id: batch.batch_id,
+                    line_id: batch.line_id,
+                    supervisor_id: batch.supervisor_id,
+                    supervisor_name: user.name,
+                    farmer_id: batch.farmer_id,
+                    farmer_name: farmer.name,
+                    start_date: batch.start_date,
+                    end_date: batch.end_date,
+                    initial_bird_count: batch.initial_bird_count,
+                    current_bird_count: batch.current_bird_count,
+                    status: batch.status,
+                    created_at: batch.created_at,
+                };
+
+                Json(response).into_response()
+            } else {
+                (
+                    StatusCode::NOT_FOUND,
+                    "Related Supervisor or Farmer not found",
+                )
+                    .into_response()
+            }
         }
     }
 }

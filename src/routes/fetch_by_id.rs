@@ -1,16 +1,22 @@
-use axum::{Router, routing::{get, post}};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use sea_orm::DatabaseConnection;
 
-use crate::{handlers::{
-    fetch_by_id::{
-        get_farmer_commission_history_by_id_handler, get_stock_return_unit_cost,
-        get_stock_returns_by_batch_id_handler,
+use crate::{
+    handlers::{
+        fetch_by_id::{
+            get_batch_by_id_handler, get_farmer_commission_history_by_id_handler,
+            get_stock_return_unit_cost, get_stock_returns_by_batch_id_handler,
+        },
+        suppliers::{
+            get_supplier_ledger_handler, get_supplier_payables, get_supplier_payments_byid_handler,
+        },
+        traders::{get_trader_ledger_handler, get_trader_payments, get_trader_receivables},
     },
-    suppliers::{
-        get_supplier_ledger_handler, get_supplier_payables, get_supplier_payments_byid_handler,
-    },
-    traders::{get_trader_ledger_handler, get_trader_payments, get_trader_receivables},
-}, pdf::draw_header::generate_pdf_handler};
+    pdf::draw_header::generate_pdf_handler,
+};
 
 pub fn fetch_by_id() -> Router<DatabaseConnection> {
     Router::new()
@@ -35,5 +41,6 @@ pub fn fetch_by_id() -> Router<DatabaseConnection> {
         .route("/trader_receivables/{id}", get(get_trader_receivables))
         .route("/trader_payments/{id}", get(get_trader_payments))
         .route("/trader_ledger/{id}", get(get_trader_ledger_handler))
+        .route("/batches/{id}", get(get_batch_by_id_handler))
         .route("/growing_charges", post(generate_pdf_handler))
 }
