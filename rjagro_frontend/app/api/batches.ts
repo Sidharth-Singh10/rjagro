@@ -1,4 +1,4 @@
-import { Batch, BatchClosure, BatchClosurePayload, BatchPayload, CreateFarmerCommission, FarmerCommissionHistory } from '../types/interfaces';
+import { Batch, BatchClosure, BatchClosurePayload, BatchPayload, CreateFarmerCommission, FarmerCommissionHistory, GrowingChargesInputs } from '../types/interfaces';
 import api from '../utils/api';
 import { toast } from 'react-toastify';
 
@@ -130,11 +130,10 @@ export const fetchBatchClosures = async (): Promise<BatchClosure[]> => {
 };
 
 export const downloadGrowingChargesPdf = async (
-    batchId: number,
-    birdShortage: number | string,
+    inputs: GrowingChargesInputs,
     setLoading?: (loading: boolean) => void
 ) => {
-    if (!batchId) {
+    if (!inputs.batch_id) {
         toast.error("Invalid Batch ID");
         return;
     }
@@ -145,10 +144,7 @@ export const downloadGrowingChargesPdf = async (
     try {
         const response = await api.post(
             "/getbyid/growing_charges",
-            {
-                batch_id: batchId,
-                bird_shortage: birdShortage,
-            },
+            inputs,
             {
                 responseType: 'blob',
             }
@@ -157,8 +153,7 @@ export const downloadGrowingChargesPdf = async (
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-
-        link.setAttribute('download', `Growing_Charges_Batch_${batchId}.pdf`);
+        link.setAttribute('download', `Growing_Charges_Batch_${inputs.batch_id}.pdf`);
 
         document.body.appendChild(link);
         link.click();
@@ -166,9 +161,11 @@ export const downloadGrowingChargesPdf = async (
         window.URL.revokeObjectURL(url);
 
         toast.success("PDF downloaded successfully!");
+        return true;
     } catch (error) {
         console.error("Error downloading PDF:", error);
         toast.error("Failed to download PDF");
+        return false;
     } finally {
         if (setLoading) setLoading(false);
     }

@@ -603,3 +603,13 @@ export interface TraderLedgerEntry {
   amount: string,
   entry_type: string,
 }
+
+export interface GrowingChargesInputs {
+  batch_id: number;
+  bird_shortage: number;
+  other_deduction: number;
+  bird_shortage_cost: number;
+  fcr_incentive: number;
+  market_incentive: number;
+  tds_per: number;
+}

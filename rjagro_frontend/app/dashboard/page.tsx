@@ -36,7 +36,7 @@ import { fetchLedgerAccounts, handleAddLedgerAccount } from '../api/ledger_accou
 import LedgerAccountsTable from '../components/tables/ledger_accounts';
 import { fetchBirdCountHistory, handleAddBirdCountHistory } from '../api/bird_count_history';
 import BirdCountHistoryTable from '../components/tables/bird_count_history';
-import BatchClosureSummaryTable from '../components/tables/batch_closure_summary';
+import BatchClosureSummaryTable from '../components/tables/batch_closure_summary/batch_closure';
 import { fetchBatchSales, handleAddBatchSale } from '../api/batch_sales';
 import BatchSalesTable from '../components/tables/batch_sales';
 import { ItemCategory } from '../types/enums';
