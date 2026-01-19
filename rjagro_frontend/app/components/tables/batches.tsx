@@ -1,44 +1,28 @@
 'use client'
-import React, { useMemo, useState } from 'react';
-import { Plus, X, Save } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Plus, X, Save, ExternalLink, ChevronRight } from 'lucide-react';
 import {
     Batch,
-    BatchAllocation,
     BatchPayload,
-    BatchRequirement,
-    CreateFarmerCommission,
     Farmer,
-    FarmerCommissionHistory,
-    SupervisorSimplified,
     Item,
-    BatchClosurePayload,
-    StockReturn,
-    BatchAllocationLine,
+    SupervisorSimplified,
 } from '@/app/types/interfaces';
 import { useAuth } from '@/app/hooks/useAuth';
 import { useBatchesSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from './sortable_headers/header';
-import BatchDetailsModal from './modals/Batches/batch_details_modal';
+import { useRouter } from 'next/navigation';
 
 interface BatchesTableProps {
     batches: Batch[];
     farmers: Farmer[];
     supervisors: SupervisorSimplified[];
     items: Item[];
-    batchAllocations: BatchAllocation[];
-    stockReturns: StockReturn[];
-    allocationLines: BatchAllocationLine[];
-    requirements: BatchRequirement[];
     loading: boolean;
     showAddForm: boolean;
     newBatch: BatchPayload;
     setShowAddForm: (show: boolean) => void;
     setNewBatch: React.Dispatch<React.SetStateAction<BatchPayload>>;
-    commissionHistory?: FarmerCommissionHistory[];
-    onAddCommission?: (commission: CreateFarmerCommission) => Promise<void>;
-    commissionLoading?: boolean;
-    onCloseBatch?: (batchClosure: BatchClosurePayload) => Promise<void>;
-    batchClosureLoading?: boolean;
     handleAddBatch: () => void;
 }
 
@@ -47,19 +31,9 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
     loading, showAddForm, newBatch,
     setShowAddForm, setNewBatch,
     handleAddBatch,
-    batchAllocations,
-    allocationLines,
-    stockReturns,
-    requirements,
-    commissionHistory = [],
-    onAddCommission,
-    commissionLoading = false,
-    onCloseBatch,
-    batchClosureLoading = false,
 }) => {
     const user = useAuth().user;
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
+    const router = useRouter();
 
     newBatch.created_by = user?.user_id ?? "";
 
@@ -95,15 +69,6 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
         });
     };
 
-    const openBatchModal = (batch: Batch) => {
-        setSelectedBatch(batch);
-        setModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setModalOpen(false);
-        setSelectedBatch(null);
-    };
 
     return (
         <div className="bg-white rounded-lg shadow">
@@ -312,9 +277,23 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                             </tr>
                         ) : (
                             sortedData.map((batch) => (
-                                <tr key={batch.batch_id} className="hover:bg-gray-50" onDoubleClick={() => openBatchModal(batch)}>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {batch.batch_id}
+                                <tr key={batch.batch_id} className="group relative border-b border-gray-100 hover:bg-green-50/40 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out cursor-pointer" onDoubleClick={() => router.push(`/dashboard/batches/${batch.batch_id}`)}>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 relative overflow-hidden">
+                                        <div className="flex items-center gap-2">
+                                            <span>#{batch.batch_id}</span>
+
+                                            {/* The sliding CTA Badge */}
+                                            <span className="
+                opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0
+                transition-all duration-300 delay-75 ease-out
+                flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100/80 px-2 py-0.5 rounded-full
+            ">
+                                                View
+                                                <ChevronRight size={12} className="text-green-600" />
+                                            </span>
+                                        </div>
+                                        {/* Subtle green accent bar on the left edge */}
+                                        <div className="absolute left-0 top-0 h-full w-1 bg-green-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {batch.line_id}
@@ -361,24 +340,6 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                     </tbody>
                 </table>
             </div>
-
-            {/* Modal */}
-            {selectedBatch && (
-                <BatchDetailsModal
-                    isOpen={modalOpen}
-                    onClose={closeModal}
-                    batch={selectedBatch}
-                    batchAllocations={batchAllocations}
-                    allocationLines={allocationLines}
-                    stockReturns={stockReturns}
-                    requirements={requirements}
-                    commissionHistory={commissionHistory}
-                    onAddCommission={onAddCommission}
-                    commissionLoading={commissionLoading}
-                    onCloseBatch={onCloseBatch}
-                    batchClosureLoading={batchClosureLoading}
-                />
-            )}
         </div>
     );
 };

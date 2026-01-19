@@ -61,7 +61,7 @@ export const LoginForm = () => {
 
             login(response.data.user, response.data.token);
             console.log('Login successful:', response.data);
-            router.push('/dashboard');
+            router.push('/dashboard/v2');
 
 
         } catch (error) {
