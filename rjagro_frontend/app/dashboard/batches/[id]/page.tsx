@@ -3,12 +3,14 @@ import { fetchAllocationsByBatchId } from "@/app/api/batch_allocations";
 import { fetchBatchSalesByBatchId } from "@/app/api/batch_sales";
 import { fetchBatchById } from "@/app/api/batches";
 import { fetchBirdCountHistoryById } from "@/app/api/bird_count_history";
+import { fetchStockReturnsByBatch } from "@/app/api/stock_returns";
 import { BatchHeader } from "@/app/components/batch_details/header";
 import { KPICard } from "@/app/components/batch_details/kpi_grid";
 import AllocatedRequirementTable from "@/app/components/batch_details/tabs/allocated_view";
 import BirdCountHistoryTable from "@/app/components/batch_details/tabs/bird_count_history/bird_count_history";
+import StockReturnsTable from "@/app/components/batch_details/tabs/returns/returns";
 import BatchSalesTable from "@/app/components/batch_details/tabs/sales_view/sales_view";
-import { useTraders } from "@/app/hooks/use_common_data";
+import { useItems, useTraders } from "@/app/hooks/use_common_data";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, AlertTriangle, Package, TrendingUp } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -45,9 +47,17 @@ export default function BatchDetailsPage() {
         enabled: !!batchId
     });
 
+    const { data: stockReturns = [], isLoading: isStockReturnsLoading } = useQuery({
+        queryKey: ["stock_returns_new", batchId],
+        queryFn: () => fetchStockReturnsByBatch(batchId),
+        enabled: !!batchId
+    });
 
 
-    const { data: traders = [], isLoading: isTradersLoading } = useTraders();
+
+
+    const { data: traders = [] } = useTraders();
+    const { data: items = [] } = useItems();
 
     if (isLoading) return <div className="p-10 text-center">Loading Batch Details...</div>;
     if (!batch) return <div className="p-10 text-center">Batch not found</div>;
@@ -93,7 +103,7 @@ export default function BatchDetailsPage() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[500px]">
                 <div className="border-b px-4">
                     <nav className="flex gap-6">
-                        {['allocations', 'sales', 'bird_count'].map((tab) => (
+                        {['allocations', 'sales', 'bird_count', 'returns'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -137,6 +147,17 @@ export default function BatchDetailsPage() {
                             <BirdCountHistoryTable
                                 historyData={birdCountHistory}
                                 loading={isBirdCountLoading}
+                                batchId={batchId}
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'returns' && (
+                        <div className="text-center text-gray-500">
+                            <StockReturnsTable
+                                stockReturns={stockReturns}
+                                items={items}
+                                loading={isStockReturnsLoading}
                                 batchId={batchId}
                             />
                         </div>
