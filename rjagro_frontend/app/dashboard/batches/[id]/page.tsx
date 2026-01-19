@@ -5,6 +5,7 @@ import { fetchBatchById } from "@/app/api/batches";
 import { fetchBirdCountHistoryById } from "@/app/api/bird_count_history";
 import { fetchStockReturnsByBatch } from "@/app/api/stock_returns";
 import { BatchHeader } from "@/app/components/batch_details/header";
+import { BatchDetailsSkeleton } from "@/app/components/batch_details/helpers/loading";
 import { KPICard } from "@/app/components/batch_details/kpi_grid";
 import AllocatedRequirementTable from "@/app/components/batch_details/tabs/allocated_view";
 import BirdCountHistoryTable from "@/app/components/batch_details/tabs/bird_count_history/bird_count_history";
@@ -20,7 +21,7 @@ export default function BatchDetailsPage() {
     const params = useParams();
     const router = useRouter();
     const batchId = Number(params.id);
-    const [activeTab, setActiveTab] = useState('overview');
+    const [activeTab, setActiveTab] = useState('allocations');
     const queryClient = useQueryClient();
 
 
@@ -59,8 +60,18 @@ export default function BatchDetailsPage() {
     const { data: traders = [] } = useTraders();
     const { data: items = [] } = useItems();
 
-    if (isLoading) return <div className="p-10 text-center">Loading Batch Details...</div>;
-    if (!batch) return <div className="p-10 text-center">Batch not found</div>;
+    if (isLoading) return <BatchDetailsSkeleton />;
+
+    if (!batch) return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+                <h2 className="text-2xl font-semibold text-gray-800">Batch Not Found</h2>
+                <button onClick={() => router.back()} className="mt-4 text-blue-600 hover:underline">
+                    Go Back
+                </button>
+            </div>
+        </div>
+    );
 
     const mortalityRate = ((batch.initial_bird_count - batch.current_bird_count) / batch.initial_bird_count * 100).toFixed(2);
 
@@ -103,7 +114,7 @@ export default function BatchDetailsPage() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[500px]">
                 <div className="border-b px-4">
                     <nav className="flex gap-6">
-                        {['allocations', 'sales', 'bird_count', 'returns'].map((tab) => (
+                        {['allocations', 'sales', 'bird count', 'returns'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -142,7 +153,7 @@ export default function BatchDetailsPage() {
                         </div>
                     )}
 
-                    {activeTab === 'bird_count' && (
+                    {activeTab === 'bird count' && (
                         <div className="text-center text-gray-500">
                             <BirdCountHistoryTable
                                 historyData={birdCountHistory}
