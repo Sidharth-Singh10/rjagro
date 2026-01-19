@@ -2,9 +2,11 @@
 import { fetchAllocationsByBatchId } from "@/app/api/batch_allocations";
 import { fetchBatchSalesByBatchId } from "@/app/api/batch_sales";
 import { fetchBatchById } from "@/app/api/batches";
+import { fetchBirdCountHistoryById } from "@/app/api/bird_count_history";
 import { BatchHeader } from "@/app/components/batch_details/header";
 import { KPICard } from "@/app/components/batch_details/kpi_grid";
 import AllocatedRequirementTable from "@/app/components/batch_details/tabs/allocated_view";
+import BirdCountHistoryTable from "@/app/components/batch_details/tabs/bird_count_history/bird_count_history";
 import BatchSalesTable from "@/app/components/batch_details/tabs/sales_view/sales_view";
 import { useTraders } from "@/app/hooks/use_common_data";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +36,12 @@ export default function BatchDetailsPage() {
     const { data: allocations = [], isLoading: isAllocationsLoading } = useQuery({
         queryKey: ["allocations_new", batchId],
         queryFn: () => fetchAllocationsByBatchId(batchId),
+        enabled: !!batchId
+    });
+
+    const { data: birdCountHistory = [], isLoading: isBirdCountLoading } = useQuery({
+        queryKey: ["bird_count_history_new", batchId],
+        queryFn: () => fetchBirdCountHistoryById(batchId),
         enabled: !!batchId
     });
 
@@ -85,7 +93,7 @@ export default function BatchDetailsPage() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[500px]">
                 <div className="border-b px-4">
                     <nav className="flex gap-6">
-                        {['allocations', 'sales'].map((tab) => (
+                        {['allocations', 'sales', 'bird_count'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -120,6 +128,16 @@ export default function BatchDetailsPage() {
                                 traders={traders}
                                 batchId={batchId}
                                 queryClient={queryClient}
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'bird_count' && (
+                        <div className="text-center text-gray-500">
+                            <BirdCountHistoryTable
+                                historyData={birdCountHistory}
+                                loading={isBirdCountLoading}
+                                batchId={batchId}
                             />
                         </div>
                     )}

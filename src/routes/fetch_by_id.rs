@@ -8,8 +8,9 @@ use crate::{
     handlers::{
         fetch_by_id::{
             get_accepted_allocations_handler, get_batch_by_id_handler,
-            get_farmer_commission_history_by_id_handler, get_sales_by_batch_id_handler,
-            get_stock_return_unit_cost, get_stock_returns_by_batch_id_handler,
+            get_bird_count_history_handler, get_farmer_commission_history_by_id_handler,
+            get_sales_by_batch_id_handler, get_stock_return_unit_cost,
+            get_stock_returns_by_batch_id_handler,
         },
         suppliers::{
             get_supplier_ledger_handler, get_supplier_payables, get_supplier_payments_byid_handler,
@@ -47,6 +48,10 @@ pub fn fetch_by_id() -> Router<DatabaseConnection> {
         .route(
             "/accepted_allocations/{id}",
             get(get_accepted_allocations_handler),
+        )
+        .route(
+            "/bird_count_history/{id}",
+            get(get_bird_count_history_handler),
         )
         .route("/growing_charges", post(generate_pdf_handler))
 }

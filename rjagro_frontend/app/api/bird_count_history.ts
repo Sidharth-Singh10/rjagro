@@ -7,6 +7,11 @@ export const fetchBirdCountHistory = async (): Promise<BirdCountHistory[]> => {
     return response.data;
 };
 
+export const fetchBirdCountHistoryById = async (batchId: number): Promise<BirdCountHistory[]> => {
+    const response = await api.get(`getbyid/bird_count_history/${batchId}`);
+    return response.data;
+};
+
 export const handleAddBirdCountHistory = async (
     payload: BirdCountHistoryPayload,
     queryClient: any,

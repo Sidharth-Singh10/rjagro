@@ -5,8 +5,8 @@ use axum::{
 };
 use entity::{
     batch_allocation_lines, batch_allocations, batch_requirements, batch_sales, batches,
-    farmer_commission_history, farmers, sea_orm_active_enums::RequirementStatus, stock_receipts,
-    stock_returns, users,
+    bird_count_history, farmer_commission_history, farmers,
+    sea_orm_active_enums::RequirementStatus, stock_receipts, stock_returns, users,
 };
 use reqwest::StatusCode;
 use sea_orm::EntityTrait;
@@ -196,6 +196,22 @@ pub async fn get_accepted_allocations_handler(
                 format!("Database error: {}", e),
             )
                 .into_response()
+        }
+    }
+}
+
+pub async fn get_bird_count_history_handler(
+    State(db): State<DatabaseConnection>,
+    Path(batch_id): Path<i32>,
+) -> impl IntoResponse {
+    let query =
+        bird_count_history::Entity::find().filter(bird_count_history::Column::BatchId.eq(batch_id));
+
+    match query.all(&db).await {
+        Ok(data) => Json(data).into_response(),
+        Err(e) => {
+            eprintln!("Failed to fetch bird count history: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
 }
