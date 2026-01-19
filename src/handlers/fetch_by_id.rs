@@ -149,6 +149,7 @@ pub async fn get_sales_by_batch_id_handler(
 ) -> impl IntoResponse {
     let sales_result = batch_sales::Entity::find()
         .filter(batch_sales::Column::BatchId.eq(batch_id))
+        .order_by_desc(batch_sales::Column::Id)
         .all(&db)
         .await;
 
