@@ -5,9 +5,9 @@ import { fetchBatchById } from "@/app/api/batches";
 import { BatchHeader } from "@/app/components/batch_details/header";
 import { KPICard } from "@/app/components/batch_details/kpi_grid";
 import AllocatedRequirementTable from "@/app/components/batch_details/tabs/allocated_view";
-import BatchSalesTable from "@/app/components/batch_details/tabs/sales_view";
-import { useAllBatches, useTraders } from "@/app/hooks/use_common_data";
-import { useQuery } from "@tanstack/react-query";
+import BatchSalesTable from "@/app/components/batch_details/tabs/sales_view/sales_view";
+import { useTraders } from "@/app/hooks/use_common_data";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, AlertTriangle, Package, TrendingUp } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -17,6 +17,7 @@ export default function BatchDetailsPage() {
     const router = useRouter();
     const batchId = Number(params.id);
     const [activeTab, setActiveTab] = useState('overview');
+    const queryClient = useQueryClient();
 
 
     const { data: batch, isLoading } = useQuery({
@@ -117,6 +118,8 @@ export default function BatchDetailsPage() {
                                 batchSales={batchSales}
                                 loading={isSalesLoading}
                                 traders={traders}
+                                batchId={batchId}
+                                queryClient={queryClient}
                             />
                         </div>
                     )}
