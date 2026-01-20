@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AllocationsModule from '@/app/components/v2/allocations_module';
 import BatchesModule from '@/app/components/v2/batches_module';
 import EntitiesModule from '@/app/components/v2/entities_module';
@@ -7,10 +7,19 @@ import InventoryModule from '@/app/components/v2/inventory_module';
 import { LedgerModule } from '@/app/components/v2/ledger_module';
 import PurchasesModule from '@/app/components/v2/purchases_module';
 import Sidebar from '@/app/components/v2/side_bar';
+import { useSearchParams } from 'next/navigation';
 
 
 const NewDashboard: React.FC = () => {
     const [activeSection, setActiveSection] = useState<string>('Ledger');
+    const searchParams = useSearchParams();
+    const tabFromUrl = searchParams.get("tab");
+
+    useEffect(() => {
+        if (tabFromUrl) {
+            setActiveSection(tabFromUrl);
+        }
+    }, [tabFromUrl]);
 
     const getTitle = (id: string): string => {
         switch (id) {

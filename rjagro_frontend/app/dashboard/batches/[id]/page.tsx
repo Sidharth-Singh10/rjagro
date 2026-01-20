@@ -24,6 +24,10 @@ export default function BatchDetailsPage() {
     const [activeTab, setActiveTab] = useState('allocations');
     const queryClient = useQueryClient();
 
+    const goToDashboardBatches = () => {
+        router.push("/dashboard/v2?tab=Batches");
+    };
+
 
     const { data: batch, isLoading } = useQuery({
         queryKey: ["batch_new"],
@@ -66,7 +70,7 @@ export default function BatchDetailsPage() {
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
             <div className="text-center">
                 <h2 className="text-2xl font-semibold text-gray-800">Batch Not Found</h2>
-                <button onClick={() => router.back()} className="mt-4 text-blue-600 hover:underline">
+                <button onClick={goToDashboardBatches} className="mt-4 text-blue-600 hover:underline">
                     Go Back
                 </button>
             </div>
@@ -77,7 +81,7 @@ export default function BatchDetailsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
-            <BatchHeader batch={batch} onBack={() => router.back()} />
+            <BatchHeader batch={batch} onBack={goToDashboardBatches} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <KPICard

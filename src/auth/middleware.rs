@@ -7,7 +7,7 @@ use axum::{
 };
 use std::collections::HashSet;
 
-use crate::auth::jwt::verify_jwt; // now using your verify_jwt function
+use crate::auth::jwt::verify_jwt;
 use entity::sea_orm_active_enums::UserRole;
 
 pub async fn auth_middleware(
@@ -35,7 +35,6 @@ pub async fn auth_middleware(
 
     let claims = match token {
         Some(token) => {
-            println!("Token: {}", token);
             let jwt_secret = std::env::var("JWT_SECRET")
                 .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "JWT_SECRET missing"))?;
 

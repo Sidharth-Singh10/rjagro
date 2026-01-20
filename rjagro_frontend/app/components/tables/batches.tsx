@@ -11,7 +11,7 @@ import {
 import { useAuth } from '@/app/hooks/useAuth';
 import { useBatchesSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from './sortable_headers/header';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface BatchesTableProps {
     batches: Batch[];
@@ -33,7 +33,6 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
     handleAddBatch,
 }) => {
     const user = useAuth().user;
-    const router = useRouter();
 
     newBatch.created_by = user?.user_id ?? "";
 
@@ -277,20 +276,25 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                             </tr>
                         ) : (
                             sortedData.map((batch) => (
-                                <tr key={batch.batch_id} className="group relative border-b border-gray-100 hover:bg-green-50/40 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out cursor-pointer" onDoubleClick={() => router.push(`/dashboard/batches/${batch.batch_id}`)}>
+                                <tr key={batch.batch_id} className="group relative border-b border-gray-100 hover:bg-green-50/40 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out cursor-pointer" >
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 relative overflow-hidden">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 group">
                                             <span>#{batch.batch_id}</span>
 
-                                            {/* The sliding CTA Badge */}
-                                            <span className="
-                opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0
-                transition-all duration-300 delay-75 ease-out
-                flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100/80 px-2 py-0.5 rounded-full
-            ">
+                                            {/* Sliding CTA Badge */}
+                                            <Link
+                                                href={`/dashboard/batches/${batch.batch_id}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="
+      opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0
+      transition-all duration-300 delay-75 ease-out
+      flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100/80 px-2 py-0.5 rounded-full
+                                "
+                                            >
                                                 View
                                                 <ChevronRight size={12} className="text-green-600" />
-                                            </span>
+                                            </Link>
                                         </div>
                                         {/* Subtle green accent bar on the left edge */}
                                         <div className="absolute left-0 top-0 h-full w-1 bg-green-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
