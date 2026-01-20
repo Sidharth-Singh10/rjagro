@@ -103,7 +103,7 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm transition-opacity duration-300">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-100 transition-transform duration-300 transform scale-100">
                 {/* Modal Header */}
-                <div className=" bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100 p-6 flex items-center justify-between p-5 sticky top-0 z-10 backdrop-blur-md">
+                <div className=" bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100  flex items-center justify-between p-5 sticky top-0 z-10 backdrop-blur-md">
                     <div>
                         <h3 className="text-xl font-bold text-gray-900">Add New Batch Sale</h3>
                         <p className="text-sm text-gray-500 mt-0.5">Enter sales details for batch #{batchId}</p>
