@@ -54,7 +54,7 @@ const PurchasesModule = () => {
     });
 
     // --- State: New Supplier ---
-    const [newSupplier, setNewSupplier] = useState<SupplierPayload>({
+    const [newSupplier, _] = useState<SupplierPayload>({
         supplier_type: SupplierType.Chick,
         name: '',
         phone_number: '',
@@ -95,10 +95,7 @@ const PurchasesModule = () => {
         handleAddPurchase(final, queryClient, setLoading);
     };
 
-    // --- Handlers: Supplier Logic ---
-    const onAddSupplier = () => {
-        handleAddSupplier(newSupplier, queryClient, setLoading);
-    };
+
 
     return (
         <div className="space-y-6">
