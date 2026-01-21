@@ -36,7 +36,7 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
         );
     };
 
-    if (batchStatus !== "closed") {
+    if (batchStatus !== "Closed") {
         return (
             <div className="bg-white rounded-lg shadow p-8 flex flex-col items-center justify-center">
                 <h3 className="text-lg font-semibold text-gray-800">
@@ -49,7 +49,6 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
             </div>
         );
     }
-
 
     return (
         <div className="bg-white rounded-lg shadow relative">
