@@ -1,44 +1,44 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
-interface SortableHeaderProps {
-  columnKey: string;
+const iconMap = {
+  ArrowUp: ArrowUp,
+  ArrowDown: ArrowDown,
+  ArrowUpDown: ArrowUpDown,
+};
+
+interface SortableHeaderProps<T> {
+  columnKey: keyof T;
   children: React.ReactNode;
   className?: string;
-  requestSort: (key: string) => void;
-  getSortIcon: (columnKey: string) => string | null;
+  requestSort: (key: keyof T) => void;
+  getSortIcon: (key: keyof T) => React.ReactNode;
   isSortable?: boolean;
 }
 
-const SortableHeader: React.FC<SortableHeaderProps> = ({
+const SortableHeader = <T,>({
   columnKey,
   children,
   className = "",
   requestSort,
   getSortIcon,
-  isSortable = false
-}) => {
-  const IconComponent = getSortIcon(columnKey) === 'ArrowUp' ? ArrowUp :
-    getSortIcon(columnKey) === 'ArrowDown' ? ArrowDown : ArrowUpDown;
+  isSortable = false,
+}: SortableHeaderProps<T>) => {
 
-  if (!isSortable) {
-    return (
-      <th className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${className}`}>
-        {children}
-      </th>
-    );
-  }
+  const iconKey = getSortIcon(columnKey);
+  const Icon = iconMap[iconKey as keyof typeof iconMap];
+
 
   return (
     <th
-      className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors ${className}`}
-      onClick={() => requestSort(columnKey)}
+      onClick={() => isSortable && requestSort(columnKey)}
+      className={`px-4 py-3 text-left text-xs font-medium uppercase ${isSortable ? 'cursor-pointer select-none' : ''
+        }`}
     >
-      <div className="flex items-center justify-between group">
-        <span>{children}</span>
-        <IconComponent
-          size={14}
-          className="ml-1 text-gray-400 group-hover:text-gray-600 transition-colors"
-        />
+      <div className="flex items-center gap-1 text-gray-500">
+        {children}
+        {isSortable && Icon && (
+          <Icon className="w-4 h-4 text-gray-400" />
+        )}
       </div>
     </th>
   );

@@ -23,7 +23,6 @@ const LedgerAccountsTable: React.FC<LedgerAccountsTableProps> = ({
   setNewLedgerAccount,
   handleAddLedgerAccount,
 }) => {
-  // Use the custom sorting hook
   const { sortedData, requestSort, getSortIcon } = useLedgerAccountsSorting(ledgerAccounts);
 
   const accountTypes = [
@@ -72,7 +71,6 @@ const LedgerAccountsTable: React.FC<LedgerAccountsTableProps> = ({
         </div>
       </div>
 
-      {/* Add Account Form */}
       {showAddForm && (
         <div className="p-4 border-b bg-gray-50">
           <div className="flex items-center justify-between mb-4">
@@ -196,14 +194,6 @@ const LedgerAccountsTable: React.FC<LedgerAccountsTableProps> = ({
                 Created At
               </SortableHeader>
 
-              <SortableHeader
-                columnKey="actions"
-                requestSort={requestSort}
-                getSortIcon={getSortIcon}
-                isSortable={false}
-              >
-                Actions
-              </SortableHeader>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -247,16 +237,6 @@ const LedgerAccountsTable: React.FC<LedgerAccountsTableProps> = ({
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                     {new Date(account.created_at).toLocaleDateString('en-IN')}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex items-center gap-2">
-                      <button className="text-blue-600 hover:text-blue-800">
-                        <Edit size={16} />
-                      </button>
-                      <button className="text-red-600 hover:text-red-800">
-                        <Delete size={16} />
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))

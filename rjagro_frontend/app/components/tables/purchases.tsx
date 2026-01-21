@@ -77,10 +77,6 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
         const paymentAccount = paymentMethod === 'CASH' ? LedgerAccountType.Asset : LedgerAccountType.Liability;
         const paymentAccountId = PAYMENT_ACCOUNT_MAP[paymentMethod as keyof typeof PAYMENT_ACCOUNT_MAP];
 
-        console.log('Payment Method:', paymentMethod);
-        console.log('Payment Account:', paymentAccount);
-        console.log('Payment Account ID:', paymentAccountId);
-
         setNewPurchase(prev => ({
             ...prev,
             payment_type: paymentMethod,

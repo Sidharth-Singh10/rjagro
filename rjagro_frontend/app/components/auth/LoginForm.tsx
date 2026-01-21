@@ -52,7 +52,6 @@ export const LoginForm = () => {
         setIsLoading(true);
 
         try {
-            console.log('Submitting login form with data:', formData);
 
             const response = await api.post("/login", formData, {
                 headers: { "Content-Type": "application/json" }
@@ -60,7 +59,6 @@ export const LoginForm = () => {
             toast.success('Login successful!');
 
             login(response.data.user, response.data.token);
-            console.log('Login successful:', response.data);
             router.push('/dashboard/v2');
 
 

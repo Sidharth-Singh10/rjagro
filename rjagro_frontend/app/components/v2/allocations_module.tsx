@@ -12,9 +12,9 @@ import { fetchSupervisors } from '@/app/api/supervisors';
 import { fetchItems } from '@/app/api/items';
 import { fetchStockReceipts } from '@/app/api/stock_receipts';
 import { BatchAllocationLinePayload, NewBatchAllocationLine, NewBatchRequirement } from '@/app/types/interfaces';
-import BatchRequirementsTable from '../tables/batch_requirements';
 import BatchAllocationsTable from '../tables/batch_allocations';
 import BatchAllocationLinesTable from '../tables/batch_allocation_line';
+import BatchRequirementsTable from '../tables/batch_requirements/requirements';
 
 
 
@@ -22,11 +22,9 @@ const AllocationsModule = () => {
     const queryClient = useQueryClient();
     const [subTab, setSubTab] = useState<'Requirements' | 'Allocations' | 'Lines'>('Requirements');
 
-    // Shared Loading/Form State
     const [loading, setLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
 
-    // --- Data Fetching (Main Entities) ---
     const { data: requirements = [] } = useQuery({
         queryKey: ["batch_requirements"],
         queryFn: fetchBatchRequirements,
@@ -81,7 +79,6 @@ const AllocationsModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    // --- STATE & HANDLERS: REQUIREMENTS ---
     const [newRequirement, setNewRequirement] = useState<NewBatchRequirement>({
         batch_id: '',
         line_id: '',
@@ -95,7 +92,6 @@ const AllocationsModule = () => {
         handleAddBatchRequirement(newRequirement, queryClient, setLoading);
     };
 
-    // --- STATE & HANDLERS: ALLOCATION LINES ---
     const [newAllocationLine, setNewAllocationLine] = useState<NewBatchAllocationLine>({
         allocation_id: '',
         lot_id: '',
@@ -120,7 +116,6 @@ const AllocationsModule = () => {
 
     return (
         <div className="space-y-6">
-            {/* Inner Module Navigation */}
             <div className="flex flex-wrap items-center gap-4 border-b border-gray-200 pb-2">
                 <button
                     onClick={() => { setSubTab('Requirements'); setShowAddForm(false); }}
@@ -148,7 +143,6 @@ const AllocationsModule = () => {
                 </button>
             </div>
 
-            {/* Content Area */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 min-h-[500px]">
                 {subTab === 'Requirements' && (
                     <BatchRequirementsTable

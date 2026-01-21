@@ -26,7 +26,6 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
     const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [commissionHistory, setCommissionHistory] = useState<FarmerCommissionHistory[]>([]);
-    console.log("Commission History:", commissionHistory);
     const [modalLoading, setModalLoading] = useState(false);
 
 

@@ -3,7 +3,6 @@ import api from '../utils/api';
 import { toast } from 'react-toastify';
 
 export const fetchProductionLines = async (): Promise<ProductionLine[]> => {
-    console.log('Fetching production lines...');
     const response = await api.get('/getall/production_lines');
     return response.data;
 };

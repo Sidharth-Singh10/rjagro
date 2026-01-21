@@ -21,7 +21,6 @@ export const handleAddLedgerEntry = async (
         return;
     }
 
-    console.log("Adding ledger entry with payload:", payload);
 
     setLoading(true);
     toast.info("Adding ledger entry...");

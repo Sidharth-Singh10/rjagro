@@ -33,7 +33,6 @@ const TradersTable: React.FC<TradersTableProps> = ({
 
         setSelectedTraderId(Number(trader.trader_id));
         setIsModalOpen(true);
-        console.log('Clicked trader:', trader);
     };
 
     return (

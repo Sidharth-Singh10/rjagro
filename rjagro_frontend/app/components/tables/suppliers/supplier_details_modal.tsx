@@ -352,11 +352,6 @@ const LedgerTable = ({ data }: { data: SupplierLedgerEntry[] }) => (
                         // Determine where the amount goes based on EntryType
                         const isLiability = row.entry_type === EntryType.Payable;
                         const isCash = row.entry_type === EntryType.Cash || row.entry_type === EntryType.Settlement;
-                        if (index == 3)
-                        {
-                            console.log(row);
-                            console.log(isLiability, isCash);
-                        }
                         return (
                             <tr key={index} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">

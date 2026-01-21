@@ -27,7 +27,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         const tokenCookie = getCookie('token');
         if (!tokenCookie) {
-          console.log('No token found, redirecting to login');
           router.push('/');
           return;
         }

@@ -29,8 +29,6 @@ export const handleAddBatch = async (
         return;
     }
 
-    console.log("Payload in handleAddBatch:", payload);
-
     setLoading(true);
     toast.info("Adding batch...");
 
@@ -70,7 +68,6 @@ export const handleAddFarmerCommission = async (
     onSuccess?: () => void,
     onError?: (error: any) => void
 ) => {
-    console.log("Payload in handleAddFarmerCommission:", payload);
     if (!payload.farmer_id || !payload.commission_amount || !payload.created_by || Number(payload.commission_amount) <= 0) {
         toast.error("Please fill in all required fields with valid values");
         return;
