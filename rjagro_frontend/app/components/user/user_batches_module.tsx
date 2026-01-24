@@ -1,0 +1,312 @@
+'use client'
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Bird, Archive, ChevronRight } from 'lucide-react';
+import { fetchBatchClosures, fetchBatches } from '@/app/api/batches';
+import { useBatchesSorting } from '@/app/hooks/custom_sorting';
+import SortableHeader from '../tables/sortable_headers/header';
+import Link from 'next/link';
+
+const UserBatchesModule = () => {
+    const [subTab, setSubTab] = useState<'Active' | 'Closures'>('Active');
+
+    // --- Data Fetching ---
+    const { data: batches = [], isLoading: batchesLoading } = useQuery({
+        queryKey: ["batches"],
+        queryFn: fetchBatches,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: batchClosures = [], isLoading: closuresLoading } = useQuery({
+        queryKey: ["batch_closures"],
+        queryFn: fetchBatchClosures,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { sortedData, requestSort, getSortIcon } = useBatchesSorting(batches);
+
+    const calculateMortality = (initial: number, current: number): number => {
+        if (initial === 0) return 0;
+        return ((initial - current) / initial) * 100;
+    };
+
+    const loading = batchesLoading || closuresLoading;
+
+    return (
+        <div className="space-y-6">
+            {/* Inner Module Navigation */}
+            <div className="flex flex-wrap items-center gap-4 border-b border-gray-200 pb-2">
+                <button
+                    onClick={() => setSubTab('Active')}
+                    className={`flex items-center space-x-2 pb-2 px-1 text-sm font-medium transition-colors ${subTab === 'Active' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <Bird className="w-4 h-4" />
+                    <span>Active Batches</span>
+                </button>
+                <button
+                    onClick={() => setSubTab('Closures')}
+                    className={`flex items-center space-x-2 pb-2 px-1 text-sm font-medium transition-colors ${subTab === 'Closures' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <Archive className="w-4 h-4" />
+                    <span>Batch Closures</span>
+                </button>
+            </div>
+
+            {/* Content Area */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 min-h-[500px]">
+                {subTab === 'Active' && (
+                    <div className="bg-white rounded-lg shadow">
+                        <div className="flex items-center justify-between p-4 border-b">
+                            <h2 className="text-xl font-semibold text-gray-800">Batches</h2>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b">
+                                    <tr>
+                                        <SortableHeader
+                                            columnKey="batch_id"
+                                            requestSort={requestSort}
+                                            getSortIcon={getSortIcon}
+                                            isSortable={true}
+                                        >
+                                            Batch ID
+                                        </SortableHeader>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Line ID
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Supervisor
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Farmer
+                                        </th>
+                                        <SortableHeader
+                                            columnKey="start_date"
+                                            requestSort={requestSort}
+                                            getSortIcon={getSortIcon}
+                                            isSortable={true}
+                                        >
+                                            Start Date
+                                        </SortableHeader>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Initial Chick Count
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Current Chick Count
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Mortality %
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Status
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Created At
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {loading ? (
+                                        <tr>
+                                            <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
+                                                Loading...
+                                            </td>
+                                        </tr>
+                                    ) : batches.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
+                                                No batches found
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        sortedData.map((batch) => (
+                                            <tr key={batch.batch_id} className="group relative border-b border-gray-100 hover:bg-green-50/40 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out cursor-pointer" >
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 relative overflow-hidden">
+                                                    <div className="flex items-center gap-2 group">
+                                                        <span>#{batch.batch_id}</span>
+
+                                                        {/* Sliding CTA Badge */}
+                                                        <Link
+                                                            href={`/dashboard/batches/${batch.batch_id}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="
+                                                                opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0
+                                                                transition-all duration-300 delay-75 ease-out
+                                                                flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100/80 px-2 py-0.5 rounded-full
+                                                            "
+                                                        >
+                                                            View
+                                                            <ChevronRight size={12} className="text-green-600" />
+                                                        </Link>
+                                                    </div>
+                                                    {/* Subtle green accent bar on the left edge */}
+                                                    <div className="absolute left-0 top-0 h-full w-1 bg-green-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
+                                                </td>
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {batch.line_id}
+                                                </td>
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {batch.supervisor_name}
+                                                </td>
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {batch.farmer_name}
+                                                </td>
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {batch.start_date}
+                                                </td>
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {batch.initial_bird_count}
+                                                </td>
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {batch.current_bird_count}
+                                                </td>
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${calculateMortality(batch.initial_bird_count, batch.current_bird_count) > 10
+                                                        ? 'bg-red-100 text-red-800'
+                                                        : calculateMortality(batch.initial_bird_count, batch.current_bird_count) > 5
+                                                            ? 'bg-yellow-100 text-yellow-800'
+                                                            : 'bg-green-100 text-green-800'
+                                                        }`}>
+                                                        {calculateMortality(batch.initial_bird_count, batch.current_bird_count).toFixed(1)}%
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${batch.status === 'Closed'
+                                                        ? 'bg-red-100 text-red-800'
+                                                        : 'bg-green-100 text-green-800'
+                                                        }`}>
+                                                        {batch.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {new Date(batch.created_at).toLocaleString()}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {subTab === 'Closures' && (
+                    <UserBatchClosuresTable
+                        batchClosures={batchClosures}
+                        batches={batches}
+                        loading={loading}
+                    />
+                )}
+            </div>
+        </div>
+    );
+};
+
+// User-facing batch closures table without financial data
+interface UserBatchClosuresTableProps {
+    batchClosures: Array<{
+        id: number;
+        batch_id: number;
+        start_date: string;
+        end_date: string;
+        initial_chicken_count: number;
+        available_chicken_count: number;
+    }>;
+    batches: Array<{
+        batch_id: number;
+        farmer_name: string;
+    }>;
+    loading: boolean;
+}
+
+const UserBatchClosuresTable: React.FC<UserBatchClosuresTableProps> = ({
+    batchClosures,
+    batches,
+    loading,
+}) => {
+    const calculateMortality = (initial: number, available: number): number => {
+        if (initial === 0) return 0;
+        return ((initial - available) / initial) * 100;
+    };
+
+    return (
+        <div className="bg-white rounded-lg shadow">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-xl font-semibold text-gray-800">Batch Closure Summary</h2>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto min-h-[400px]">
+                <table className="w-full">
+                    <thead className="bg-gray-50 border-b">
+                        <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch ID</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Farmer</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Initial Count</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available Count</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mortality %</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {loading ? (
+                            <tr>
+                                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">Loading...</td>
+                            </tr>
+                        ) : batchClosures.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No batch closure summaries found</td>
+                            </tr>
+                        ) : (
+                            batchClosures.map((closure) => (
+                                <tr key={closure.id} className="hover:bg-gray-50">
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.id}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">#{closure.batch_id}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {(() => {
+                                            const batch = batches.find(b => b.batch_id === closure.batch_id);
+                                            return batch?.farmer_name || 'N/A';
+                                        })()}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <div className="text-xs">
+                                            <div>{closure.start_date}</div>
+                                            <div className="text-gray-500">to {closure.end_date}</div>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.initial_chicken_count.toLocaleString()}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.available_chicken_count.toLocaleString()}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${calculateMortality(closure.initial_chicken_count, closure.available_chicken_count) > 10
+                                            ? 'bg-red-100 text-red-800'
+                                            : calculateMortality(closure.initial_chicken_count, closure.available_chicken_count) > 5
+                                                ? 'bg-yellow-100 text-yellow-800'
+                                                : 'bg-green-100 text-green-800'
+                                            }`}>
+                                            {calculateMortality(closure.initial_chicken_count, closure.available_chicken_count).toFixed(1)}%
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+                <div className="text-sm text-gray-500">
+                    Showing {batchClosures.length} results
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default UserBatchesModule;

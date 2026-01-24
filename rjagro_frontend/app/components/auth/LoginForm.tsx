@@ -36,7 +36,7 @@ export const LoginForm = () => {
 
         if (!formData.password) {
             newErrors.password = 'Password is required';
-        } 
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -59,7 +59,13 @@ export const LoginForm = () => {
             toast.success('Login successful!');
 
             login(response.data.user, response.data.token);
-            router.push('/dashboard/v2');
+
+            // Redirect based on user role
+            if (response.data.user.role === 'Admin') {
+                router.push('/dashboard/v2');
+            } else {
+                router.push('/dashboard/user');
+            }
 
 
         } catch (error) {
