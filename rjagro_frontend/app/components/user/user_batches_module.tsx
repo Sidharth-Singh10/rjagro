@@ -193,14 +193,6 @@ const UserBatchesModule = () => {
                         </div>
                     </div>
                 )}
-
-                {subTab === 'Closures' && (
-                    <UserBatchClosuresTable
-                        batchClosures={batchClosures}
-                        batches={batches}
-                        loading={loading}
-                    />
-                )}
             </div>
         </div>
     );

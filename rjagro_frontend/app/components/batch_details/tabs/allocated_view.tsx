@@ -6,11 +6,13 @@ import { formatINR } from '@/app/utils/helper';
 interface AllocatedRequirementTableProps {
     allocations: AllocatedRequirement[];
     loading: boolean;
+    isAdmin?: boolean;
 }
 
 const AllocatedRequirementTable: React.FC<AllocatedRequirementTableProps> = ({
     allocations,
     loading,
+    isAdmin = false,
 }) => {
 
     return (
@@ -41,9 +43,11 @@ const AllocatedRequirementTable: React.FC<AllocatedRequirementTableProps> = ({
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Allocated Qty
                             </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Alloc Value
-                            </th>
+                            {isAdmin && (
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Alloc Value
+                                </th>
+                            )}
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Alloc Date
                             </th>
@@ -52,7 +56,7 @@ const AllocatedRequirementTable: React.FC<AllocatedRequirementTableProps> = ({
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={isAdmin ? 8 : 7} className="px-4 py-8 text-center text-gray-500">
                                     <div className="flex justify-center items-center gap-2">
                                         <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
                                         Loading allocations...
@@ -61,7 +65,7 @@ const AllocatedRequirementTable: React.FC<AllocatedRequirementTableProps> = ({
                             </tr>
                         ) : allocations.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={isAdmin ? 8 : 7} className="px-4 py-8 text-center text-gray-500">
                                     No allocated requirements found for this batch.
                                 </td>
                             </tr>
@@ -94,9 +98,11 @@ const AllocatedRequirementTable: React.FC<AllocatedRequirementTableProps> = ({
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
                                         {formatINR(row.allocated_qty)}
                                     </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
-                                        {formatINR(row.allocated_value)}
-                                    </td>
+                                    {isAdmin && (
+                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                                            {formatINR(row.allocated_value)}
+                                        </td>
+                                    )}
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <div className="flex items-center gap-2">
                                             <Calendar size={14} />

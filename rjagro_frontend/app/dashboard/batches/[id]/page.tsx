@@ -12,10 +12,11 @@ import BirdCountHistoryTable from "@/app/components/batch_details/tabs/bird_coun
 import StockReturnsTable from "@/app/components/batch_details/tabs/returns/returns";
 import BatchSalesTable from "@/app/components/batch_details/tabs/sales_view/sales_view";
 import { useItems, useTraders } from "@/app/hooks/use_common_data";
+import { useAuth } from "@/app/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, AlertTriangle, Package, TrendingUp } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function BatchDetailsPage() {
     const params = useParams();
@@ -23,6 +24,8 @@ export default function BatchDetailsPage() {
     const batchId = Number(params.id);
     const [activeTab, setActiveTab] = useState('allocations');
     const queryClient = useQueryClient();
+    const { user } = useAuth();
+    const isAdmin = user?.role === 'Admin';
 
     const goToDashboardBatches = () => {
         router.push("/dashboard/v2?tab=Batches");
@@ -83,7 +86,7 @@ export default function BatchDetailsPage() {
         <div className="min-h-screen bg-gray-50 p-6">
             <BatchHeader batch={batch} onBack={goToDashboardBatches} />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-4 mb-8`}>
                 <KPICard
                     title="Current Stock"
                     value={batch.current_bird_count}
@@ -98,20 +101,24 @@ export default function BatchDetailsPage() {
                     icon={AlertTriangle}
                     colorClass={Number(mortalityRate) > 5 ? "bg-red-500" : "bg-green-500"}
                 />
-                <KPICard
-                    title="Total Expenses"
-                    value="₹ 0.00"
-                    subtext="Feed + Medicine + Chicks"
-                    icon={TrendingUp}
-                    colorClass="bg-orange-500"
-                />
-                <KPICard
-                    title="Est. Revenue"
-                    value="₹ 0.00"
-                    subtext="Based on current weight"
-                    icon={Activity}
-                    colorClass="bg-purple-500"
-                />
+                {isAdmin && (
+                    <KPICard
+                        title="Total Expenses"
+                        value="₹ 0.00"
+                        subtext="Feed + Medicine + Chicks"
+                        icon={TrendingUp}
+                        colorClass="bg-orange-500"
+                    />
+                )}
+                {isAdmin && (
+                    <KPICard
+                        title="Est. Revenue"
+                        value="₹ 0.00"
+                        subtext="Based on current weight"
+                        icon={Activity}
+                        colorClass="bg-purple-500"
+                    />
+                )}
             </div>
 
             {/* 3. Tab Navigation */}
@@ -141,6 +148,7 @@ export default function BatchDetailsPage() {
                             <AllocatedRequirementTable
                                 allocations={allocations}
                                 loading={isAllocationsLoading}
+                                isAdmin={isAdmin}
                             />
                         </div>
                     )}
@@ -175,6 +183,7 @@ export default function BatchDetailsPage() {
                                 items={items}
                                 loading={isStockReturnsLoading}
                                 batchId={batchId}
+                                isAdmin={isAdmin}
                             />
                         </div>
                     )}

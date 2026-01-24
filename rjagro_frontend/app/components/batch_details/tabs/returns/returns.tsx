@@ -12,6 +12,7 @@ interface StockReturnsTableProps {
     items: Item[];
     loading: boolean;
     batchId: number;
+    isAdmin?: boolean;
 }
 
 const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
@@ -19,13 +20,11 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
     items,
     loading,
     batchId,
+    isAdmin = false,
 }) => {
-    // Assuming 'return_date' is the default sort key
     const { sortedData, requestSort, getSortIcon } = useTableSorting(
         stockReturns,
         { key: 'return_date', direction: 'desc' },
-        // You might need to add a config for stockReturns in your TableConfigs, 
-        // or just pass a simple accessor function here
         (item: any, key: string) => item[key]
     );
 
@@ -42,7 +41,6 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
         );
     };
 
-    // Helper for currency formatting
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
 
@@ -60,7 +58,6 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                 </button>
             </div>
 
-            {/* Table Section */}
             <div className="overflow-x-auto">
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b">
@@ -81,19 +78,23 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                                 Qty
                             </SortableHeader>
 
-                            <SortableHeader columnKey="unit_cost" requestSort={requestSort} getSortIcon={getSortIcon} isSortable={true}>
-                                Unit Cost
-                            </SortableHeader>
+                            {isAdmin && (
+                                <SortableHeader columnKey="unit_cost" requestSort={requestSort} getSortIcon={getSortIcon} isSortable={true}>
+                                    Unit Cost
+                                </SortableHeader>
+                            )}
 
-                            <SortableHeader columnKey="return_value" requestSort={requestSort} getSortIcon={getSortIcon} isSortable={true}>
-                                Total Value
-                            </SortableHeader>
+                            {isAdmin && (
+                                <SortableHeader columnKey="return_value" requestSort={requestSort} getSortIcon={getSortIcon} isSortable={true}>
+                                    Total Value
+                                </SortableHeader>
+                            )}
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={isAdmin ? 6 : 4} className="px-4 py-8 text-center text-gray-500">
                                     <div className="flex justify-center items-center gap-2">
                                         <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
                                         Loading stock returns...
@@ -102,7 +103,7 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                             </tr>
                         ) : sortedData.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={isAdmin ? 6 : 4} className="px-4 py-8 text-center text-gray-500">
                                     No stock returns found for this batch.
                                 </td>
                             </tr>
@@ -134,13 +135,17 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                                         </div>
                                     </td>
 
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {formatCurrency(row.unit_cost)}
-                                    </td>
+                                    {isAdmin && (
+                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {formatCurrency(row.unit_cost)}
+                                        </td>
+                                    )}
 
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                                        {formatCurrency(row.return_value)}
-                                    </td>
+                                    {isAdmin && (
+                                        <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                                            {formatCurrency(row.return_value)}
+                                        </td>
+                                    )}
                                 </tr>
                             ))
                         )}
@@ -178,7 +183,7 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                 onSubmit={handleSaveRecord}
                 isSubmitting={isSubmitting}
                 batchId={batchId}
-                items={items} 
+                items={items}
             />
         </div>
     );
