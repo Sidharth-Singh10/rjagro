@@ -16,7 +16,7 @@ export interface Purchase {
   total_cost: number;
   quantity: number;
   purchase_date: string;
-  supplier: string;
+  supplier_id: number;
   created_by: number;
   payment_account?: LedgerAccountType;
 }

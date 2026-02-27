@@ -7,6 +7,7 @@ import { fetchInventory, handleAddInventory, handleUpdateInventory } from '@/app
 import { fetchInventoryMovements, handleAddInventoryMovement } from '@/app/api/inventory_movement';
 import { fetchStockReceipts, handleAddStockReceipt } from '@/app/api/stock_receipts';
 import { fetchPurchases } from '@/app/api/purchases';
+import { fetchSuppliers } from '@/app/api/supplier';
 import { ItemCategory } from '@/app/types/enums';
 import { InventoryMovementPayload, InventoryPayload, Item, MovementType, NewInventory, NewInventoryMovement, NewStockReceipt, StockReceiptPayload } from '@/app/types/interfaces';
 import InventoryTable from '../tables/inventory';
@@ -51,6 +52,12 @@ const InventoryModule = () => {
     const { data: purchases = [] } = useQuery({
         queryKey: ['purchases'],
         queryFn: fetchPurchases,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: suppliers = [] } = useQuery({
+        queryKey: ['suppliers'],
+        queryFn: fetchSuppliers,
         staleTime: 5 * 60 * 1000,
     });
 
@@ -175,7 +182,7 @@ const InventoryModule = () => {
                 item_code: selectedPurchase.item_code,
                 item_name: selectedPurchase.item_name,
                 unit_cost: selectedPurchase.cost_per_unit,
-                supplier: selectedPurchase.supplier
+                supplier: suppliers.find(s => s.supplier_id === selectedPurchase.supplier_id)?.name || ''
             }));
         } else {
             setNewStockReceipt(prev => ({

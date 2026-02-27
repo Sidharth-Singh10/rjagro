@@ -107,6 +107,11 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
         TableConfigs.purchases.getValueFn
     );
 
+    const getSupplierName = (supplierId: number) => {
+        const supplier = suppliers.find(s => s.supplier_id === supplierId);
+        return supplier?.name || 'Unknown';
+    };
+
     const queryClient = useQueryClient();
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
@@ -360,7 +365,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                         {purchase.purchase_date}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {purchase.supplier}
+                                        {getSupplierName(purchase.supplier_id)}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {purchase.payment_type || 'N/A'}
