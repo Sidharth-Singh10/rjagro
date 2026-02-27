@@ -45,9 +45,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    let allowed_origins = [
+        "http://tauri.localhost",
+        "https://tauri.localhost",
+        "https://rjagro.vercel.app",
+    ];
     let cors = CorsLayer::new()
-        .allow_origin("https://rjagro.vercel.app".parse::<HeaderValue>().unwrap())
-        // .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
+        .allow_origin(
+            allowed_origins
+                .iter()
+                .map(|o| o.parse::<HeaderValue>().unwrap())
+                .collect::<Vec<_>>(),
+        )
         .allow_methods([
             Method::GET,
             Method::POST,
