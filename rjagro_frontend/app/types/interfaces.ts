@@ -27,6 +27,7 @@ export interface NewPurchase {
   cost_per_unit: number | '';
   quantity: number | '';
   supplier: string;
+  purchase_date: string;
   payment_type: string;
   supplier_id?: number;
   payment_account?: LedgerAccountType;
