@@ -3,7 +3,8 @@ import { fetchFarmerCommissionHistoryById } from '@/app/api/batches';
 import { Farmer, FarmerCommissionHistory, NewFarmer } from '@/app/types/interfaces';
 import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, IndianRupee, Calendar } from 'lucide-react';
 import { useState } from 'react';
-
+import { toast } from 'react-toastify';
+import { handleAddFarmerCommission } from '@/app/api/batches';
 interface FarmersTableProps {
     farmers: Farmer[];
     loading: boolean;
@@ -27,7 +28,12 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
     const [showModal, setShowModal] = useState(false);
     const [commissionHistory, setCommissionHistory] = useState<FarmerCommissionHistory[]>([]);
     const [modalLoading, setModalLoading] = useState(false);
-
+    
+    // Add Commission Form State
+    const [showAddCommissionForm, setShowAddCommissionForm] = useState(false);
+    const [newCommissionAmount, setNewCommissionAmount] = useState<string>('');
+    const [newCommissionDescription, setNewCommissionDescription] = useState<string>('');
+    const [isAddingCommission, setIsAddingCommission] = useState(false);
 
     const handleFarmerDoubleClick = async (farmer: Farmer) => {
         setSelectedFarmer(farmer);
@@ -49,6 +55,53 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
         setShowModal(false);
         setSelectedFarmer(null);
         setCommissionHistory([]);
+        setShowAddCommissionForm(false);
+        setNewCommissionAmount('');
+        setNewCommissionDescription('');
+    };
+
+    const submitCommission = async () => {
+        if (!selectedFarmer) return;
+
+        const amountNum = parseFloat(newCommissionAmount);
+        
+        // Basic validation handled by the backend function, but catch early empty fields
+        if (!newCommissionAmount || isNaN(amountNum) || amountNum <= 0) {
+            toast.error("Please enter a valid amount.");
+            return;
+        }
+
+        try {
+            // Create a mock queryClient object or pass undefined if it's not strictly required by the backend, 
+            // but the function signature expects it. The api function calls `queryClient.invalidateQueries(...)`.
+            // Let's pass a dummy object with invalidateQueries to avoid another runtime error if a real one isn't available in this component's scope.
+            const dummyQueryClient: any = { invalidateQueries: () => {} };
+
+            await handleAddFarmerCommission(
+                {
+                    farmer_id: selectedFarmer.farmer_id,
+                    commission_amount: amountNum,
+                    description: newCommissionDescription,
+                    created_by: 1 // Placeholder until auth user is available, needs to be a number
+                },
+                dummyQueryClient,
+                setIsAddingCommission
+            );
+            
+            // Refresh history
+            const history = await fetchFarmerCommissionHistoryById(selectedFarmer.farmer_id);
+            setCommissionHistory(history);
+            
+            // Reset form
+            setShowAddCommissionForm(false);
+            setNewCommissionAmount('');
+            setNewCommissionDescription('');
+        } catch (error) {
+            console.error('Failed to add commission:', error);
+            toast.error('Failed to save commission. Please try again.');
+        } finally {
+            setIsAddingCommission(false);
+        }
     };
 
     const totalCommission = commissionHistory.reduce((sum, commission) => {
@@ -249,6 +302,15 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">
+                                    {!showAddCommissionForm && (
+                                        <button
+                                            onClick={() => setShowAddCommissionForm(true)}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                                        >
+                                            <Plus size={16} />
+                                            Add
+                                        </button>
+                                    )}
                                     <button
                                         onClick={closeModal}
                                         className="p-2 rounded-full hover:bg-white/80 transition-colors duration-200 group"
@@ -276,9 +338,69 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
                                 </div>
                             </div>
 
+                            {/* Add Commission Form Inline */}
+                            {showAddCommissionForm && (
+                                <div className="bg-white border text-black border-gray-200 rounded-xl p-5 mb-6 animate-in slide-in-from-top-2 duration-200">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h4 className="text-md font-semibold text-gray-800">New Commission Entry</h4>
+                                        <button
+                                            onClick={() => {
+                                                setShowAddCommissionForm(false);
+                                                setNewCommissionAmount('');
+                                                setNewCommissionDescription('');
+                                            }}
+                                            className="text-gray-400 hover:text-gray-600"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
+                                            <div className="relative">
+                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <span className="text-gray-500 font-medium">₹</span>
+                                                </div>
+                                                <input
+                                                    type="number"
+                                                    value={newCommissionAmount}
+                                                    onChange={(e) => setNewCommissionAmount(e.target.value)}
+                                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                                    placeholder="0.00"
+                                                    step="0.01"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                            <input
+                                                type="text"
+                                                value={newCommissionDescription}
+                                                onChange={(e) => setNewCommissionDescription(e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                                placeholder="Optional details..."
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end mt-4">
+                                        <button
+                                            onClick={submitCommission}
+                                            disabled={isAddingCommission}
+                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                                        >
+                                            {isAddingCommission ? (
+                                                <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Saving...</>
+                                            ) : (
+                                                <><Save size={16} /> Save Entry</>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Commission History Table */}
                             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                                     <h4 className="text-lg font-semibold text-gray-800">Commission History</h4>
                                 </div>
 
