@@ -180,9 +180,9 @@ const PaymentForm = ({ supplierId, onSuccess, onCancel }: {
     });
 
     const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const rawValue = e.target.value.replace(/,/g, '');
-        if (!isNaN(Number(rawValue))) {
-            setFormData({ ...formData, amount: rawValue });
+        const val = e.target.value.replace(/,/g, '');
+        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+            setFormData({ ...formData, amount: val });
         }
     };
 
@@ -214,7 +214,7 @@ const PaymentForm = ({ supplierId, onSuccess, onCancel }: {
                             inputMode="decimal"
                             required
                             className="pl-7 block w-full text-black rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                            value={formatINR(formData.amount)}
+                            value={formData.amount}
                             onChange={handleAmountChange}
                             placeholder="0.00"
                         />
