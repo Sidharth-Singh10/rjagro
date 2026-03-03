@@ -95,7 +95,7 @@ pub async fn create_batch_allocation(
 pub async fn create_farmer(
     State(db): State<DatabaseConnection>,
     Json(payload): Json<CreateFarmer>,
-) -> Result<Json<farmers::Model>, StatusCode> {
+) -> Result<Json<farmers::Model>, (StatusCode, String)> {
     let new_farmer = farmers::ActiveModel {
         name: Set(payload.name),
         phone_number: Set(payload.phone_number),
@@ -106,11 +106,12 @@ pub async fn create_farmer(
         area_size: Set(payload.area_size),
         ..Default::default()
     };
+
     new_farmer
         .insert(&db)
         .await
         .map(Json)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
 }
 
 /// Traders
