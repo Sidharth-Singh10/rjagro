@@ -30,6 +30,12 @@ const UserBatchesModule = () => {
         return ((initial - current) / initial) * 100;
     };
 
+    const calculateDaysRunning = (startDate: string): number => {
+        const start = new Date(startDate);
+        const now = new Date();
+        return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    };
+
     const loading = batchesLoading || closuresLoading;
 
     return (
@@ -104,7 +110,7 @@ const UserBatchesModule = () => {
                                             Status
                                         </th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Created At
+                                            Days Running
                                         </th>
                                     </tr>
                                 </thead>
@@ -183,7 +189,7 @@ const UserBatchesModule = () => {
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {new Date(batch.created_at).toLocaleString()}
+                                                    {calculateDaysRunning(batch.start_date)} days
                                                 </td>
                                             </tr>
                                         ))
