@@ -62,6 +62,10 @@ export const toolRegistry: Record<string, ToolMeta> = {
         endpoint: '/getall/purchases',
         method: 'GET',
     },
+    get_ledger_accounts: {
+        endpoint: '/getall/ledger_accounts',
+        method: 'GET',
+    },
     get_ledger_entries: {
         endpoint: '/getall/ledger_entries',
         method: 'GET',
@@ -209,6 +213,15 @@ export const functionDeclarations: FunctionDeclaration[] = [
         name: 'get_purchases',
         description:
             'Get all purchase records with item details, supplier, cost per unit, quantity, total cost, and payment type. Use when the user asks about purchases, spending, or what was bought.',
+        parameters: {
+            type: Type.OBJECT,
+            properties: {},
+        },
+    },
+    {
+        name: 'get_ledger_accounts',
+        description:
+            'Get the chart of accounts (ledger accounts table) with account_id, name, account_type (asset/liability/equity/revenue/expense), and current_balance. Use when the user asks about ledger accounts, chart of accounts, account list, or what accounting accounts exist.',
         parameters: {
             type: Type.OBJECT,
             properties: {},

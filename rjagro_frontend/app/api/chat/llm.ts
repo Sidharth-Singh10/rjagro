@@ -41,6 +41,7 @@ export async function chat(
 ): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
+        console.error('[Chat LLM] GEMINI_API_KEY is not set');
         throw new Error('GEMINI_API_KEY is not set');
     }
 
@@ -49,22 +50,38 @@ export async function chat(
     const contents: Content[] = messagesToContents(messages);
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents,
-            config: {
-                systemInstruction: systemPrompt,
-                tools: [{ functionDeclarations }],
-            },
-        });
+        console.log('[Chat LLM] Round', round + 1, 'of', MAX_TOOL_ROUNDS);
+        let response;
+        try {
+            response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents,
+                config: {
+                    systemInstruction: systemPrompt,
+                    tools: [{ functionDeclarations }],
+                },
+            });
+        } catch (e) {
+            console.error('[Chat LLM] Gemini API error:', e);
+            throw e;
+        }
 
         const candidate = response.candidates?.[0];
         if (!candidate?.content?.parts) {
+            console.error('[Chat LLM] No candidate or parts:', {
+                candidates: response.candidates?.length,
+                finishReason: candidate?.finishReason,
+                response: JSON.stringify(response).slice(0, 500),
+            });
             return 'Sorry, I could not generate a response. Please try again.';
         }
 
         const parts = candidate.content.parts;
         const fnCalls = extractFunctionCalls(parts);
+
+        if (fnCalls.length > 0) {
+            console.log('[Chat LLM] Function calls:', fnCalls.map((fc) => ({ name: fc.name, args: fc.args })));
+        }
 
         if (fnCalls.length === 0) {
             return extractTextContent(parts) || 'No response generated.';
@@ -82,10 +99,12 @@ export async function chat(
                 (fc.args as Record<string, unknown>) ?? {},
                 jwt
             );
+            const responsePayload: Record<string, unknown> =
+                Array.isArray(result) ? { data: result } : (result as Record<string, unknown>);
             responseParts.push({
                 functionResponse: {
                     name: fc.name!,
-                    response: result as Record<string, unknown>,
+                    response: responsePayload,
                 },
             });
         }

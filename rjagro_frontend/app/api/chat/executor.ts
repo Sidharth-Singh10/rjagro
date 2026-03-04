@@ -9,6 +9,7 @@ export async function executeTool(
 ): Promise<unknown> {
     const meta = toolRegistry[name];
     if (!meta) {
+        console.error('[Chat Executor] Unknown tool:', name);
         return { error: `Unknown tool: ${name}` };
     }
 
@@ -24,22 +25,29 @@ export async function executeTool(
         }
     }
 
+    const authHeader = jwt.startsWith('Bearer ') ? jwt : `Bearer ${jwt}`;
+
     try {
+        console.log('[Chat Executor] Calling:', meta.method, url);
         const res = await fetch(url, {
             method: meta.method,
             headers: {
-                'Authorization': jwt,
+                'Authorization': authHeader,
                 'Content-Type': 'application/json',
             },
         });
 
         if (!res.ok) {
             const text = await res.text();
+            console.error('[Chat Executor] Backend error:', res.status, text.slice(0, 200));
             return { error: `Backend returned ${res.status}: ${text}` };
         }
 
-        return await res.json();
+        const data = await res.json();
+        return data;
     } catch (err) {
-        return { error: `Failed to call backend: ${err instanceof Error ? err.message : String(err)}` };
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[Chat Executor] Fetch failed:', msg);
+        return { error: `Failed to call backend: ${msg}` };
     }
 }

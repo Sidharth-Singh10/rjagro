@@ -42,20 +42,34 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
         try {
             const res = await fetch('/api/chat', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages: updatedMessages.map(m => ({ role: m.role, content: m.content }))
                 }),
             });
 
+            const data = await res.json().catch(() => ({}));
+
             if (!res.ok) {
-                throw new Error(`Chat request failed: ${res.status}`);
+                console.error('[ChatPanel] Chat API failed:', {
+                    status: res.status,
+                    statusText: res.statusText,
+                    body: data,
+                });
+                throw new Error(data.error || `Chat request failed: ${res.status}`);
             }
 
-            const data = await res.json();
+            if (!data.content) {
+                console.error('[ChatPanel] No content in response:', data);
+                throw new Error('Invalid response: no content');
+            }
+
             setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
-        } catch {
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' }]);
+        } catch (err) {
+            console.error('[ChatPanel] Chat error:', err);
+            const msg = err instanceof Error ? err.message : 'Unknown error';
+            setMessages(prev => [...prev, { role: 'assistant', content: `Sorry, something went wrong. Please try again. (${msg})` }]);
         } finally {
             setLoading(false);
         }
