@@ -537,6 +537,36 @@ pub async fn get_batch_sales_handler(State(db): State<DatabaseConnection>) -> im
     }
 }
 
+// LOANS
+pub async fn get_loans_handler(State(db): State<DatabaseConnection>) -> impl IntoResponse {
+    match loans::Entity::find()
+        .order_by_desc(loans::Column::LoanDate)
+        .all(&db)
+        .await
+    {
+        Ok(data) => Json(data).into_response(),
+        Err(e) => {
+            eprintln!("Failed to fetch loans: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+// LOAN_PAYMENTS
+pub async fn get_loan_payments_handler(State(db): State<DatabaseConnection>) -> impl IntoResponse {
+    match loan_payments::Entity::find()
+        .order_by_desc(loan_payments::Column::PaymentDate)
+        .all(&db)
+        .await
+    {
+        Ok(data) => Json(data).into_response(),
+        Err(e) => {
+            eprintln!("Failed to fetch loan payments: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
 pub async fn get_paginated_returns_handler(
     State(db): State<DatabaseConnection>,
     Query(params): Query<PaginationParams>,

@@ -614,6 +614,78 @@ export interface GrowingChargesInputs {
 }
 
 
+export interface Loan {
+  loan_id: number;
+  lender_name: string;
+  principal_amount: number;
+  interest_rate: number | null;
+  loan_date: string;
+  due_date: string | null;
+  outstanding_balance: number;
+  status: string;
+  txn_group_id: string | null;
+  notes: string | null;
+  created_at: string;
+  created_by: number | null;
+}
+
+export interface LoanPayload {
+  lender_name: string;
+  principal_amount: number;
+  interest_rate?: number;
+  loan_date: string;
+  due_date?: string;
+  notes?: string;
+  created_by: number;
+}
+
+export interface NewLoan {
+  lender_name: string;
+  principal_amount: number | '';
+  interest_rate: number | '';
+  loan_date: string;
+  due_date: string;
+  notes: string;
+}
+
+export interface LoanPayment {
+  payment_id: number;
+  loan_id: number;
+  principal_amount: number;
+  interest_amount: number;
+  total_amount: number;
+  payment_date: string;
+  payment_mode: string | null;
+  reference_number: string | null;
+  txn_group_id: string | null;
+  notes: string | null;
+  created_at: string;
+  created_by: number | null;
+}
+
+export interface LoanPaymentPayload {
+  loan_id: number;
+  principal_amount: number;
+  interest_amount: number;
+  total_amount: number;
+  payment_date: string;
+  payment_mode?: string;
+  reference_number?: string;
+  notes?: string;
+  created_by: number;
+}
+
+export interface NewLoanPayment {
+  loan_id: number | '';
+  principal_amount: number | '';
+  interest_amount: number | '';
+  total_amount: number | '';
+  payment_date: string;
+  payment_mode: string;
+  reference_number: string;
+  notes: string;
+}
+
 export interface AllocatedRequirement {
   requirement_id: number;
   item_code: string;

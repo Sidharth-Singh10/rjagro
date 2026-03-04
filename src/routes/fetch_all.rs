@@ -9,7 +9,8 @@ use crate::{
         get_batch_requirements_handler, get_batch_sales_handler, get_batches_handler,
         get_bird_count_history_handler, get_bird_sell_history_handler, get_farmers_handler,
         get_inventory_handler, get_inventory_movements_handler, get_items_handler,
-        get_ledger_accounts_handler, get_ledger_entries_handler, get_paginated_returns_handler,
+        get_ledger_accounts_handler, get_ledger_entries_handler, get_loan_payments_handler,
+        get_loans_handler, get_paginated_returns_handler,
         get_production_lines_handler, get_purchases_handler, get_stock_receipts_handler,
         get_supervisors_handler, get_suppliers_handler, get_traders_handler, get_users_handler,
     },
@@ -54,4 +55,6 @@ pub fn fetch_all() -> Router<DatabaseConnection> {
             get(get_all_farmer_commission_history_handler),
         )
         .route("/stock_returns", get(get_paginated_returns_handler))
+        .route("/loans", get(get_loans_handler))
+        .route("/loan_payments", get(get_loan_payments_handler))
 }

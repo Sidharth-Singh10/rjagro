@@ -5,6 +5,7 @@ import BatchesModule from '@/app/components/v2/batches_module';
 import EntitiesModule from '@/app/components/v2/entities_module';
 import InventoryModule from '@/app/components/v2/inventory_module';
 import { LedgerModule } from '@/app/components/v2/ledger_module';
+import LoanModule from '@/app/components/v2/loan_module';
 import PurchasesModule from '@/app/components/v2/purchases_module';
 import Sidebar from '@/app/components/v2/side_bar';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -40,6 +41,7 @@ const DashboardContent: React.FC = () => {
             case 'Allocations': return 'Allocations';
             case 'Batches': return 'Batches';
             case 'Entities': return 'Entities';
+            case 'Loan': return 'Loan';
             default: return 'Dashboard';
         }
     };
@@ -75,6 +77,7 @@ const DashboardContent: React.FC = () => {
                     {activeSection === 'Allocations' && <AllocationsModule />}
                     {activeSection === 'Batches' && <BatchesModule />}
                     {activeSection === 'Entities' && <EntitiesModule />}
+                    {activeSection === 'Loan' && <LoanModule />}
 
                     {activeSection === 'Overview' && (
                         <div className="p-4 bg-white rounded-lg shadow text-gray-500">

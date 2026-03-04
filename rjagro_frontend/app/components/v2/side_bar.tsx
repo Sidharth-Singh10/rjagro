@@ -1,6 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import {
+    Banknote,
     Bird,
     ClipboardCheck,
     Package,
@@ -36,6 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onNavigate }) => {
         { id: 'Allocations', label: 'Allocations', icon: ClipboardCheck },
         { id: 'Batches', label: 'Batches', icon: Bird },
         { id: 'Entities', label: 'Entities', icon: Users },
+        { id: 'Loan', label: 'Loan', icon: Banknote },
     ];
 
     return (

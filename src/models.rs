@@ -318,6 +318,30 @@ pub struct TraderLedgerEntry {
     pub entry_type: Option<String>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CreateLoan {
+    pub lender_name: String,
+    pub principal_amount: Decimal,
+    pub interest_rate: Option<Decimal>,
+    pub loan_date: NaiveDate,
+    pub due_date: Option<NaiveDate>,
+    pub notes: Option<String>,
+    pub created_by: i32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CreateLoanPayment {
+    pub loan_id: i32,
+    pub principal_amount: Decimal,
+    pub interest_amount: Decimal,
+    pub total_amount: Decimal,
+    pub payment_date: NaiveDate,
+    pub payment_mode: Option<String>,
+    pub reference_number: Option<String>,
+    pub notes: Option<String>,
+    pub created_by: i32,
+}
+
 #[derive(Debug, Serialize, FromQueryResult)]
 pub struct AllocatedRequirementDTO {
     // Fields from BatchRequirements
