@@ -1,6 +1,6 @@
 'use client'
 import React, { useMemo } from 'react';
-import { Plus, X, Save, ExternalLink, ChevronRight } from 'lucide-react';
+import { Plus, X, Save, ChevronRight } from 'lucide-react';
 import {
     Batch,
     BatchPayload,

@@ -6,7 +6,7 @@ import { fetchBirdCountHistoryById } from "@/app/api/bird_count_history";
 import { fetchStockReturnsByBatch } from "@/app/api/stock_returns";
 import { BatchHeader } from "@/app/components/batch_details/header";
 import { BatchDetailsSkeleton } from "@/app/components/batch_details/helpers/loading";
-import { KPICard } from "@/app/components/batch_details/kpi_grid";
+import { KPICard, ExpenseKPICard, ExpenseBreakdown } from "@/app/components/batch_details/kpi_grid";
 import AllocatedRequirementTable from "@/app/components/batch_details/tabs/allocated_view";
 import BirdCountHistoryTable from "@/app/components/batch_details/tabs/bird_count_history/bird_count_history";
 import StockReturnsTable from "@/app/components/batch_details/tabs/returns/returns";
@@ -73,6 +73,23 @@ export default function BatchDetailsPage() {
         return allocatedTotal - returnsTotal;
     }, [allocations, stockReturns]);
 
+    const expenseBreakdown: ExpenseBreakdown = useMemo(() => {
+        const itemCategoryMap = new Map(items.map(i => [i.item_code, i.item_category]));
+        const result = { feed: 0, chicks: 0, medicine: 0, returns: 0 };
+
+        for (const alloc of allocations) {
+            const cat = (itemCategoryMap.get(alloc.item_code) ?? '').toLowerCase();
+            const val = parseFloat(alloc.allocated_value || '0');
+            if (cat.includes('feed')) result.feed += val;
+            else if (cat.includes('chick')) result.chicks += val;
+            else if (cat.includes('medicine')) result.medicine += val;
+            else result.feed += val;
+        }
+
+        result.returns = stockReturns.reduce((sum, r) => sum + (r.return_value || 0), 0);
+        return result;
+    }, [allocations, stockReturns, items]);
+
     if (isLoading) return <BatchDetailsSkeleton />;
 
     if (!batch) return (
@@ -108,12 +125,13 @@ export default function BatchDetailsPage() {
                     colorClass={Number(mortalityRate) > 5 ? "bg-red-500" : "bg-green-500"}
                 />
                 {isAdmin && (
-                    <KPICard
+                    <ExpenseKPICard
                         title="Total Expenses"
                         value={`₹ ${totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                        subtext="Feed + Medicine + Chicks"
+                        subtext="Hover for breakdown"
                         icon={TrendingUp}
                         colorClass="bg-orange-500"
+                        breakdown={expenseBreakdown}
                     />
                 )}
                 {isAdmin && (
