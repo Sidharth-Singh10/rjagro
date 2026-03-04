@@ -5,6 +5,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import ChatBubble from './components/chat/ChatBubble';
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -29,6 +30,7 @@ export default function RootLayout({
         <AuthProvider>
           <QueryClientProvider client={queryClient}>
             {children}
+            <ChatBubble />
           </QueryClientProvider>
           <ToastContainer position="top-right" autoClose={3000} />
         </AuthProvider>
