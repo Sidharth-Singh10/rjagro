@@ -46,7 +46,7 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
     const calculateDaysRunning = (startDate: string): number => {
         const start = new Date(startDate);
         const now = new Date();
-        return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        return Math.floor((now.getTime() - start.getTime() ) / (1000 * 60 * 60 * 24)) + 1;
     };
 
     const chickItems = useMemo(() => {

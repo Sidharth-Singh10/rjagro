@@ -67,6 +67,12 @@ export default function BatchDetailsPage() {
     const { data: traders = [] } = useTraders();
     const { data: items = [] } = useItems();
 
+    const totalExpenses = useMemo(() => {
+        const allocatedTotal = allocations.reduce((sum, a) => sum + parseFloat(a.allocated_value || '0'), 0);
+        const returnsTotal = stockReturns.reduce((sum, r) => sum + (r.return_value || 0), 0);
+        return allocatedTotal - returnsTotal;
+    }, [allocations, stockReturns]);
+
     if (isLoading) return <BatchDetailsSkeleton />;
 
     if (!batch) return (
@@ -104,7 +110,7 @@ export default function BatchDetailsPage() {
                 {isAdmin && (
                     <KPICard
                         title="Total Expenses"
-                        value="₹ 0.00"
+                        value={`₹ ${totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         subtext="Feed + Medicine + Chicks"
                         icon={TrendingUp}
                         colorClass="bg-orange-500"
