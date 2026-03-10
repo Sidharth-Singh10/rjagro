@@ -1,3 +1,4 @@
+use crate::handlers::batch_sales::compute_total_expenses;
 use crate::models::*;
 use axum::{extract::State, http::StatusCode, Json};
 use chrono::Utc;
@@ -385,6 +386,11 @@ pub async fn create_batch_closure_summary(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    let total_expenses = compute_total_expenses(&txn, payload.batch_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let gross_profit = payload.revenue - total_expenses;
+
     let new_record = batch_closure_summary::ActiveModel {
         batch_id: Set(payload.batch_id),
         start_date: Set(payload.start_date),
@@ -392,7 +398,7 @@ pub async fn create_batch_closure_summary(
         initial_chicken_count: Set(payload.initial_chicken_count),
         available_chicken_count: Set(payload.available_chicken_count),
         revenue: Set(payload.revenue),
-        gross_profit: Set(payload.gross_profit),
+        gross_profit: Set(gross_profit),
         ..Default::default()
     };
 

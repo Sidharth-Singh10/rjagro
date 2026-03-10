@@ -9,9 +9,11 @@ use axum::{
     Json,
 };
 use chrono::Utc;
+use entity::batch_allocation_lines;
 use entity::batch_closure_summary;
 use entity::batch_sales;
 use entity::ledger_entries;
+use entity::stock_returns;
 use entity::sea_orm_active_enums::PaymentType;
 use num_traits::ToPrimitive;
 use reqwest::StatusCode;
@@ -24,6 +26,25 @@ use sea_orm::EntityTrait;
 use sea_orm::QueryFilter;
 use sea_orm::TransactionTrait;
 use uuid::Uuid;
+
+pub(crate) async fn compute_total_expenses(
+    conn: &impl sea_orm::ConnectionTrait,
+    batch_id: i32,
+) -> Result<Decimal, sea_orm::DbErr> {
+    let allocation_lines = batch_allocation_lines::Entity::find()
+        .filter(batch_allocation_lines::Column::BatchId.eq(batch_id))
+        .all(conn)
+        .await?;
+    let allocated_total: Decimal = allocation_lines.iter().map(|l| l.line_value).sum();
+
+    let returns = stock_returns::Entity::find()
+        .filter(stock_returns::Column::BatchId.eq(batch_id))
+        .all(conn)
+        .await?;
+    let returns_total: Decimal = returns.iter().map(|r| r.return_value).sum();
+
+    Ok(allocated_total - returns_total)
+}
 
 pub async fn create_batch_sale(
     State(db): State<DatabaseConnection>,
@@ -94,8 +115,10 @@ async fn update_batch_financials(
                 "Available chicken count would become negative".to_string(),
             ));
         }
-        active.revenue = Set(active.revenue.unwrap() + added_value);
-        active.gross_profit = Set(active.gross_profit.unwrap() + added_value);
+        let new_revenue = active.revenue.unwrap() + added_value;
+        let total_expenses = compute_total_expenses(txn, batch_id).await?;
+        active.revenue = Set(new_revenue);
+        active.gross_profit = Set(new_revenue - total_expenses);
         active.available_chicken_count = Set(current_count - quantity_to_subtract);
 
         active.update(txn).await?;
@@ -236,12 +259,14 @@ pub async fn delete_batch_sale(
     {
         let mut active: batch_closure_summary::ActiveModel = batch.into();
 
-        let current_revenue = active.revenue.unwrap();
-        let current_gross_profit = active.gross_profit.unwrap();
+        let new_revenue = active.revenue.unwrap() - sale_value;
+        let total_expenses = compute_total_expenses(&txn, batch_id)
+            .await
+            .map_err(internal_error("compute total expenses"))?;
         let current_count = active.available_chicken_count.unwrap();
 
-        active.revenue = Set(current_revenue - sale_value);
-        active.gross_profit = Set(current_gross_profit - sale_value);
+        active.revenue = Set(new_revenue);
+        active.gross_profit = Set(new_revenue - total_expenses);
 
         let qty_to_add = quantity.to_i32().unwrap_or_default();
         active.available_chicken_count = Set(current_count + qty_to_add);
