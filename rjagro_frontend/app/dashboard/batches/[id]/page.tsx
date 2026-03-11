@@ -73,6 +73,12 @@ export default function BatchDetailsPage() {
         return allocatedTotal - returnsTotal;
     }, [allocations, stockReturns]);
 
+    const totalRevenue = useMemo(() => {
+        return batchSales.reduce((sum, s) => sum + (s.value || 0), 0);
+    }, [batchSales]);
+
+    const grossProfit = useMemo(() => totalRevenue - totalExpenses, [totalRevenue, totalExpenses]);
+
     const expenseBreakdown: ExpenseBreakdown = useMemo(() => {
         const itemCategoryMap = new Map(items.map(i => [i.item_code, i.item_category]));
         const result = { feed: 0, chicks: 0, medicine: 0, returns: 0 };
@@ -136,11 +142,11 @@ export default function BatchDetailsPage() {
                 )}
                 {isAdmin && (
                     <KPICard
-                        title="Est. Revenue"
-                        value="₹ 0.00"
-                        subtext="Based on current weight"
+                        title="Revenue"
+                        value={`₹ ${totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        subtext={`Gross Profit: ₹ ${grossProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         icon={Activity}
-                        colorClass="bg-purple-500"
+                        colorClass={grossProfit >= 0 ? "bg-green-500" : "bg-red-500"}
                     />
                 )}
             </div>
