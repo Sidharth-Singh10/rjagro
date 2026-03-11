@@ -25,7 +25,6 @@ export const handleAddBatchSale = async (
     !payload.avg_weight ||
     !payload.rate ||
     !payload.quantity ||
-    !payload.value ||
     !payload.payment_type
   ) {
     toast.error("Please fill in all required fields");

@@ -55,6 +55,8 @@ pub async fn create_batch_sale(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
+    let computed_value = payload.avg_weight * payload.rate;
+
     let new_sale = batch_sales::ActiveModel {
         item_code: Set(payload.item_code),
         batch_id: Set(payload.batch_id),
@@ -62,7 +64,7 @@ pub async fn create_batch_sale(
         avg_weight: Set(payload.avg_weight),
         rate: Set(payload.rate),
         quantity: Set(payload.quantity),
-        value: Set(payload.value),
+        value: Set(computed_value),
         payment_type: Set(payload.payment_type),
         ..Default::default()
     };
@@ -81,7 +83,7 @@ pub async fn create_batch_sale(
     }
 
     if let Err(err) =
-        update_batch_financials(&txn, payload.batch_id, payload.value, payload.quantity).await
+        update_batch_financials(&txn, payload.batch_id, computed_value, payload.quantity).await
     {
         eprintln!("Failed to update batch financials: {:?}", err);
         txn.rollback().await.ok();

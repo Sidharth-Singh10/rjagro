@@ -487,7 +487,6 @@ export interface BatchSalePayload {
   avg_weight: number;
   rate: number;
   quantity: number;
-  value: number;
   payment_type: string;
   created_by: number;
 }

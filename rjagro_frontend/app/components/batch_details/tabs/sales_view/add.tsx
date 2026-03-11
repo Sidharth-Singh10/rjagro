@@ -7,6 +7,7 @@ interface BatchSaleFormState extends Omit<BatchSalePayload, 'trader_id' | 'avg_w
     avg_weight: number | string;
     rate: number | string;
     quantity: number | string;
+    value: number;
     trader_name: string;
     item_name: string;
 }
@@ -53,7 +54,7 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
     const calculateValue = (weight: number | string, rate: number | string) => {
         const w = Number(weight) || 0;
         const r = Number(rate) || 0;
-        return w * r;
+        return Math.round(w * r * 100) / 100;
     };
 
     const handleTraderSelect = (id: string) => {
@@ -78,7 +79,6 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
             avg_weight: Number(formState.avg_weight),
             rate: Number(formState.rate),
             quantity: Number(formState.quantity),
-            value: Number(formState.value),
             payment_type: formState.payment_type,
             created_by: formState.created_by,
         };

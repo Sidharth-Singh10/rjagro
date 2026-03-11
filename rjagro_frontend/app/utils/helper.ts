@@ -3,7 +3,7 @@ import { Batch } from '@/app/types/interfaces';
 export function calculateTotalCost(costPerUnit: string | number, quantity: string | number): number {
   const cost = Number(costPerUnit) || 0;
   const qty = Number(quantity) || 0;
-  return cost * qty;
+  return Math.round(cost * qty * 100) / 100;
 }
 
 export function capitalizeWords(str: string): string {
