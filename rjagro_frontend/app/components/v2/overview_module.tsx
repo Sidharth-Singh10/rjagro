@@ -1,9 +1,11 @@
 'use client'
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Banknote, TrendingUp, TrendingDown, Bird, Heart, Landmark } from 'lucide-react';
+import {
+    Banknote, TrendingUp, TrendingDown, Bird, Heart,
+    Landmark, IndianRupee, LucideIcon,
+} from 'lucide-react';
 
-import { LucideIcon } from 'lucide-react';
 import { fetchLedgerAccounts } from '@/app/api/ledger_accounts';
 import { fetchBatchSales } from '@/app/api/batch_sales';
 import { fetchPurchases } from '@/app/api/purchases';
@@ -13,6 +15,8 @@ import { fetchInventory } from '@/app/api/inventory';
 import { fetchItems } from '@/app/api/items';
 import { fetchSuppliers } from '@/app/api/supplier';
 import { fetchTraders } from '@/app/api/traders';
+import { fetchBatchAllocationLines } from '@/app/api/batch_allocation_lines';
+import { fetchStockReceipts } from '@/app/api/stock_receipts';
 import { Item } from '@/app/types/interfaces';
 
 import { RevenueExpenseChart } from './overview/revenue_expense_chart';
@@ -21,6 +25,8 @@ import { BatchProfitChart } from './overview/batch_profit_chart';
 import { MortalityChart } from './overview/mortality_chart';
 import { InventoryChart } from './overview/inventory_chart';
 import { PayablesReceivables } from './overview/payables_receivables';
+import { AvgSaleRateChart } from './overview/avg_sale_rate_chart';
+import { FCRChart } from './overview/fcr_chart';
 
 const STALE = 5 * 60 * 1000;
 
@@ -68,6 +74,7 @@ const OverviewKPI = ({ title, value, subtext, icon: Icon, color }: {
 );
 
 const OverviewModule = () => {
+    // ── Data fetching ─────────────────────────────────────────────────
     const { data: ledgerAccounts = [] } = useQuery({
         queryKey: ['ledger_accounts'], queryFn: fetchLedgerAccounts, staleTime: STALE,
     });
@@ -98,12 +105,25 @@ const OverviewModule = () => {
     const { data: batchClosures = [] } = useQuery({
         queryKey: ['batch_closures'], queryFn: fetchBatchClosures, staleTime: STALE,
     });
+    const { data: allocationLines = [] } = useQuery({
+        queryKey: ['batch_allocation_lines'], queryFn: fetchBatchAllocationLines, staleTime: STALE,
+    });
+    const { data: stockReceipts = [] } = useQuery({
+        queryKey: ['stock_receipts'], queryFn: fetchStockReceipts, staleTime: STALE,
+    });
 
+    // ── Lookup maps ───────────────────────────────────────────────────
     const itemMap = useMemo(() => {
         const map: Record<string, Item> = {};
         items.forEach(i => { map[i.item_code] = i; });
         return map;
     }, [items]);
+
+    const lotItemCodeMap = useMemo(() => {
+        const map: Record<number, string> = {};
+        stockReceipts.forEach(sr => { map[n(sr.lot_id)] = sr.item_code; });
+        return map;
+    }, [stockReceipts]);
 
     // ── KPI aggregations ──────────────────────────────────────────────
     const kpis = useMemo(() => {
@@ -142,6 +162,12 @@ const OverviewModule = () => {
         const activeLoans = loans.filter(l => l.status === 'Active');
         const outstandingLoanBalance = activeLoans.reduce((s, l) => s + n(l.outstanding_balance), 0);
 
+        const totalClosedRevenue = batchClosures.reduce((s, c) => s + n(c.revenue), 0);
+        const totalBirdsSold = batchClosures.reduce((s, c) => s + n(c.available_chicken_count), 0);
+        const avgRevenuePerBird = totalBirdsSold > 0
+            ? totalClosedRevenue / totalBirdsSold
+            : 0;
+
         return {
             cashBalance,
             revenueThisMonth,
@@ -153,8 +179,9 @@ const OverviewModule = () => {
             overallMortality,
             outstandingLoanBalance,
             activeLoanCount: activeLoans.length,
+            avgRevenuePerBird,
         };
-    }, [ledgerAccounts, batchSales, purchases, batches, loans]);
+    }, [ledgerAccounts, batchSales, purchases, batches, loans, batchClosures]);
 
     // ── Monthly revenue vs expenses series ────────────────────────────
     const revenueExpenseData = useMemo(() => {
@@ -206,13 +233,20 @@ const OverviewModule = () => {
         return { data, total: data.reduce((s, d) => s + d.value, 0) };
     }, [purchases, itemMap]);
 
-    // ── Batch profitability (closed batches) ──────────────────────────
+    // ── Batch profitability with Gross Margin % and Cost Per Bird ─────
     const batchProfitData = useMemo(() => {
-        return batchClosures.slice(-15).map(c => ({
-            label: `Batch ${c.batch_id}`,
-            revenue: parseFloat(n(c.revenue).toFixed(2)),
-            grossProfit: parseFloat(n(c.gross_profit).toFixed(2)),
-        }));
+        return batchClosures.slice(-15).map(c => {
+            const rev = n(c.revenue);
+            const gp = n(c.gross_profit);
+            const birds = n(c.initial_chicken_count);
+            return {
+                label: `Batch ${c.batch_id}`,
+                revenue: parseFloat(rev.toFixed(2)),
+                grossProfit: parseFloat(gp.toFixed(2)),
+                grossMarginPct: rev > 0 ? parseFloat(((gp / rev) * 100).toFixed(2)) : 0,
+                costPerBird: birds > 0 ? parseFloat(((rev - gp) / birds).toFixed(2)) : 0,
+            };
+        });
     }, [batchClosures]);
 
     // ── Mortality rate per active batch ───────────────────────────────
@@ -235,6 +269,66 @@ const OverviewModule = () => {
             .sort((a, b) => b.mortalityPct - a.mortalityPct)
             .slice(0, 10);
     }, [batches, batchSales]);
+
+    // ── Avg Sale Rate per month (weighted by weight sold) ─────────────
+    const avgSaleRateData = useMemo(() => {
+        const months: Record<string, { weightedSum: number; totalWeight: number }> = {};
+
+        batchSales.forEach(s => {
+            const key = getMonthKey(s.created_at);
+            const weight = n(s.quantity) * n(s.avg_weight);
+            if (weight <= 0) return;
+            if (!months[key]) months[key] = { weightedSum: 0, totalWeight: 0 };
+            months[key].weightedSum += n(s.rate) * weight;
+            months[key].totalWeight += weight;
+        });
+
+        return Object.entries(months)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .slice(-12)
+            .map(([key, val]) => ({
+                month: getMonthLabel(key),
+                avgRate: val.totalWeight > 0
+                    ? parseFloat((val.weightedSum / val.totalWeight).toFixed(2))
+                    : 0,
+            }));
+    }, [batchSales]);
+
+    // ── FCR per batch ─────────────────────────────────────────────────
+    const fcrData = useMemo(() => {
+        const feedPerBatch: Record<number, number> = {};
+        allocationLines.forEach(line => {
+            const batchId = n(line.batch_id);
+            if (!batchId) return;
+            const itemCode = lotItemCodeMap[n(line.lot_id)];
+            if (!itemCode) return;
+            const category = itemMap[itemCode]?.item_category;
+            if (category !== 'Feed') return;
+            feedPerBatch[batchId] = (feedPerBatch[batchId] ?? 0) + n(line.qty);
+        });
+
+        const weightPerBatch: Record<number, number> = {};
+        batchSales.forEach(s => {
+            const batchId = n(s.batch_id);
+            weightPerBatch[batchId] = (weightPerBatch[batchId] ?? 0) + n(s.quantity) * n(s.avg_weight);
+        });
+
+        const batchIds = new Set([...Object.keys(feedPerBatch), ...Object.keys(weightPerBatch)].map(Number));
+
+        return Array.from(batchIds)
+            .map(id => {
+                const feed = feedPerBatch[id] ?? 0;
+                const weight = weightPerBatch[id] ?? 0;
+                if (feed <= 0 || weight <= 0) return null;
+                return {
+                    label: `Batch ${id}`,
+                    fcr: parseFloat((feed / weight).toFixed(2)),
+                };
+            })
+            .filter((d): d is { label: string; fcr: number } => d !== null)
+            .sort((a, b) => b.fcr - a.fcr)
+            .slice(0, 10);
+    }, [allocationLines, batchSales, lotItemCodeMap, itemMap]);
 
     // ── Inventory levels with item details ────────────────────────────
     const inventoryData = useMemo(() => {
@@ -327,6 +421,13 @@ const OverviewModule = () => {
                     icon={Landmark}
                     color="#8b5cf6"
                 />
+                <OverviewKPI
+                    title="Revenue Per Bird"
+                    value={fmt(kpis.avgRevenuePerBird)}
+                    subtext="Avg across closed batches"
+                    icon={IndianRupee}
+                    color="#d946ef"
+                />
             </div>
 
             {/* Revenue vs Expenses & Expense Breakdown */}
@@ -337,17 +438,21 @@ const OverviewModule = () => {
                 <ExpenseDonut data={expenseBreakdown.data} total={expenseBreakdown.total} />
             </div>
 
-            {/* Batch Profitability & Mortality */}
+            {/* Batch Profitability & FCR */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <BatchProfitChart data={batchProfitData} />
-                <MortalityChart data={mortalityData} />
+                <FCRChart data={fcrData} />
             </div>
 
-            {/* Inventory & Payables/Receivables */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Mortality, Avg Sale Rate, Inventory */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <MortalityChart data={mortalityData} />
+                <AvgSaleRateChart data={avgSaleRateData} />
                 <InventoryChart data={inventoryData} />
-                <PayablesReceivables {...payablesReceivablesData} />
             </div>
+
+            {/* Payables & Receivables */}
+            <PayablesReceivables {...payablesReceivablesData} />
         </div>
     );
 };

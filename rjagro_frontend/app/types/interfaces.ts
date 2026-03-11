@@ -330,11 +330,11 @@ export interface NewStockReceipt {
 export interface BatchAllocationLine {
   allocation_line_id: number;
   allocation_id: number;
+  batch_id?: number;
   lot_id: number;
   qty: number;
   unit_cost: number;
   line_value: number;
-  // Related data for display
   allocation_date?: string;
   requirement_id?: number;
   item_code?: string;
