@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Banknote, TrendingUp, TrendingDown, Bird, Heart, Landmark } from 'lucide-react';
 
-import { KPICard } from '../batch_details/kpi_grid';
+import { LucideIcon } from 'lucide-react';
 import { fetchLedgerAccounts } from '@/app/api/ledger_accounts';
 import { fetchBatchSales } from '@/app/api/batch_sales';
 import { fetchPurchases } from '@/app/api/purchases';
@@ -44,6 +44,28 @@ const getMonthLabel = (key: string) => {
     const d = new Date(parseInt(year), parseInt(month) - 1);
     return d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
 };
+
+const OverviewKPI = ({ title, value, subtext, icon: Icon, color }: {
+    title: string;
+    value: string;
+    subtext: string;
+    icon: LucideIcon;
+    color: string;
+}) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md transition-shadow duration-200">
+        <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: `${color}14` }}
+        >
+            <Icon size={22} style={{ color }} strokeWidth={1.8} />
+        </div>
+        <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{title}</p>
+            <p className="text-xl font-bold text-gray-900 truncate mt-0.5">{value}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5 truncate">{subtext}</p>
+        </div>
+    </div>
+);
 
 const OverviewModule = () => {
     const { data: ledgerAccounts = [] } = useQuery({
@@ -254,15 +276,15 @@ const OverviewModule = () => {
     return (
         <div className="space-y-6">
             {/* KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <KPICard
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <OverviewKPI
                     title="Cash Balance"
                     value={fmt(kpis.cashBalance)}
                     subtext="Current cash position"
                     icon={Banknote}
-                    colorClass="bg-green-600"
+                    color="#16a34a"
                 />
-                <KPICard
+                <OverviewKPI
                     title="Revenue (Month)"
                     value={fmt(kpis.revenueThisMonth)}
                     subtext={
@@ -271,9 +293,9 @@ const OverviewModule = () => {
                             : 'This month'
                     }
                     icon={TrendingUp}
-                    colorClass="bg-emerald-500"
+                    color="#10b981"
                 />
-                <KPICard
+                <OverviewKPI
                     title="Expenses (Month)"
                     value={fmt(kpis.expensesThisMonth)}
                     subtext={
@@ -282,28 +304,28 @@ const OverviewModule = () => {
                             : 'This month'
                     }
                     icon={TrendingDown}
-                    colorClass="bg-orange-500"
+                    color="#f97316"
                 />
-                <KPICard
+                <OverviewKPI
                     title="Active Batches"
                     value={String(kpis.activeBatchCount)}
                     subtext={`${kpis.totalBirds.toLocaleString('en-IN')} total birds`}
                     icon={Bird}
-                    colorClass="bg-sky-500"
+                    color="#0ea5e9"
                 />
-                <KPICard
+                <OverviewKPI
                     title="Total Live Birds"
                     value={kpis.totalBirds.toLocaleString('en-IN')}
                     subtext={`${kpis.overallMortality.toFixed(2)}% overall mortality`}
                     icon={Heart}
-                    colorClass="bg-rose-500"
+                    color="#f43f5e"
                 />
-                <KPICard
+                <OverviewKPI
                     title="Outstanding Loans"
                     value={fmt(kpis.outstandingLoanBalance)}
                     subtext={`${kpis.activeLoanCount} active loan${kpis.activeLoanCount !== 1 ? 's' : ''}`}
                     icon={Landmark}
-                    colorClass="bg-violet-500"
+                    color="#8b5cf6"
                 />
             </div>
 
