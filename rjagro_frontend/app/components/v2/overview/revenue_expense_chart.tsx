@@ -10,6 +10,14 @@ interface MonthlyData {
 
 interface Props {
     data: MonthlyData[];
+    filterMode: 'months' | 'custom';
+    onFilterModeChange: (mode: 'months' | 'custom') => void;
+    monthsBack: number;
+    onMonthsBackChange: (v: number) => void;
+    customFrom: string;
+    onCustomFromChange: (v: string) => void;
+    customTo: string;
+    onCustomToChange: (v: string) => void;
 }
 
 const fmt = (v: number) => `₹${v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -28,19 +36,98 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     );
 };
 
-export const RevenueExpenseChart = ({ data }: Props) => {
+const FilterControls = ({
+    filterMode, onFilterModeChange,
+    monthsBack, onMonthsBackChange,
+    customFrom, onCustomFromChange,
+    customTo, onCustomToChange,
+}: Omit<Props, 'data'>) => (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+            <button
+                onClick={() => onFilterModeChange('months')}
+                className={`px-3 py-1.5 font-medium transition-colors ${
+                    filterMode === 'months'
+                        ? 'bg-gray-800 text-white'
+                        : 'bg-white text-gray-500 hover:bg-gray-50'
+                }`}
+            >
+                Months
+            </button>
+            <button
+                onClick={() => onFilterModeChange('custom')}
+                className={`px-3 py-1.5 font-medium transition-colors ${
+                    filterMode === 'custom'
+                        ? 'bg-gray-800 text-white'
+                        : 'bg-white text-gray-500 hover:bg-gray-50'
+                }`}
+            >
+                Custom
+            </button>
+        </div>
+
+        {filterMode === 'months' ? (
+            <div className="flex items-center gap-2">
+                <input
+                    type="range"
+                    min={1}
+                    max={24}
+                    value={monthsBack}
+                    onChange={e => onMonthsBackChange(Number(e.target.value))}
+                    className="w-24 h-1.5 accent-gray-700 cursor-pointer"
+                />
+                <span className="text-xs text-gray-500 whitespace-nowrap w-20">
+                    Last {monthsBack} mo{monthsBack !== 1 ? 's' : ''}
+                </span>
+            </div>
+        ) : (
+            <div className="flex items-center gap-1.5 text-xs">
+                <input
+                    type="date"
+                    value={customFrom}
+                    onChange={e => onCustomFromChange(e.target.value)}
+                    className="border border-gray-200 rounded-md px-2 py-1 text-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300"
+                />
+                <span className="text-gray-400">to</span>
+                <input
+                    type="date"
+                    value={customTo}
+                    onChange={e => onCustomToChange(e.target.value)}
+                    className="border border-gray-200 rounded-md px-2 py-1 text-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300"
+                />
+            </div>
+        )}
+    </div>
+);
+
+export const RevenueExpenseChart = ({
+    data,
+    filterMode, onFilterModeChange,
+    monthsBack, onMonthsBackChange,
+    customFrom, onCustomFromChange,
+    customTo, onCustomToChange,
+}: Props) => {
+    const controls = (
+        <FilterControls
+            filterMode={filterMode} onFilterModeChange={onFilterModeChange}
+            monthsBack={monthsBack} onMonthsBackChange={onMonthsBackChange}
+            customFrom={customFrom} onCustomFromChange={onCustomFromChange}
+            customTo={customTo} onCustomToChange={onCustomToChange}
+        />
+    );
+
     if (data.length === 0) {
         return (
-            <ChartCard title="Revenue vs Expenses">
+            <ChartCard title="Revenue vs Expenses (Closed Batches)" headerControls={controls}>
                 <div className="h-[300px] flex items-center justify-center text-sm text-gray-400">
-                    No transaction data yet
+                    No closed batch data for this period
                 </div>
             </ChartCard>
         );
     }
 
     return (
-        <ChartCard title="Revenue vs Expenses">
+        <ChartCard title="Revenue vs Expenses (Closed Batches)" headerControls={controls}>
             <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                     <defs>

@@ -1,5 +1,5 @@
 'use client'
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Banknote, TrendingUp, TrendingDown, Bird, Heart,
@@ -184,31 +184,39 @@ const OverviewModule = () => {
         };
     }, [ledgerAccounts, batchSales, purchases, batches, loans, batchClosures]);
 
-    // ── Monthly revenue vs expenses series ────────────────────────────
+    // ── Revenue vs Expenses filter state ──────────────────────────────
+    const [revExpFilterMode, setRevExpFilterMode] = useState<'months' | 'custom'>('months');
+    const [revExpMonthsBack, setRevExpMonthsBack] = useState(12);
+    const [revExpCustomFrom, setRevExpCustomFrom] = useState('');
+    const [revExpCustomTo, setRevExpCustomTo] = useState('');
+
+    // ── Monthly revenue vs expenses (closed batches only) ──────────
     const revenueExpenseData = useMemo(() => {
         const months: Record<string, { revenue: number; expenses: number }> = {};
 
-        batchSales.forEach(s => {
-            const key = getMonthKey(s.created_at);
+        batchClosures.forEach(c => {
+            const key = getMonthKey(c.end_date);
             if (!months[key]) months[key] = { revenue: 0, expenses: 0 };
-            months[key].revenue += n(s.value);
+            months[key].revenue += n(c.revenue);
+            months[key].expenses += n(c.revenue) - n(c.gross_profit);
         });
 
-        purchases.forEach(p => {
-            const key = getMonthKey(p.purchase_date);
-            if (!months[key]) months[key] = { revenue: 0, expenses: 0 };
-            months[key].expenses += n(p.total_cost);
-        });
+        let filtered = Object.entries(months).sort(([a], [b]) => a.localeCompare(b));
 
-        return Object.entries(months)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .slice(-12)
-            .map(([key, val]) => ({
-                month: getMonthLabel(key),
-                revenue: parseFloat(n(val.revenue).toFixed(2)),
-                expenses: parseFloat(n(val.expenses).toFixed(2)),
-            }));
-    }, [batchSales, purchases]);
+        if (revExpFilterMode === 'months') {
+            filtered = filtered.slice(-revExpMonthsBack);
+        } else if (revExpCustomFrom && revExpCustomTo) {
+            const fromKey = revExpCustomFrom.slice(0, 7);
+            const toKey = revExpCustomTo.slice(0, 7);
+            filtered = filtered.filter(([key]) => key >= fromKey && key <= toKey);
+        }
+
+        return filtered.map(([key, val]) => ({
+            month: getMonthLabel(key),
+            revenue: parseFloat(n(val.revenue).toFixed(2)),
+            expenses: parseFloat(n(val.expenses).toFixed(2)),
+        }));
+    }, [batchClosures, revExpFilterMode, revExpMonthsBack, revExpCustomFrom, revExpCustomTo]);
 
     // ── Expense breakdown by item category ────────────────────────────
     const expenseBreakdown = useMemo(() => {
@@ -437,7 +445,17 @@ const OverviewModule = () => {
             {/* Revenue vs Expenses & Expense Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
-                    <RevenueExpenseChart data={revenueExpenseData} />
+                    <RevenueExpenseChart
+                        data={revenueExpenseData}
+                        filterMode={revExpFilterMode}
+                        onFilterModeChange={setRevExpFilterMode}
+                        monthsBack={revExpMonthsBack}
+                        onMonthsBackChange={setRevExpMonthsBack}
+                        customFrom={revExpCustomFrom}
+                        onCustomFromChange={setRevExpCustomFrom}
+                        customTo={revExpCustomTo}
+                        onCustomToChange={setRevExpCustomTo}
+                    />
                 </div>
                 <ExpenseDonut data={expenseBreakdown.data} total={expenseBreakdown.total} />
             </div>
