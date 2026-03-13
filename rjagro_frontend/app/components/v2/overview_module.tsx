@@ -163,10 +163,14 @@ const OverviewModule = () => {
         const activeLoans = loans.filter(l => l.status === 'Active');
         const outstandingLoanBalance = activeLoans.reduce((s, l) => s + n(l.outstanding_balance), 0);
 
-        const totalClosedRevenue = batchClosures.reduce((s, c) => s + n(c.revenue), 0);
-        const totalBirdsSold = batchClosures.reduce((s, c) => s + n(c.available_chicken_count), 0);
-        const avgRevenuePerBird = totalBirdsSold > 0
-            ? totalClosedRevenue / totalBirdsSold
+        const last5Closures = batchClosures
+            .slice()
+            .sort((a, b) => b.end_date.localeCompare(a.end_date))
+            .slice(0, 5);
+        const totalClosedRevenue = last5Closures.reduce((s, c) => s + n(c.revenue), 0);
+        const totalBirdsPlaced = last5Closures.reduce((s, c) => s + n(c.initial_chicken_count), 0);
+        const avgRevenuePerBird = totalBirdsPlaced > 0
+            ? totalClosedRevenue / totalBirdsPlaced
             : 0;
 
         return {
@@ -537,7 +541,7 @@ const OverviewModule = () => {
                 <OverviewKPI
                     title="Revenue Per Bird"
                     value={fmt(kpis.avgRevenuePerBird)}
-                    subtext="Avg across closed batches"
+                    subtext="Avg across last 5 closed batches"
                     icon={IndianRupee}
                     color="#d946ef"
                 />
