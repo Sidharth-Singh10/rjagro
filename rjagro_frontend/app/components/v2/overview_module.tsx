@@ -27,6 +27,7 @@ import { InventoryChart } from './overview/inventory_chart';
 import { PayablesReceivables } from './overview/payables_receivables';
 import { AvgSaleRateChart } from './overview/avg_sale_rate_chart';
 import { FCRChart } from './overview/fcr_chart';
+import { LiftingHeatmap } from './overview/lifting_heatmap';
 
 const STALE = 5 * 60 * 1000;
 
@@ -429,6 +430,9 @@ const OverviewModule = () => {
                     color="#d946ef"
                 />
             </div>
+
+            {/* Chick Lifting Heatmap */}
+            <LiftingHeatmap batches={batches} />
 
             {/* Revenue vs Expenses & Expense Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
