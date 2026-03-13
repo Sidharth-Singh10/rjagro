@@ -1,13 +1,14 @@
 'use client';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FlaskConical, Plus, X } from 'lucide-react';
 import { ChartCard } from './chart_card';
 import { Batch } from '@/app/types/interfaces';
 
 interface BatchLift {
-    batch_id: number;
+    batch_id: number | string;
     farmer_name: string;
     chick_count: number;
+    planned?: boolean;
 }
 
 interface DayData {
@@ -22,6 +23,12 @@ interface TooltipState {
     x: number;
     y: number;
     day: DayData | null;
+}
+
+interface PlannedBatch {
+    id: string;
+    startDate: string;
+    chickCount: number;
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -74,9 +81,32 @@ interface Props {
     batches: Batch[];
 }
 
+let plannedCounter = 0;
+
 export const LiftingHeatmap = ({ batches }: Props) => {
     const today = useMemo(() => new Date(), []);
     const [baseMonth, setBaseMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+    const [planMode, setPlanMode] = useState(false);
+    const [plannedBatches, setPlannedBatches] = useState<PlannedBatch[]>([]);
+    const [draftDate, setDraftDate] = useState('');
+    const [draftCount, setDraftCount] = useState('');
+
+    const addPlannedBatch = useCallback(() => {
+        const count = parseInt(draftCount);
+        if (!draftDate || isNaN(count) || count <= 0) return;
+        plannedCounter++;
+        setPlannedBatches(prev => [...prev, {
+            id: `P${plannedCounter}`,
+            startDate: draftDate,
+            chickCount: count,
+        }]);
+        setDraftDate('');
+        setDraftCount('');
+    }, [draftDate, draftCount]);
+
+    const removePlannedBatch = useCallback((id: string) => {
+        setPlannedBatches(prev => prev.filter(b => b.id !== id));
+    }, []);
 
     const visibleMonths = useMemo(() => {
         return [0, 1, 2].map(i => new Date(baseMonth.getFullYear(), baseMonth.getMonth() + i, 1));
@@ -84,6 +114,7 @@ export const LiftingHeatmap = ({ batches }: Props) => {
 
     const liftMap = useMemo(() => {
         const map: Record<string, BatchLift[]> = {};
+
         batches.forEach(b => {
             if (b.status !== 'Open') return;
             const start = new Date(b.start_date);
@@ -100,8 +131,28 @@ export const LiftingHeatmap = ({ batches }: Props) => {
                 });
             }
         });
+
+        if (planMode) {
+            plannedBatches.forEach(pb => {
+                const start = new Date(pb.startDate);
+                if (isNaN(start.getTime())) return;
+                const liftStart = addDays(start, LIFT_START_DAY);
+                const liftEnd = addDays(start, LIFT_END_DAY);
+                for (let d = new Date(liftStart); d <= liftEnd; d.setDate(d.getDate() + 1)) {
+                    const key = dateKey(d);
+                    if (!map[key]) map[key] = [];
+                    map[key].push({
+                        batch_id: pb.id,
+                        farmer_name: 'Planned',
+                        chick_count: pb.chickCount,
+                        planned: true,
+                    });
+                }
+            });
+        }
+
         return map;
-    }, [batches]);
+    }, [batches, planMode, plannedBatches]);
 
     const maxChicks = useMemo(() => {
         let max = 0;
@@ -166,7 +217,7 @@ export const LiftingHeatmap = ({ batches }: Props) => {
     return (
         <ChartCard title="Chick Lifting Schedule">
             <div ref={containerRef} className="relative">
-                {/* Navigation */}
+                {/* Header: Navigation + Plan Mode toggle */}
                 <div className="flex items-center justify-between mb-4">
                     <button
                         onClick={() => shiftMonth(-1)}
@@ -179,13 +230,96 @@ export const LiftingHeatmap = ({ batches }: Props) => {
                         {' — '}
                         {visibleMonths[2].toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
                     </span>
-                    <button
-                        onClick={() => shiftMonth(1)}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
-                    >
-                        <ChevronRight size={18} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setPlanMode(prev => !prev)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                                planMode
+                                    ? 'bg-violet-100 text-violet-700 ring-1 ring-violet-300'
+                                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                            }`}
+                        >
+                            <FlaskConical size={14} />
+                            Plan
+                        </button>
+                        <button
+                            onClick={() => shiftMonth(1)}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+                        >
+                            <ChevronRight size={18} />
+                        </button>
+                    </div>
                 </div>
+
+                {/* Plan Mode Panel */}
+                {planMode && (
+                    <div className="mb-5 p-4 rounded-xl bg-violet-50 border border-violet-200">
+                        <p className="text-xs font-semibold text-violet-700 mb-3">
+                            What-if: Add hypothetical batches to preview lifting pressure
+                        </p>
+                        <div className="flex flex-wrap items-end gap-3 mb-3">
+                            <div>
+                                <label className="block text-[10px] font-medium text-violet-500 mb-1">Batch Start Date</label>
+                                <input
+                                    type="date"
+                                    value={draftDate}
+                                    onChange={e => setDraftDate(e.target.value)}
+                                    className="px-3 py-1.5 text-xs text-gray-900 rounded-lg border border-violet-200 bg-white focus:outline-none focus:ring-2 focus:ring-violet-300"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-medium text-violet-500 mb-1">Chick Count</label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={draftCount}
+                                    onChange={e => setDraftCount(e.target.value)}
+                                    placeholder="e.g. 5000"
+                                    className="px-3 py-1.5 text-xs text-gray-900 rounded-lg border border-violet-200 bg-white w-28 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                                />
+                            </div>
+                            <button
+                                onClick={addPlannedBatch}
+                                disabled={!draftDate || !draftCount || parseInt(draftCount) <= 0}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <Plus size={14} />
+                                Add
+                            </button>
+                        </div>
+                        {plannedBatches.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {plannedBatches.map(pb => {
+                                    const liftStart = addDays(new Date(pb.startDate), LIFT_START_DAY);
+                                    const liftEnd = addDays(new Date(pb.startDate), LIFT_END_DAY);
+                                    return (
+                                        <div
+                                            key={pb.id}
+                                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white border border-violet-200 text-xs"
+                                        >
+                                            <div>
+                                                <span className="font-semibold text-violet-700">{pb.chickCount.toLocaleString('en-IN')}</span>
+                                                <span className="text-violet-400 ml-1">chicks</span>
+                                                <span className="text-gray-400 mx-1.5">|</span>
+                                                <span className="text-gray-500">
+                                                    Lift: {liftStart.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                    {' - '}
+                                                    {liftEnd.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => removePlannedBatch(pb.id)}
+                                                className="p-0.5 rounded hover:bg-violet-100 text-violet-400 hover:text-violet-600 transition-colors"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Calendar Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -213,6 +347,7 @@ export const LiftingHeatmap = ({ batches }: Props) => {
                                         const ratio = maxChicks > 0 ? totalChicks / maxChicks : 0;
                                         const color = getColor(ratio);
                                         const isToday = key === todayKey;
+                                        const hasPlanned = lifts.some(l => l.planned);
                                         const dayData: DayData = { date: d, dateKey: key, totalChicks, batches: lifts };
 
                                         return (
@@ -223,6 +358,7 @@ export const LiftingHeatmap = ({ batches }: Props) => {
                                                     text-[11px] font-medium cursor-default transition-all duration-150
                                                     ${totalChicks > 0 ? 'hover:scale-110 hover:shadow-md cursor-pointer' : ''}
                                                     ${isToday ? 'ring-2 ring-blue-400 ring-offset-1' : ''}
+                                                    ${hasPlanned ? 'ring-2 ring-violet-400 ring-inset' : ''}
                                                 `}
                                                 style={{ backgroundColor: color.bg, color: color.text }}
                                                 onMouseEnter={e => handleMouseEnter(e, dayData)}
@@ -272,12 +408,14 @@ export const LiftingHeatmap = ({ batches }: Props) => {
                         </p>
                         <div className="space-y-1 max-h-[160px] overflow-y-auto">
                             {tooltip.day.batches.map(b => (
-                                <div key={b.batch_id} className="flex items-center justify-between text-xs gap-3">
-                                    <span className="text-gray-600 truncate">
-                                        Batch #{b.batch_id}
-                                        <span className="text-gray-400 ml-1">({b.farmer_name})</span>
+                                <div key={b.batch_id} className={`flex items-center justify-between text-xs gap-3 ${b.planned ? 'opacity-80' : ''}`}>
+                                    <span className={`truncate ${b.planned ? 'text-violet-600' : 'text-gray-600'}`}>
+                                        {b.planned ? `${b.batch_id}` : `Batch #${b.batch_id}`}
+                                        <span className={`ml-1 ${b.planned ? 'text-violet-400' : 'text-gray-400'}`}>
+                                            ({b.farmer_name})
+                                        </span>
                                     </span>
-                                    <span className="font-semibold text-gray-800 whitespace-nowrap">
+                                    <span className={`font-semibold whitespace-nowrap ${b.planned ? 'text-violet-700' : 'text-gray-800'}`}>
                                         {b.chick_count.toLocaleString('en-IN')}
                                     </span>
                                 </div>
