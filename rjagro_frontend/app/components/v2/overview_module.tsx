@@ -185,38 +185,119 @@ const OverviewModule = () => {
     }, [ledgerAccounts, batchSales, purchases, batches, loans, batchClosures]);
 
     // ── Revenue vs Expenses filter state ──────────────────────────────
-    const [revExpFilterMode, setRevExpFilterMode] = useState<'months' | 'custom'>('months');
-    const [revExpMonthsBack, setRevExpMonthsBack] = useState(12);
+    const [revExpFilterMode, setRevExpFilterMode] = useState<'month' | 'custom'>('month');
+    const [revExpSelectedMonth, setRevExpSelectedMonth] = useState(() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    });
     const [revExpCustomFrom, setRevExpCustomFrom] = useState('');
     const [revExpCustomTo, setRevExpCustomTo] = useState('');
 
-    // ── Monthly revenue vs expenses (closed batches only) ──────────
-    const revenueExpenseData = useMemo(() => {
-        const months: Record<string, { revenue: number; expenses: number }> = {};
+    const closedBatchIds = useMemo(
+        () => new Set(batchClosures.map(c => c.batch_id)),
+        [batchClosures],
+    );
 
-        batchClosures.forEach(c => {
-            const key = getMonthKey(c.end_date);
-            if (!months[key]) months[key] = { revenue: 0, expenses: 0 };
-            months[key].revenue += n(c.revenue);
-            months[key].expenses += n(c.revenue) - n(c.gross_profit);
+    const availableMonths = useMemo(() => {
+        const s = new Set<string>();
+        batchClosures.forEach(c => s.add(getMonthKey(c.end_date)));
+        batchSales.forEach(sale => {
+            if (closedBatchIds.has(sale.batch_id)) s.add(getMonthKey(sale.created_at));
+        });
+        return Array.from(s).sort();
+    }, [batchClosures, batchSales, closedBatchIds]);
+
+    // ── Cumulative revenue vs expenses (closed batches only) ────────
+    const revenueExpenseData = useMemo(() => {
+        const isInRange = (dateStr: string) => {
+            if (revExpFilterMode === 'month') {
+                return getMonthKey(dateStr) === revExpSelectedMonth;
+            }
+            if (revExpCustomFrom && revExpCustomTo) {
+                const d = dateStr.slice(0, 10);
+                return d >= revExpCustomFrom && d <= revExpCustomTo;
+            }
+            return false;
+        };
+
+        // Expense events from batch closures
+        const expenseEvents = batchClosures
+            .filter(c => isInRange(c.end_date))
+            .sort((a, b) => a.end_date.localeCompare(b.end_date))
+            .map(c => ({
+                dateRaw: c.end_date.slice(0, 10),
+                batchId: c.batch_id,
+                amount: n(c.revenue) - n(c.gross_profit),
+            }));
+
+        // Revenue events from sales of closed batches
+        const revenueEvents = batchSales
+            .filter(s => closedBatchIds.has(s.batch_id) && isInRange(s.created_at))
+            .sort((a, b) => a.created_at.localeCompare(b.created_at))
+            .map(s => ({
+                dateRaw: s.created_at.slice(0, 10),
+                batchId: s.batch_id,
+                amount: n(s.value),
+            }));
+
+        // Cumulative expense by date
+        type BatchEntry = { batchId: number; amount: number };
+        const expByDate: Record<string, { cumulative: number; batches: BatchEntry[] }> = {};
+        let expCum = 0;
+        const expBatchesSoFar: BatchEntry[] = [];
+        expenseEvents.forEach(e => {
+            expCum += e.amount;
+            expBatchesSoFar.push({ batchId: e.batchId, amount: e.amount });
+            expByDate[e.dateRaw] = { cumulative: expCum, batches: [...expBatchesSoFar] };
         });
 
-        let filtered = Object.entries(months).sort(([a], [b]) => a.localeCompare(b));
+        // Cumulative revenue by date (group sales by date, aggregate per batch)
+        const revGrouped: Record<string, BatchEntry[]> = {};
+        revenueEvents.forEach(r => {
+            if (!revGrouped[r.dateRaw]) revGrouped[r.dateRaw] = [];
+            revGrouped[r.dateRaw].push({ batchId: r.batchId, amount: r.amount });
+        });
+        const revByDate: Record<string, { cumulative: number; batches: BatchEntry[] }> = {};
+        let revCum = 0;
+        const revBatchMap: Record<number, number> = {};
+        Object.keys(revGrouped).sort().forEach(date => {
+            revGrouped[date].forEach(r => {
+                revCum += r.amount;
+                revBatchMap[r.batchId] = (revBatchMap[r.batchId] ?? 0) + r.amount;
+            });
+            revByDate[date] = {
+                cumulative: revCum,
+                batches: Object.entries(revBatchMap).map(([id, amt]) => ({ batchId: Number(id), amount: amt })),
+            };
+        });
 
-        if (revExpFilterMode === 'months') {
-            filtered = filtered.slice(-revExpMonthsBack);
-        } else if (revExpCustomFrom && revExpCustomTo) {
-            const fromKey = revExpCustomFrom.slice(0, 7);
-            const toKey = revExpCustomTo.slice(0, 7);
-            filtered = filtered.filter(([key]) => key >= fromKey && key <= toKey);
-        }
+        // Merge all dates into a single timeline
+        const allDates = Array.from(new Set([...Object.keys(expByDate), ...Object.keys(revByDate)])).sort();
+        let lastExp = 0;
+        let lastRev = 0;
+        let lastExpBatches: BatchEntry[] = [];
+        let lastRevBatches: BatchEntry[] = [];
 
-        return filtered.map(([key, val]) => ({
-            month: getMonthLabel(key),
-            revenue: parseFloat(n(val.revenue).toFixed(2)),
-            expenses: parseFloat(n(val.expenses).toFixed(2)),
-        }));
-    }, [batchClosures, revExpFilterMode, revExpMonthsBack, revExpCustomFrom, revExpCustomTo]);
+        return allDates.map(dateRaw => {
+            if (expByDate[dateRaw]) {
+                lastExp = expByDate[dateRaw].cumulative;
+                lastExpBatches = expByDate[dateRaw].batches;
+            }
+            if (revByDate[dateRaw]) {
+                lastRev = revByDate[dateRaw].cumulative;
+                lastRevBatches = revByDate[dateRaw].batches;
+            }
+            const d = new Date(dateRaw + 'T00:00:00');
+            return {
+                date: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+                dateRaw,
+                revenue: parseFloat(lastRev.toFixed(2)),
+                expenses: parseFloat(lastExp.toFixed(2)),
+                expenseBatches: lastExpBatches,
+                revenueBatches: lastRevBatches,
+            };
+        });
+    }, [batchClosures, batchSales, closedBatchIds, revExpFilterMode, revExpSelectedMonth, revExpCustomFrom, revExpCustomTo]);
 
     // ── Expense breakdown by item category ────────────────────────────
     const expenseBreakdown = useMemo(() => {
@@ -449,8 +530,9 @@ const OverviewModule = () => {
                         data={revenueExpenseData}
                         filterMode={revExpFilterMode}
                         onFilterModeChange={setRevExpFilterMode}
-                        monthsBack={revExpMonthsBack}
-                        onMonthsBackChange={setRevExpMonthsBack}
+                        selectedMonth={revExpSelectedMonth}
+                        onSelectedMonthChange={setRevExpSelectedMonth}
+                        availableMonths={availableMonths}
                         customFrom={revExpCustomFrom}
                         onCustomFromChange={setRevExpCustomFrom}
                         customTo={revExpCustomTo}
