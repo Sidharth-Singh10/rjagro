@@ -360,29 +360,52 @@ const OverviewModule = () => {
             .slice(0, 10);
     }, [batches, batchSales]);
 
-    // ── Avg Sale Rate per month (weighted by weight sold) ─────────────
-    const avgSaleRateData = useMemo(() => {
-        const months: Record<string, { weightedSum: number; totalWeight: number }> = {};
+    // ── Avg Sale Rate mode ───────────────────────────────────────────
+    const [avgRateMode, setAvgRateMode] = useState<'monthly' | 'continuous'>('continuous');
 
+    const avgSaleRateData = useMemo(() => {
+        if (avgRateMode === 'monthly') {
+            const months: Record<string, { weightedSum: number; totalWeight: number }> = {};
+            batchSales.forEach(s => {
+                const key = getMonthKey(s.created_at);
+                const weight = n(s.quantity) * n(s.avg_weight);
+                if (weight <= 0) return;
+                if (!months[key]) months[key] = { weightedSum: 0, totalWeight: 0 };
+                months[key].weightedSum += n(s.rate) * weight;
+                months[key].totalWeight += weight;
+            });
+            return Object.entries(months)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .slice(-12)
+                .map(([key, val]) => ({
+                    label: getMonthLabel(key),
+                    avgRate: val.totalWeight > 0
+                        ? parseFloat((val.weightedSum / val.totalWeight).toFixed(2))
+                        : 0,
+                }));
+        }
+
+        const days: Record<string, { weightedSum: number; totalWeight: number }> = {};
         batchSales.forEach(s => {
-            const key = getMonthKey(s.created_at);
+            const key = s.created_at.slice(0, 10);
             const weight = n(s.quantity) * n(s.avg_weight);
             if (weight <= 0) return;
-            if (!months[key]) months[key] = { weightedSum: 0, totalWeight: 0 };
-            months[key].weightedSum += n(s.rate) * weight;
-            months[key].totalWeight += weight;
+            if (!days[key]) days[key] = { weightedSum: 0, totalWeight: 0 };
+            days[key].weightedSum += n(s.rate) * weight;
+            days[key].totalWeight += weight;
         });
-
-        return Object.entries(months)
+        return Object.entries(days)
             .sort(([a], [b]) => a.localeCompare(b))
-            .slice(-12)
-            .map(([key, val]) => ({
-                month: getMonthLabel(key),
-                avgRate: val.totalWeight > 0
-                    ? parseFloat((val.weightedSum / val.totalWeight).toFixed(2))
-                    : 0,
-            }));
-    }, [batchSales]);
+            .map(([key, val]) => {
+                const d = new Date(key + 'T00:00:00');
+                return {
+                    label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+                    avgRate: val.totalWeight > 0
+                        ? parseFloat((val.weightedSum / val.totalWeight).toFixed(2))
+                        : 0,
+                };
+            });
+    }, [batchSales, avgRateMode]);
 
     // ── FCR per batch ─────────────────────────────────────────────────
     const fcrData = useMemo(() => {
@@ -551,7 +574,7 @@ const OverviewModule = () => {
             {/* Mortality, Avg Sale Rate, Inventory */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <MortalityChart data={mortalityData} />
-                <AvgSaleRateChart data={avgSaleRateData} />
+                <AvgSaleRateChart data={avgSaleRateData} mode={avgRateMode} onModeChange={setAvgRateMode} />
                 <InventoryChart data={inventoryData} />
             </div>
 
