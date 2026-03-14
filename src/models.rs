@@ -44,7 +44,6 @@ pub struct CreateProductionLine {
 pub struct CreatePurchase {
     pub item_code: String,
     pub cost_per_unit: Decimal,
-    pub total_cost: Option<Decimal>,
     pub purchase_date: chrono::NaiveDate,
     pub supplier_id: i32,
     pub supplier: Option<String>,
@@ -133,7 +132,6 @@ pub struct CreateBirdSellHistory {
     pub sale_date: chrono::NaiveDate,
     pub quantity_sold: i32,
     pub price_per_bird: Decimal,
-    pub total_amount: Decimal,
     pub notes: String,
 }
 
@@ -215,7 +213,6 @@ pub struct CreateBatchClosureSummary {
     pub initial_chicken_count: i32,
     pub available_chicken_count: i32,
     pub revenue: Decimal,
-    pub gross_profit: Decimal,
 }
 
 #[derive(serde::Deserialize)]

@@ -26,7 +26,6 @@ pub async fn build_farmer_details(
         Some((batch, Some(farmer))) => {
             Ok(FarmerDetails {
                 farmer_name: farmer.name,
-                farmer_id: farmer.farmer_id,
                 phone_number: farmer.phone_number,
                 // local??
                 date: Local::now().date_naive(),

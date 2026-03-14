@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, Trash2 } from 'lucide-react';
+import { Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
 import { calculateTotalCost } from '../../utils/helper';
 import { Item, LedgerAccountType, NewPurchase, Purchase, Supplier } from '@/app/types/interfaces';
 import { useQueryClient } from '@tanstack/react-query';

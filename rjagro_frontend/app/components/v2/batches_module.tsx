@@ -18,10 +18,6 @@ const BatchesModule = () => {
     const [loading, setLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
 
-    // Specific loading states
-    const [commissionLoading, setCommissionLoading] = useState(false);
-    const [batchClosureLoading, setBatchClosureLoading] = useState(false);
-
     // --- Data Fetching ---
     const { data: batches = [] } = useQuery({
         queryKey: ["batches"],

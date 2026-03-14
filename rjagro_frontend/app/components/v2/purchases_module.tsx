@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/app/hooks/useAuth';
 import { fetchPurchases, handleAddPurchase } from '@/app/api/purchases';
-import { fetchSuppliers, handleAddSupplier } from '@/app/api/supplier';
+import { fetchSuppliers } from '@/app/api/supplier';
 import { fetchItems } from '@/app/api/items';
-import { LedgerAccountType, NewPurchase, PurchasePayload, SupplierPayload, SupplierType } from '@/app/types/interfaces';
+import { LedgerAccountType, NewPurchase, PurchasePayload } from '@/app/types/interfaces';
 import { ShoppingCart } from 'lucide-react';
 import PurchasesTable from '../tables/purchases';
 
@@ -54,17 +54,6 @@ const PurchasesModule = () => {
         payment_account_id: undefined
     });
 
-    // --- State: New Supplier ---
-    const [newSupplier, _] = useState<SupplierPayload>({
-        supplier_type: SupplierType.Chick,
-        name: '',
-        phone_number: '',
-        address: '',
-        bank_account_no: '',
-        bank_name: '',
-        ifsc_code: ''
-    });
-
     // --- Handlers: Purchase Logic ---
     const handleItemCodeSelect = (itemCode: string) => {
         const selectedItem = items.find(item => item.item_code === itemCode);
@@ -81,7 +70,6 @@ const PurchasesModule = () => {
         const final: PurchasePayload = {
             item_code: newPurchase.item_code,
             cost_per_unit: Number(newPurchase.cost_per_unit),
-            total_cost: Number(newPurchase.cost_per_unit) * Number(newPurchase.quantity),
             quantity: Number(newPurchase.quantity),
             purchase_date: newPurchase.purchase_date,
             supplier: newPurchase.supplier,

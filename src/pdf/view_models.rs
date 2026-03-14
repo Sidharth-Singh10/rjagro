@@ -4,7 +4,6 @@ use serde::Deserialize;
 
 pub struct FarmerDetails {
     pub farmer_name: String,
-    pub farmer_id: i32,
     pub phone_number: String,
     pub date: NaiveDate,
     pub batch_id: i32,
@@ -72,7 +71,7 @@ impl BatchSalesInfo {
         }
     }
     pub fn get_converted_fcr(&self) -> String {
-        match self.fcr {
+        match self.converted_fcr {
             Some(num) => num.to_string(),
             None => "N/A".to_string(),
         }

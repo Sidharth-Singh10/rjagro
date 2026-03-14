@@ -222,13 +222,14 @@ pub async fn create_bird_sell_history(
     State(db): State<DatabaseConnection>,
     Json(payload): Json<CreateBirdSellHistory>,
 ) -> Result<Json<bird_sell_history::Model>, StatusCode> {
+    let computed_total = Decimal::from(payload.quantity_sold) * payload.price_per_bird;
     let new_sale = bird_sell_history::ActiveModel {
         batch_id: Set(payload.batch_id),
         trader_id: Set(payload.trader_id),
         sale_date: Set(payload.sale_date),
         quantity_sold: Set(payload.quantity_sold),
         price_per_bird: Set(payload.price_per_bird),
-        total_amount: Set(payload.total_amount),
+        total_amount: Set(computed_total),
         notes: Set(payload.notes),
         ..Default::default()
     };

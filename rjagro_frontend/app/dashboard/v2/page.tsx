@@ -15,6 +15,7 @@ import { useAuth } from '@/app/hooks/useAuth';
 
 const DashboardContent: React.FC = () => {
     const [activeSection, setActiveSection] = useState<string>('Ledger');
+    const [visitedSections, setVisitedSections] = useState<Set<string>>(() => new Set(['Ledger']));
     const searchParams = useSearchParams();
     const tabFromUrl = searchParams.get("tab");
     const { user, loading } = useAuth();
@@ -32,6 +33,13 @@ const DashboardContent: React.FC = () => {
             setActiveSection(tabFromUrl);
         }
     }, [tabFromUrl]);
+
+    useEffect(() => {
+        setVisitedSections(prev => {
+            if (prev.has(activeSection)) return prev;
+            return new Set(prev).add(activeSection);
+        });
+    }, [activeSection]);
 
     const getTitle = (id: string): string => {
         switch (id) {
@@ -72,15 +80,46 @@ const DashboardContent: React.FC = () => {
                         </h1>
                     </div>
 
-                    {activeSection === 'Ledger' && <LedgerModule />}
-                    {activeSection === 'Purchases' && <PurchasesModule />}
-                    {activeSection === 'Inventory' && <InventoryModule />}
-                    {activeSection === 'Allocations' && <AllocationsModule />}
-                    {activeSection === 'Batches' && <BatchesModule />}
-                    {activeSection === 'Entities' && <EntitiesModule />}
-                    {activeSection === 'Loan' && <LoanModule />}
-
-                    {activeSection === 'Overview' && <OverviewModule />}
+                    {visitedSections.has('Overview') && (
+                        <div style={{ display: activeSection === 'Overview' ? 'block' : 'none' }}>
+                            <OverviewModule />
+                        </div>
+                    )}
+                    {visitedSections.has('Ledger') && (
+                        <div style={{ display: activeSection === 'Ledger' ? 'block' : 'none' }}>
+                            <LedgerModule />
+                        </div>
+                    )}
+                    {visitedSections.has('Purchases') && (
+                        <div style={{ display: activeSection === 'Purchases' ? 'block' : 'none' }}>
+                            <PurchasesModule />
+                        </div>
+                    )}
+                    {visitedSections.has('Inventory') && (
+                        <div style={{ display: activeSection === 'Inventory' ? 'block' : 'none' }}>
+                            <InventoryModule />
+                        </div>
+                    )}
+                    {visitedSections.has('Allocations') && (
+                        <div style={{ display: activeSection === 'Allocations' ? 'block' : 'none' }}>
+                            <AllocationsModule />
+                        </div>
+                    )}
+                    {visitedSections.has('Batches') && (
+                        <div style={{ display: activeSection === 'Batches' ? 'block' : 'none' }}>
+                            <BatchesModule />
+                        </div>
+                    )}
+                    {visitedSections.has('Entities') && (
+                        <div style={{ display: activeSection === 'Entities' ? 'block' : 'none' }}>
+                            <EntitiesModule />
+                        </div>
+                    )}
+                    {visitedSections.has('Loan') && (
+                        <div style={{ display: activeSection === 'Loan' ? 'block' : 'none' }}>
+                            <LoanModule />
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

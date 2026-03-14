@@ -52,10 +52,11 @@ async fn insert_purchase<C: TransactionTrait + sea_orm::ConnectionTrait>(
     txn: &C,
     payload: &CreatePurchase,
 ) -> Result<purchases::Model, StatusCode> {
+    let computed_total_cost = Some(payload.cost_per_unit * payload.quantity);
     let new_purchase = purchases::ActiveModel {
         item_code: Set(payload.item_code.clone()),
         cost_per_unit: Set(payload.cost_per_unit),
-        total_cost: Set(payload.total_cost),
+        total_cost: Set(computed_total_cost),
         quantity: Set(payload.quantity),
         purchase_date: Set(payload.purchase_date),
         supplier_id: Set(payload.supplier_id),
@@ -149,7 +150,7 @@ async fn insert_ledger_entries<C: TransactionTrait + sea_orm::ConnectionTrait>(
     payload: &CreatePurchase,
     purchase: &purchases::Model,
 ) -> Result<(), StatusCode> {
-    let total_cost = payload.total_cost;
+    let total_cost = purchase.total_cost;
     let txn_group_id = Uuid::new_v4();
 
     let inventory_account_id = payload.inventory_account_id;

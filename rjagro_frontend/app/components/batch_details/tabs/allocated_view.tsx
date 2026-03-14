@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, Filter, Calendar, Package } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Package } from "lucide-react";
 import { AllocatedRequirement } from '@/app/types/interfaces';
 import { formatINR } from '@/app/utils/helper';
 
@@ -70,7 +70,7 @@ const AllocatedRequirementTable: React.FC<AllocatedRequirementTableProps> = ({
                                 </td>
                             </tr>
                         ) : (
-                            allocations.map((row, index) => (
+                            allocations.map((row) => (
                                 <tr key={`${row.requirement_id}-${row.allocation_id}`} className="hover:bg-gray-50 transition-colors">
                                     {/* Requirement Data */}
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">

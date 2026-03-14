@@ -47,7 +47,19 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
 
     useEffect(() => {
         if (isOpen) {
-            setFormState({ ...initialFormState, batch_id: batchId });
+            setFormState({
+                batch_id: batchId,
+                trader_id: "",
+                trader_name: "",
+                item_code: "DC101",
+                item_name: "DESI CHICKEN",
+                avg_weight: "",
+                rate: "",
+                quantity: "",
+                value: 0,
+                payment_type: "Cash",
+                created_by: 1,
+            });
         }
     }, [isOpen, batchId]);
 

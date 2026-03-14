@@ -15,7 +15,6 @@ export const handleAddPurchase = async (
     if (
         !payload.item_code ||
         !payload.cost_per_unit ||
-        !payload.total_cost ||
         !payload.purchase_date ||
         !payload.supplier ||
         !payload.created_by ||

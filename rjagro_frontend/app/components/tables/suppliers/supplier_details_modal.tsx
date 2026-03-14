@@ -1,11 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { X, CreditCard, Receipt, Plus, ArrowLeft, Save, BookOpen } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 import { SupplierLedgerEntry, SupplierPayable, SupplierPayment } from '@/app/types/interfaces';
 import { fetchSupplierLedger, fetchSupplierPayables, fetchSupplierPayments, handleAddSupplierPayment } from '@/app/api/supplier';
-import { formatINR } from '@/app/utils/helper';
 import { EntryType } from '@/app/types/enums';
 
 interface SupplierDetailsModalProps {
@@ -18,21 +16,18 @@ type TabType = 'payable' | 'paid' | 'ledger';
 type ViewMode = 'list' | 'form';
 
 export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supplierId, isOpen, onClose }) => {
-    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState<TabType>('payable');
     const [viewMode, setViewMode] = useState<ViewMode>('list');
 
     const [payables, setPayables] = useState<SupplierPayable[]>([]);
     const [payments, setPayments] = useState<SupplierPayment[]>([]);
-    const [ledger, setLedger] = useState<SupplierLedgerEntry[]>([]); // New State
+    const [ledger, setLedger] = useState<SupplierLedgerEntry[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Refresh data function
-    const refreshData = async () => {
+    const refreshData = useCallback(async () => {
         if (!supplierId) return;
         setLoading(true);
         try {
-
             const [payablesData, paymentsData, ledgerData] = await Promise.all([
                 fetchSupplierPayables(supplierId),
                 fetchSupplierPayments(supplierId),
@@ -46,13 +41,13 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
         } finally {
             setLoading(false);
         }
-    };
+    }, [supplierId]);
 
     useEffect(() => {
         if (!isOpen || !supplierId) return;
         refreshData();
         setViewMode('list');
-    }, [supplierId, isOpen]);
+    }, [supplierId, isOpen, refreshData]);
 
     if (!isOpen || !supplierId) return null;
 

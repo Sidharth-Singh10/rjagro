@@ -2,8 +2,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { X, CreditCard, Receipt, Plus, ArrowLeft, Save, BookOpen, TrendingUp } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
-import { formatINR } from '@/app/utils/helper';
 import { EntryType } from '@/app/types/enums';
 import { TraderLedgerEntry, TraderPayment, TraderReceivable } from '@/app/types/interfaces';
 import { fetchTraderLedger, fetchTraderPayments, fetchTraderReceivable, handleAddTraderPayment } from '@/app/api/traders';
@@ -18,7 +16,6 @@ type TabType = 'receivable' | 'received' | 'ledger';
 type ViewMode = 'list' | 'form';
 
 export const TraderDetailsModal: React.FC<TraderDetailsModalProps> = ({ traderId, isOpen, onClose }) => {
-    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState<TabType>('receivable');
     const [viewMode, setViewMode] = useState<ViewMode>('list');
 

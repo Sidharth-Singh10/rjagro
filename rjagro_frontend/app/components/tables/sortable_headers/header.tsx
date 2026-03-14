@@ -31,8 +31,7 @@ const SortableHeader = <T,>({
   return (
     <th
       onClick={() => isSortable && requestSort(columnKey)}
-      className={`px-4 py-3 text-left text-xs font-medium uppercase ${isSortable ? 'cursor-pointer select-none' : ''
-        }`}
+      className={`px-4 py-3 text-left text-xs font-medium uppercase ${isSortable ? 'cursor-pointer select-none' : ''} ${className}`}
     >
       <div className="flex items-center gap-1 text-gray-500">
         {children}

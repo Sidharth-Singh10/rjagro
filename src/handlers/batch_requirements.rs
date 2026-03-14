@@ -501,13 +501,14 @@ async fn process_stock_return(
     let item_code = requirement.item_code.clone();
 
     // 3. Insert stock return record
+    let computed_return_value = payload.return_qty * payload.unit_cost;
     let stock_return = stock_returns::ActiveModel {
         return_id: Default::default(),
         allocation_line_id: Set(payload.allocation_line_id),
         batch_id: Set(payload.batch_id),
         return_qty: Set(payload.return_qty),
         unit_cost: Set(payload.unit_cost),
-        return_value: Set(payload.return_value),
+        return_value: Set(computed_return_value),
         return_date: Set(payload.return_date),
         created_at: Set(chrono::Utc::now().into()),
     };

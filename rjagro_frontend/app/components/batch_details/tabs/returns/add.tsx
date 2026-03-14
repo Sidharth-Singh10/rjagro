@@ -39,9 +39,12 @@ const AddStockReturnModal: React.FC<AddStockReturnModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             setFormState({
-                ...initialFormState,
                 batch_id: batchId,
-                return_date: new Date().toISOString().split('T')[0]
+                allocation_line_id: 0,
+                return_date: new Date().toISOString().split('T')[0],
+                return_qty: 0,
+                unit_cost: 0,
+                return_value: 0,
             });
             setSelectedItemCode('');
             setFetchingCost(false);

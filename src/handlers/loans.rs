@@ -209,11 +209,12 @@ async fn insert_loan_payment_record<C: TransactionTrait + sea_orm::ConnectionTra
     payload: &CreateLoanPayment,
     txn_group_id: Uuid,
 ) -> Result<loan_payments::Model, StatusCode> {
+    let computed_total = payload.principal_amount + payload.interest_amount;
     let new_payment = loan_payments::ActiveModel {
         loan_id: Set(payload.loan_id),
         principal_amount: Set(payload.principal_amount),
         interest_amount: Set(payload.interest_amount),
-        total_amount: Set(payload.total_amount),
+        total_amount: Set(computed_total),
         payment_date: Set(payload.payment_date),
         payment_mode: Set(payload.payment_mode.clone()),
         reference_number: Set(payload.reference_number.clone()),

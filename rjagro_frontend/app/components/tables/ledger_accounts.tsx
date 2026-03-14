@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, Delete, Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import { Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
 import { LedgerAccount, NewLedgerAccount } from '@/app/types/interfaces';
 import { useLedgerAccountsSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from './sortable_headers/header';

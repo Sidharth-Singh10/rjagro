@@ -380,7 +380,7 @@ export interface LedgerAccountPayload {
 export interface PurchasePayload {
   item_code: string;
   cost_per_unit: number;
-  total_cost: number;
+  total_cost?: number;
   purchase_date: string;
   supplier: string;
   supplier_id?: number;

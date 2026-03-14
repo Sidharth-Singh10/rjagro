@@ -17,7 +17,7 @@ const UserBatchesModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: batchClosures = [], isLoading: closuresLoading } = useQuery({
+    const { isLoading: closuresLoading } = useQuery({
         queryKey: ["batch_closures"],
         queryFn: fetchBatchClosures,
         staleTime: 5 * 60 * 1000,
@@ -308,3 +308,4 @@ const UserBatchClosuresTable: React.FC<UserBatchClosuresTableProps> = ({
 };
 
 export default UserBatchesModule;
+export { UserBatchClosuresTable };

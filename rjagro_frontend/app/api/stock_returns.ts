@@ -44,12 +44,6 @@ export const handleAddStockReturn = async (
         return;
     }
 
-    const calculatedValue = payload.return_qty * payload.unit_cost;
-    if (Math.abs(calculatedValue - payload.return_value) > 0.01) {
-        toast.warning("Return value doesn't match quantity × unit cost. Adjusting...");
-        payload.return_value = calculatedValue;
-    }
-
     setLoading(true);
     toast.info("Processing stock return...");
 

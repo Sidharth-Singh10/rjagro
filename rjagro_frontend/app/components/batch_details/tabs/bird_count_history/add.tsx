@@ -31,10 +31,12 @@ const AddBirdCountModal: React.FC<AddBirdCountModalProps> = ({
     // Reset form when modal opens
     useEffect(() => {
         if (isOpen) {
-            setFormState({ 
-                ...initialFormState, 
+            setFormState({
                 batch_id: batchId,
-                record_date: new Date().toISOString().split('T')[0]
+                record_date: new Date().toISOString().split('T')[0],
+                deaths: 0,
+                additions: 0,
+                notes: "",
             });
         }
     }, [isOpen, batchId]);

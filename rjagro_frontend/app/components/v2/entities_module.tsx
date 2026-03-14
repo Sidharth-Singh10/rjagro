@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Users, Tractor, Briefcase, Truck } from 'lucide-react';
+import { Tractor, Briefcase, Truck } from 'lucide-react';
 import { fetchFarmers, handleAddFarmer } from '@/app/api/farmers';
 import { fetchTraders, handleAddTrader } from '@/app/api/traders';
 import { fetchSuppliers, handleAddSupplier } from '@/app/api/supplier';

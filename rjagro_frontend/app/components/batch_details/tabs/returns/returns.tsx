@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Package, Plus, FileText } from "lucide-react";
 import { Item, StockReturn, StockReturnPayload } from '@/app/types/interfaces';
-import { useTableSorting, TableConfigs } from '@/app/hooks/sorting';
+import { useTableSorting } from '@/app/hooks/sorting';
 import { handleAddStockReturn } from '@/app/api/stock_returns';
 import { useQueryClient } from '@tanstack/react-query';
 import SortableHeader from '@/app/components/tables/sortable_headers/header';
