@@ -1,4 +1,5 @@
 'use client'
+import { memo } from 'react';
 import { ChartCard } from './chart_card';
 
 interface EntityDue {
@@ -15,7 +16,7 @@ interface Props {
 
 const fmt = (v: number) => `₹${v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export const PayablesReceivables = ({ payables, receivables, totalPayable, totalReceivable }: Props) => {
+export const PayablesReceivables = memo(({ payables, receivables, totalPayable, totalReceivable }: Props) => {
     const net = totalReceivable - totalPayable;
 
     return (
@@ -78,4 +79,5 @@ export const PayablesReceivables = ({ payables, receivables, totalPayable, total
             </div>
         </ChartCard>
     );
-};
+});
+PayablesReceivables.displayName = 'PayablesReceivables';

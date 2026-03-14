@@ -1,4 +1,5 @@
 'use client'
+import { memo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { ChartCard } from './chart_card';
 
@@ -131,7 +132,7 @@ const FilterControls = ({
     </div>
 );
 
-export const RevenueExpenseChart = ({
+export const RevenueExpenseChart = memo(({
     data,
     filterMode, onFilterModeChange,
     selectedMonth, onSelectedMonthChange, availableMonths,
@@ -192,4 +193,5 @@ export const RevenueExpenseChart = ({
             </ResponsiveContainer>
         </ChartCard>
     );
-};
+});
+RevenueExpenseChart.displayName = 'RevenueExpenseChart';

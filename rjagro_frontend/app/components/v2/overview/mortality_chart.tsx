@@ -1,4 +1,5 @@
 'use client'
+import { memo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ChartCard } from './chart_card';
 
@@ -17,7 +18,7 @@ const getColor = (pct: number) => {
     return '#ef4444';
 };
 
-export const MortalityChart = ({ data }: Props) => {
+export const MortalityChart = memo(({ data }: Props) => {
     if (data.length === 0) {
         return (
             <ChartCard title="Mortality Rate by Batch">
@@ -57,4 +58,5 @@ export const MortalityChart = ({ data }: Props) => {
             </ResponsiveContainer>
         </ChartCard>
     );
-};
+});
+MortalityChart.displayName = 'MortalityChart';

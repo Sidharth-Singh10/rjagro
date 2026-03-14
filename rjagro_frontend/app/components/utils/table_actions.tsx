@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { MoreVertical } from 'lucide-react';
 
 interface ActionItem {
@@ -16,7 +16,7 @@ interface TableActionsDropdownProps {
     onMenuToggle?: (id: number | string | null) => void;
 }
 
-const TableActionsDropdown: React.FC<TableActionsDropdownProps> = ({
+const TableActionsDropdown: React.FC<TableActionsDropdownProps> = memo(({
     actions,
     rowId,
     openMenuId,
@@ -87,6 +87,7 @@ const TableActionsDropdown: React.FC<TableActionsDropdownProps> = ({
             )}
         </div>
     );
-};
+});
+TableActionsDropdown.displayName = 'TableActionsDropdown';
 
 export default TableActionsDropdown;

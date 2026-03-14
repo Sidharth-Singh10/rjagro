@@ -1,4 +1,5 @@
 'use client'
+import { memo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ChartCard } from './chart_card';
 
@@ -31,7 +32,7 @@ const CustomTooltip = ({ active, payload }: any) => {
     );
 };
 
-export const InventoryChart = ({ data }: Props) => {
+export const InventoryChart = memo(({ data }: Props) => {
     if (data.length === 0) {
         return (
             <ChartCard title="Inventory Levels">
@@ -64,4 +65,5 @@ export const InventoryChart = ({ data }: Props) => {
             </ResponsiveContainer>
         </ChartCard>
     );
-};
+});
+InventoryChart.displayName = 'InventoryChart';

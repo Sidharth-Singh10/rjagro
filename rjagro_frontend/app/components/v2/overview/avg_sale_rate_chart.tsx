@@ -1,4 +1,5 @@
 'use client'
+import { memo } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer,
@@ -53,7 +54,7 @@ const ModeToggle = ({ mode, onModeChange }: Pick<Props, 'mode' | 'onModeChange'>
     </div>
 );
 
-export const AvgSaleRateChart = ({ data, mode, onModeChange }: Props) => {
+export const AvgSaleRateChart = memo(({ data, mode, onModeChange }: Props) => {
     const toggle = <ModeToggle mode={mode} onModeChange={onModeChange} />;
 
     if (data.length === 0) {
@@ -100,4 +101,5 @@ export const AvgSaleRateChart = ({ data, mode, onModeChange }: Props) => {
             </ResponsiveContainer>
         </ChartCard>
     );
-};
+});
+AvgSaleRateChart.displayName = 'AvgSaleRateChart';

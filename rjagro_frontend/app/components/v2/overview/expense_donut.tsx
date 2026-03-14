@@ -1,4 +1,5 @@
 'use client'
+import { memo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartCard } from './chart_card';
 
@@ -26,7 +27,7 @@ const CustomTooltip = ({ active, payload }: any) => {
     );
 };
 
-export const ExpenseDonut = ({ data, total }: Props) => {
+export const ExpenseDonut = memo(({ data, total }: Props) => {
     if (data.length === 0) {
         return (
             <ChartCard title="Expense Breakdown">
@@ -78,4 +79,5 @@ export const ExpenseDonut = ({ data, total }: Props) => {
             </div>
         </ChartCard>
     );
-};
+});
+ExpenseDonut.displayName = 'ExpenseDonut';

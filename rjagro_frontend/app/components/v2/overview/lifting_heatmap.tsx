@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
 import { ChevronLeft, ChevronRight, FlaskConical, Plus, X } from 'lucide-react';
 import { ChartCard } from './chart_card';
 import { Batch } from '@/app/types/interfaces';
@@ -83,7 +83,7 @@ interface Props {
 
 let plannedCounter = 0;
 
-export const LiftingHeatmap = ({ batches }: Props) => {
+export const LiftingHeatmap = memo(({ batches }: Props) => {
     const today = useMemo(() => new Date(), []);
     const [baseMonth, setBaseMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
     const [planMode, setPlanMode] = useState(false);
@@ -426,4 +426,5 @@ export const LiftingHeatmap = ({ batches }: Props) => {
             </div>
         </ChartCard>
     );
-};
+});
+LiftingHeatmap.displayName = 'LiftingHeatmap';

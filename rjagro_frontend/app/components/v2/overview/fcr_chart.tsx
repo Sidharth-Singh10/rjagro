@@ -1,4 +1,5 @@
 'use client'
+import { memo } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Cell, ReferenceLine,
@@ -31,7 +32,7 @@ const CustomTooltip = ({ active, payload }: any) => {
     );
 };
 
-export const FCRChart = ({ data }: Props) => {
+export const FCRChart = memo(({ data }: Props) => {
     if (data.length === 0) {
         return (
             <ChartCard title="Feed Conversion Ratio (FCR)">
@@ -80,4 +81,5 @@ export const FCRChart = ({ data }: Props) => {
             </ResponsiveContainer>
         </ChartCard>
     );
-};
+});
+FCRChart.displayName = 'FCRChart';

@@ -3,27 +3,29 @@ import { fetchTraders } from "../api/traders";
 import { fetchBatches } from "../api/batches";
 import { fetchItems } from "../api/items";
 
-// fix re fetches (imp)
+const STALE_10 = 1000 * 60 * 10;
+const STALE_5 = 1000 * 60 * 5;
+
 export const useTraders = () => {
     return useQuery({
-        queryKey: ["traders_new"],
+        queryKey: ["traders"],
         queryFn: fetchTraders,
-        staleTime: 1000 * 60 * 10, // 10 mins
+        staleTime: STALE_10,
     });
 };
 
 export const useAllBatches = () => {
     return useQuery({
-        queryKey: ["batches_list"],
+        queryKey: ["batches"],
         queryFn: fetchBatches,
-        staleTime: 1000 * 60 * 5,
+        staleTime: STALE_5,
     });
 };
 
 export const useItems = () => {
     return useQuery({
-        queryKey: ["items_new"],
+        queryKey: ["items"],
         queryFn: fetchItems,
-        staleTime: 1000 * 60 * 10,
+        staleTime: STALE_10,
     });
 };

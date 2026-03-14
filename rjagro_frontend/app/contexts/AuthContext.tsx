@@ -1,5 +1,5 @@
 'use client'
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { User, AuthContextType } from '../types/auth';
 import { useRouter } from 'next/navigation';
 
@@ -15,11 +15,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Check if "token" cookie exists
         const getCookie = (name: string) => {
           const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
           return match ? match[2] : null;
@@ -31,10 +29,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return;
         }
 
-        // Optionally, decode JWT and check expiry
-        const decodeJwt = (token: string) => {
+        const decodeJwt = (t: string) => {
           try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
+            const payload = JSON.parse(atob(t.split('.')[1]));
             return payload;
           } catch {
             return null;
@@ -47,7 +44,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return;
         }
 
-        // If token is valid, restore user from localStorage
         const savedUser = localStorage.getItem('user');
         if (savedUser) {
           const parsedUser: User = JSON.parse(savedUser);
@@ -57,7 +53,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         console.error('Error initializing auth:', error);
         localStorage.removeItem('user');
-        await logout();
+        setUser(null);
+        setToken(null);
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         router.push('/');
       } finally {
         setLoading(false);
@@ -66,43 +64,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, [router]);
 
-  const login = (userData: User, authToken: string): void => {
+  const login = useCallback((userData: User, authToken: string): void => {
     try {
       setUser(userData);
       setToken(authToken);
       document.cookie = `token=${authToken}; path=/;`;
-      // Only save user data to localStorage (token is in HTTP-only cookie)
       localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       console.error('Error saving auth data:', error);
       throw new Error('Failed to save authentication data');
     }
-  };
+  }, []);
 
-
-  const logout = async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<void> => {
     try {
       setUser(null);
       setToken(null);
       localStorage.removeItem('user');
-      // Remove all cookies (or just the "token" cookie)
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     } catch (error) {
       console.error('Error during logout:', error);
-      // Even if logout API fails, clear local state
       setUser(null);
       setToken(null);
       localStorage.removeItem('user');
     }
-  };
+  }, []);
 
-  const contextValue: AuthContextType = {
+  const contextValue = useMemo<AuthContextType>(() => ({
     user,
     token,
     login,
     logout,
     loading
-  };
+  }), [user, token, login, logout, loading]);
 
   return (
     <AuthContext.Provider value={contextValue}>

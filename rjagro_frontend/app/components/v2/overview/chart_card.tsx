@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 interface ChartCardProps {
     title: string;
     children: React.ReactNode;
@@ -5,7 +7,7 @@ interface ChartCardProps {
     headerControls?: React.ReactNode;
 }
 
-export const ChartCard = ({ title, children, className = '', headerControls }: ChartCardProps) => (
+export const ChartCard = memo(({ title, children, className = '', headerControls }: ChartCardProps) => (
     <div className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 ${className}`}>
         <div className="flex items-start justify-between gap-4 mb-4">
             <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
@@ -13,4 +15,5 @@ export const ChartCard = ({ title, children, className = '', headerControls }: C
         </div>
         {children}
     </div>
-);
+));
+ChartCard.displayName = 'ChartCard';

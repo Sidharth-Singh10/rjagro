@@ -1,4 +1,5 @@
 'use client'
+import { memo } from 'react';
 import {
     ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, Legend, ResponsiveContainer,
@@ -36,7 +37,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     );
 };
 
-export const BatchProfitChart = ({ data }: Props) => {
+export const BatchProfitChart = memo(({ data }: Props) => {
     if (data.length === 0) {
         return (
             <ChartCard title="Batch Profitability">
@@ -84,4 +85,5 @@ export const BatchProfitChart = ({ data }: Props) => {
             </ResponsiveContainer>
         </ChartCard>
     );
-};
+});
+BatchProfitChart.displayName = 'BatchProfitChart';

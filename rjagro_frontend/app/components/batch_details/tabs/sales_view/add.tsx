@@ -2,6 +2,16 @@ import { BatchSalePayload, Trader } from "@/app/types/interfaces";
 import { Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+const Label = ({ children, required }: { children: React.ReactNode, required?: boolean }) => (
+    <label className="block text-sm font-medium text-gray-800 mb-1.5">
+        {children} {required && <span className="text-blue-600">*</span>}
+    </label>
+);
+
+const inputBaseClasses = "w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all";
+
+const readOnlyBaseClasses = "w-full px-3.5 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 font-medium cursor-not-allowed select-none";
+
 interface BatchSaleFormState extends Omit<BatchSalePayload, 'trader_id' | 'avg_weight' | 'rate' | 'quantity'> {
     trader_id: number | string;
     avg_weight: number | string;
@@ -99,17 +109,6 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
     };
 
     if (!isOpen) return null;
-
-    const Label = ({ children, required }: { children: React.ReactNode, required?: boolean }) => (
-        <label className="block text-sm font-medium text-gray-800 mb-1.5">
-            {children} {required && <span className="text-blue-600">*</span>}
-        </label>
-    );
-
-    const inputBaseClasses = "w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all";
-
-    const readOnlyBaseClasses = "w-full px-3.5 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 font-medium cursor-not-allowed select-none";
-
 
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm transition-opacity duration-300">

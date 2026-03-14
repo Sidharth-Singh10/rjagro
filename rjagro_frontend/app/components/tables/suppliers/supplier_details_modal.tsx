@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { X, CreditCard, Receipt, Plus, ArrowLeft, Save, BookOpen } from 'lucide-react';
 import { SupplierLedgerEntry, SupplierPayable, SupplierPayment } from '@/app/types/interfaces';
 import { fetchSupplierLedger, fetchSupplierPayables, fetchSupplierPayments, handleAddSupplierPayment } from '@/app/api/supplier';
 import { EntryType } from '@/app/types/enums';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface SupplierDetailsModalProps {
     supplierId: number | null;
@@ -18,36 +19,38 @@ type ViewMode = 'list' | 'form';
 export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supplierId, isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState<TabType>('payable');
     const [viewMode, setViewMode] = useState<ViewMode>('list');
+    const queryClient = useQueryClient();
 
-    const [payables, setPayables] = useState<SupplierPayable[]>([]);
-    const [payments, setPayments] = useState<SupplierPayment[]>([]);
-    const [ledger, setLedger] = useState<SupplierLedgerEntry[]>([]);
-    const [loading, setLoading] = useState(false);
+    const enabled = isOpen && !!supplierId;
 
-    const refreshData = useCallback(async () => {
-        if (!supplierId) return;
-        setLoading(true);
-        try {
-            const [payablesData, paymentsData, ledgerData] = await Promise.all([
-                fetchSupplierPayables(supplierId),
-                fetchSupplierPayments(supplierId),
-                fetchSupplierLedger(supplierId)
-            ]);
-            setPayables(payablesData);
-            setPayments(paymentsData);
-            setLedger(ledgerData);
-        } catch (err) {
-            console.error("Failed to fetch supplier details", err);
-        } finally {
-            setLoading(false);
-        }
-    }, [supplierId]);
+    const { data: payables = [], isLoading: payablesLoading } = useQuery<SupplierPayable[]>({
+        queryKey: ['supplier_payables', supplierId],
+        queryFn: () => fetchSupplierPayables(supplierId!),
+        enabled,
+        staleTime: 5 * 60 * 1000,
+    });
 
-    useEffect(() => {
-        if (!isOpen || !supplierId) return;
-        refreshData();
-        setViewMode('list');
-    }, [supplierId, isOpen, refreshData]);
+    const { data: payments = [], isLoading: paymentsLoading } = useQuery<SupplierPayment[]>({
+        queryKey: ['supplier_payments', supplierId],
+        queryFn: () => fetchSupplierPayments(supplierId!),
+        enabled,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: ledger = [], isLoading: ledgerLoading } = useQuery<SupplierLedgerEntry[]>({
+        queryKey: ['supplier_ledger', supplierId],
+        queryFn: () => fetchSupplierLedger(supplierId!),
+        enabled,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const loading = payablesLoading || paymentsLoading || ledgerLoading;
+
+    const refreshData = () => {
+        queryClient.invalidateQueries({ queryKey: ['supplier_payables', supplierId] });
+        queryClient.invalidateQueries({ queryKey: ['supplier_payments', supplierId] });
+        queryClient.invalidateQueries({ queryKey: ['supplier_ledger', supplierId] });
+    };
 
     if (!isOpen || !supplierId) return null;
 

@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { X, CreditCard, Receipt, Plus, ArrowLeft, Save, BookOpen, TrendingUp } from 'lucide-react';
 import { EntryType } from '@/app/types/enums';
 import { TraderLedgerEntry, TraderPayment, TraderReceivable } from '@/app/types/interfaces';
 import { fetchTraderLedger, fetchTraderPayments, fetchTraderReceivable, handleAddTraderPayment } from '@/app/api/traders';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface TraderDetailsModalProps {
     traderId: number | null;
@@ -18,37 +19,38 @@ type ViewMode = 'list' | 'form';
 export const TraderDetailsModal: React.FC<TraderDetailsModalProps> = ({ traderId, isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState<TabType>('receivable');
     const [viewMode, setViewMode] = useState<ViewMode>('list');
+    const queryClient = useQueryClient();
 
-    const [receivables, setReceivables] = useState<TraderReceivable[]>([]);
-    const [payments, setPayments] = useState<TraderPayment[]>([]);
-    const [ledger, setLedger] = useState<TraderLedgerEntry[]>([]);
-    const [loading, setLoading] = useState(false);
+    const enabled = isOpen && !!traderId;
 
-    const refreshData = useCallback(async () => {
-        if (!traderId) return;
-        setLoading(true);
-        try {
-            const [receivablesData, paymentsData, ledgerData] = await Promise.all([
-                fetchTraderReceivable(traderId),
-                fetchTraderPayments(traderId),
-                fetchTraderLedger(traderId)
-            ]);
-            setReceivables(receivablesData);
-            setPayments(paymentsData);
-            setLedger(ledgerData);
-        } catch (err) {
-            console.error("Failed to fetch trader details", err);
-        } finally {
-            setLoading(false);
-        }
-    }, [traderId]);
+    const { data: receivables = [], isLoading: receivablesLoading } = useQuery<TraderReceivable[]>({
+        queryKey: ['trader_receivables', traderId],
+        queryFn: () => fetchTraderReceivable(traderId!),
+        enabled,
+        staleTime: 5 * 60 * 1000,
+    });
 
-    useEffect(() => {
-        if (!isOpen || !traderId) return;
-        refreshData();
-        setViewMode('list');
-        setActiveTab('receivable');
-    }, [traderId, isOpen, refreshData]);
+    const { data: payments = [], isLoading: paymentsLoading } = useQuery<TraderPayment[]>({
+        queryKey: ['trader_payments', traderId],
+        queryFn: () => fetchTraderPayments(traderId!),
+        enabled,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: ledger = [], isLoading: ledgerLoading } = useQuery<TraderLedgerEntry[]>({
+        queryKey: ['trader_ledger', traderId],
+        queryFn: () => fetchTraderLedger(traderId!),
+        enabled,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const loading = receivablesLoading || paymentsLoading || ledgerLoading;
+
+    const refreshData = () => {
+        queryClient.invalidateQueries({ queryKey: ['trader_receivables', traderId] });
+        queryClient.invalidateQueries({ queryKey: ['trader_payments', traderId] });
+        queryClient.invalidateQueries({ queryKey: ['trader_ledger', traderId] });
+    };
 
     if (!isOpen || !traderId) return null;
 

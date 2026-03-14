@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import {
     Banknote,
     Bird,
@@ -25,20 +25,27 @@ interface NavItem {
     icon: LucideIcon | React.ElementType | null;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeSection, onNavigate }) => {
-    // Default to true or false based on your preference
+const navItems: NavItem[] = [
+    { id: 'Overview', label: 'Overview', icon: null },
+    { id: 'Ledger', label: 'Finance & Ledger', icon: LedgerIcon },
+    { id: 'Inventory', label: 'Inventory', icon: Package },
+    { id: 'Purchases', label: 'Purchases', icon: ShoppingCartIcon },
+    { id: 'Allocations', label: 'Allocations', icon: ClipboardCheck },
+    { id: 'Batches', label: 'Batches', icon: Bird },
+    { id: 'Entities', label: 'Entities', icon: Users },
+    { id: 'Loan', label: 'Loan', icon: Banknote },
+];
+
+const Sidebar: React.FC<SidebarProps> = memo(({ activeSection, onNavigate }) => {
     const [isSidebarOpen, setSidebarOpen] = useState<boolean>(true);
 
-    const navItems: NavItem[] = [
-        { id: 'Overview', label: 'Overview', icon: null },
-        { id: 'Ledger', label: 'Finance & Ledger', icon: LedgerIcon },
-        { id: 'Inventory', label: 'Inventory', icon: Package },
-        { id: 'Purchases', label: 'Purchases', icon: ShoppingCartIcon },
-        { id: 'Allocations', label: 'Allocations', icon: ClipboardCheck },
-        { id: 'Batches', label: 'Batches', icon: Bird },
-        { id: 'Entities', label: 'Entities', icon: Users },
-        { id: 'Loan', label: 'Loan', icon: Banknote },
-    ];
+    const toggleSidebar = useCallback(() => {
+        setSidebarOpen(prev => !prev);
+    }, []);
+
+    const handleNavigate = useCallback((id: string) => {
+        onNavigate(id);
+    }, [onNavigate]);
 
     return (
         <aside
@@ -54,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onNavigate }) => {
                     RJ AGRO
                 </span>
                 <button
-                    onClick={() => setSidebarOpen(!isSidebarOpen)}
+                    onClick={toggleSidebar}
                     className={`
                         p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors
                         ${!isSidebarOpen ? 'mx-auto' : ''}
@@ -74,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onNavigate }) => {
                         return (
                             <li key={item.id} className="relative flex items-center">
                                 <button
-                                    onClick={() => onNavigate(item.id)}
+                                    onClick={() => handleNavigate(item.id)}
                                     className={`
                                         group flex items-center rounded-xl text-sm font-medium transition-all duration-300 ease-in-out whitespace-nowrap
                                         h-14
@@ -153,6 +160,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onNavigate }) => {
             </div>
         </aside>
     );
-};
+});
+Sidebar.displayName = 'Sidebar';
 
 export default Sidebar;

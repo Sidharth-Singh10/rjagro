@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Banknote, TrendingUp, TrendingDown, Bird, Heart,
@@ -52,7 +52,7 @@ const getMonthLabel = (key: string) => {
     return d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
 };
 
-const OverviewKPI = ({ title, value, subtext, icon: Icon, color }: {
+const OverviewKPI = memo(({ title, value, subtext, icon: Icon, color }: {
     title: string;
     value: string;
     subtext: string;
@@ -72,7 +72,8 @@ const OverviewKPI = ({ title, value, subtext, icon: Icon, color }: {
             <p className="text-[11px] text-gray-400 mt-0.5 truncate">{subtext}</p>
         </div>
     </div>
-);
+));
+OverviewKPI.displayName = 'OverviewKPI';
 
 const OverviewModule = () => {
     // ── Data fetching ─────────────────────────────────────────────────
