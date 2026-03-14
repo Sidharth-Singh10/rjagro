@@ -413,6 +413,8 @@ const OverviewModule = () => {
     }, [batchSales, avgRateMode]);
 
     // ── FCR per batch ─────────────────────────────────────────────────
+    const FEED_BAG_KG = 50;
+
     const fcrData = useMemo(() => {
         const feedPerBatch: Record<number, number> = {};
         allocationLines.forEach(line => {
@@ -420,9 +422,11 @@ const OverviewModule = () => {
             if (!batchId) return;
             const itemCode = lotItemCodeMap[n(line.lot_id)];
             if (!itemCode) return;
-            const category = itemMap[itemCode]?.item_category;
-            if (category !== 'Feed') return;
-            feedPerBatch[batchId] = (feedPerBatch[batchId] ?? 0) + n(line.qty);
+            const item = itemMap[itemCode];
+            if (!item || item.item_category !== 'Feed') return;
+            const qty = n(line.qty);
+            const kgs = item.unit?.toLowerCase() === 'bags' ? qty * FEED_BAG_KG : qty;
+            feedPerBatch[batchId] = (feedPerBatch[batchId] ?? 0) + kgs;
         });
 
         const weightPerBatch: Record<number, number> = {};

@@ -45,13 +45,17 @@ export const FCRChart = memo(({ data }: Props) => {
 
     return (
         <ChartCard title="Feed Conversion Ratio (FCR)">
-            <ResponsiveContainer width="100%" height={340}>
+            <p className="text-[11px] text-gray-400 -mt-2 mb-2">
+                FCR = kg of feed consumed per kg of live weight sold. Lower is better — below 1.6 is ideal; above 2.0 signals inefficiency.
+            </p>
+            <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis
                         type="number"
                         tick={{ fontSize: 11, fill: '#6b7280' }}
                         domain={[0, (max: number) => Math.max(max * 1.15, 2.5)]}
+                        ticks={[0, 0.65, 1.3, 1.6, 1.95, 2.5]}
                     />
                     <YAxis
                         type="category"
@@ -60,6 +64,18 @@ export const FCRChart = memo(({ data }: Props) => {
                         width={90}
                     />
                     <Tooltip content={<CustomTooltip />} />
+                    <ReferenceLine
+                        x={1.6}
+                        stroke="#ef4444"
+                        strokeDasharray="4 3"
+                        strokeWidth={1.5}
+                        label={{
+                            value: 'Target 1.6',
+                            position: 'top',
+                            fontSize: 10,
+                            fill: '#ef4444',
+                        }}
+                    />
                     <ReferenceLine
                         x={1.8}
                         stroke="#6b7280"
