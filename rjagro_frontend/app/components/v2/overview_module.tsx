@@ -428,7 +428,7 @@ const OverviewModule = () => {
         const weightPerBatch: Record<number, number> = {};
         batchSales.forEach(s => {
             const batchId = n(s.batch_id);
-            weightPerBatch[batchId] = (weightPerBatch[batchId] ?? 0) + n(s.quantity) * n(s.avg_weight);
+            weightPerBatch[batchId] = (weightPerBatch[batchId] ?? 0) + n(s.avg_weight);
         });
 
         const batchIds = new Set([...Object.keys(feedPerBatch), ...Object.keys(weightPerBatch)].map(Number));

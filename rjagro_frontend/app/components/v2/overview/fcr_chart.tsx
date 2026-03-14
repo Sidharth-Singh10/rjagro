@@ -72,7 +72,7 @@ export const FCRChart = memo(({ data }: Props) => {
                             fill: '#6b7280',
                         }}
                     />
-                    <Bar dataKey="fcr" name="FCR" radius={[0, 4, 4, 0]}>
+                    <Bar dataKey="fcr" name="FCR" radius={[0, 4, 4, 0]} activeBar={false}>
                         {data.map((entry, idx) => (
                             <Cell key={idx} fill={getColor(entry.fcr)} />
                         ))}
