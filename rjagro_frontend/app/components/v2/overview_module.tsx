@@ -26,7 +26,8 @@ import { MortalityChart } from './overview/mortality_chart';
 import { InventoryChart } from './overview/inventory_chart';
 import { PayablesReceivables } from './overview/payables_receivables';
 import { AvgSaleRateChart } from './overview/avg_sale_rate_chart';
-import { FCRChart } from './overview/fcr_chart';
+import { FCRChart, FCRData } from './overview/fcr_chart';
+import { FCRDetailModal } from './overview/fcr_detail_modal';
 import { LiftingHeatmap } from './overview/lifting_heatmap';
 
 const STALE = 5 * 60 * 1000;
@@ -365,6 +366,9 @@ const OverviewModule = () => {
             .slice(0, 10);
     }, [batches, batchSales]);
 
+    // ── FCR detail modal ──────────────────────────────────────────────
+    const [selectedFCR, setSelectedFCR] = useState<FCRData | null>(null);
+
     // ── Avg Sale Rate mode ───────────────────────────────────────────
     const [avgRateMode, setAvgRateMode] = useState<'monthly' | 'continuous'>('continuous');
 
@@ -417,6 +421,7 @@ const OverviewModule = () => {
 
     const fcrData = useMemo(() => {
         const feedPerBatch: Record<number, number> = {};
+        const feedBreakdownPerBatch: Record<number, { itemName: string; qty: number; unit: string; kg: number }[]> = {};
         allocationLines.forEach(line => {
             const batchId = n(line.batch_id);
             if (!batchId) return;
@@ -425,14 +430,22 @@ const OverviewModule = () => {
             const item = itemMap[itemCode];
             if (!item || item.item_category !== 'Feed') return;
             const qty = n(line.qty);
-            const kgs = item.unit?.toLowerCase() === 'bags' ? qty * FEED_BAG_KG : qty;
+            const unit = item.unit ?? '';
+            const kgs = unit.toLowerCase() === 'bags' ? qty * FEED_BAG_KG : qty;
             feedPerBatch[batchId] = (feedPerBatch[batchId] ?? 0) + kgs;
+            if (!feedBreakdownPerBatch[batchId]) feedBreakdownPerBatch[batchId] = [];
+            feedBreakdownPerBatch[batchId].push({ itemName: item.item_name, qty, unit, kg: kgs });
         });
 
         const weightPerBatch: Record<number, number> = {};
+        const salesBreakdownPerBatch: Record<number, { quantity: number; avgWeight: number; totalWeight: number }[]> = {};
         batchSales.forEach(s => {
             const batchId = n(s.batch_id);
-            weightPerBatch[batchId] = (weightPerBatch[batchId] ?? 0) + n(s.avg_weight);
+            const avgW = n(s.avg_weight);
+            const qty = n(s.quantity);
+            weightPerBatch[batchId] = (weightPerBatch[batchId] ?? 0) + avgW;
+            if (!salesBreakdownPerBatch[batchId]) salesBreakdownPerBatch[batchId] = [];
+            salesBreakdownPerBatch[batchId].push({ quantity: qty, avgWeight: avgW, totalWeight: avgW });
         });
 
         const batchIds = new Set([...Object.keys(feedPerBatch), ...Object.keys(weightPerBatch)].map(Number));
@@ -445,9 +458,14 @@ const OverviewModule = () => {
                 return {
                     label: `Batch ${id}`,
                     fcr: parseFloat((feed / weight).toFixed(2)),
+                    batchId: id,
+                    totalFeedKg: feed,
+                    totalWeightKg: weight,
+                    feedBreakdown: feedBreakdownPerBatch[id] ?? [],
+                    salesBreakdown: salesBreakdownPerBatch[id] ?? [],
                 };
             })
-            .filter((d): d is { label: string; fcr: number } => d !== null)
+            .filter((d): d is FCRData => d !== null)
             .sort((a, b) => b.fcr - a.fcr)
             .slice(0, 10);
     }, [allocationLines, batchSales, lotItemCodeMap, itemMap]);
@@ -577,7 +595,7 @@ const OverviewModule = () => {
             {/* Batch Profitability & FCR */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <BatchProfitChart data={batchProfitData} />
-                <FCRChart data={fcrData} />
+                <FCRChart data={fcrData} onBarClick={setSelectedFCR} />
             </div>
 
             {/* Mortality, Avg Sale Rate, Inventory */}
@@ -589,6 +607,13 @@ const OverviewModule = () => {
 
             {/* Payables & Receivables */}
             <PayablesReceivables {...payablesReceivablesData} />
+
+            {/* FCR Detail Modal */}
+            <FCRDetailModal
+                isOpen={!!selectedFCR}
+                onClose={() => setSelectedFCR(null)}
+                data={selectedFCR}
+            />
         </div>
     );
 };

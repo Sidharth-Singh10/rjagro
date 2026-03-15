@@ -1,18 +1,37 @@
 'use client'
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts';
 import { ChartCard } from './chart_card';
 
+export interface FeedBreakdownItem {
+    itemName: string;
+    qty: number;
+    unit: string;
+    kg: number;
+}
+
+export interface SalesBreakdownItem {
+    quantity: number;
+    avgWeight: number;
+    totalWeight: number;
+}
+
 export interface FCRData {
     label: string;
     fcr: number;
+    batchId: number;
+    totalFeedKg: number;
+    totalWeightKg: number;
+    feedBreakdown: FeedBreakdownItem[];
+    salesBreakdown: SalesBreakdownItem[];
 }
 
 interface Props {
     data: FCRData[];
+    onBarClick?: (entry: FCRData) => void;
 }
 
 const getColor = (fcr: number) => {
@@ -28,11 +47,18 @@ const CustomTooltip = ({ active, payload }: any) => {
         <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-100 text-xs">
             <p className="font-semibold text-gray-700">{label}</p>
             <p style={{ color: getColor(fcr) }}>FCR: {fcr.toFixed(2)}</p>
+            <p className="text-[10px] text-gray-400 mt-1">Click for breakdown</p>
         </div>
     );
 };
 
-export const FCRChart = memo(({ data }: Props) => {
+export const FCRChart = memo(({ data, onBarClick }: Props) => {
+    const handleBarClick = useCallback((barData: any) => {
+        if (onBarClick && barData?.payload) {
+            onBarClick(barData.payload as FCRData);
+        }
+    }, [onBarClick]);
+
     if (data.length === 0) {
         return (
             <ChartCard title="Feed Conversion Ratio (FCR)">
@@ -88,7 +114,14 @@ export const FCRChart = memo(({ data }: Props) => {
                             fill: '#6b7280',
                         }}
                     />
-                    <Bar dataKey="fcr" name="FCR" radius={[0, 4, 4, 0]} activeBar={false}>
+                    <Bar
+                        dataKey="fcr"
+                        name="FCR"
+                        radius={[0, 4, 4, 0]}
+                        activeBar={false}
+                        onClick={handleBarClick}
+                        cursor={onBarClick ? 'pointer' : undefined}
+                    >
                         {data.map((entry, idx) => (
                             <Cell key={idx} fill={getColor(entry.fcr)} />
                         ))}
