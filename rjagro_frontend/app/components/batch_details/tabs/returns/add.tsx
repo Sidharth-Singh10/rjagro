@@ -67,12 +67,12 @@ const AddStockReturnModal: React.FC<AddStockReturnModalProps> = ({
                 try {
                     const data = await fetchStockReturnUnitCost(formState.batch_id, selectedItemCode);
 
+                    const unitCost = Number(data.unit_cost);
                     setFormState(prev => ({
                         ...prev,
                         allocation_line_id: data.allocation_line_id,
-                        unit_cost: data.unit_cost,
-                        // Recalculate value immediately if qty exists
-                        return_value: Number((prev.return_qty * data.unit_cost).toFixed(2))
+                        unit_cost: unitCost,
+                        return_value: Number((prev.return_qty * unitCost).toFixed(2))
                     }));
                 } catch (error) {
                     toast.error("Failed to fetch cost details for this item");

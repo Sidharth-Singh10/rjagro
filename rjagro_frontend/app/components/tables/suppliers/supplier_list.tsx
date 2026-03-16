@@ -41,7 +41,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({ suppliers, loading, 
                                 <td className="px-4 py-4 text-sm text-gray-900">{s.supplier_id}</td>
                                 <td className="px-4 py-4 text-sm text-gray-900 font-medium">{s.name}</td>
                                 <td className="px-4 py-4 text-sm text-gray-900">{s.phone_number}</td>
-                                <td className={`px-4 py-4 text-sm font-medium ${parseInt(s.amount_due) > 0 ? 'text-red-600' : 'text-green-600'
+                                <td className={`px-4 py-4 text-sm font-medium ${parseFloat(s.amount_due) > 0 ? 'text-red-600' : 'text-green-600'
                                     }`}>
                                     {s.amount_due}
                                 </td>

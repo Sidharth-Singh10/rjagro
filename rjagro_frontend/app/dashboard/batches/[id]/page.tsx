@@ -69,12 +69,12 @@ export default function BatchDetailsPage() {
 
     const totalExpenses = useMemo(() => {
         const allocatedTotal = allocations.reduce((sum, a) => sum + parseFloat(a.allocated_value || '0'), 0);
-        const returnsTotal = stockReturns.reduce((sum, r) => sum + (r.return_value || 0), 0);
+        const returnsTotal = stockReturns.reduce((sum, r) => sum + (Number(r.return_value) || 0), 0);
         return allocatedTotal - returnsTotal;
     }, [allocations, stockReturns]);
 
     const totalRevenue = useMemo(() => {
-        return batchSales.reduce((sum, s) => sum + (s.value || 0), 0);
+        return batchSales.reduce((sum, s) => sum + (Number(s.value) || 0), 0);
     }, [batchSales]);
 
     const grossProfit = useMemo(() => totalRevenue - totalExpenses, [totalRevenue, totalExpenses]);
@@ -92,7 +92,7 @@ export default function BatchDetailsPage() {
             else result.feed += val;
         }
 
-        result.returns = stockReturns.reduce((sum, r) => sum + (r.return_value || 0), 0);
+        result.returns = stockReturns.reduce((sum, r) => sum + (Number(r.return_value) || 0), 0);
         return result;
     }, [allocations, stockReturns, items]);
 

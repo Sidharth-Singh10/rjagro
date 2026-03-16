@@ -36,7 +36,7 @@ const TradersList: React.FC<TradersListProps> = ({ traders, loading, onRowClick 
                             <tr key={trader.trader_id} onClick={() => onRowClick(trader)} className="hover:bg-gray-50">
                                 <td className="px-4 py-4 text-sm text-gray-900">{trader.trader_id}</td>
                                 <td className="px-4 py-4 text-sm text-gray-900">{trader.name}</td>
-                                <td className={`px-4 py-4 text-sm font-medium ${parseInt(trader.amount_due) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                <td className={`px-4 py-4 text-sm font-medium ${parseFloat(trader.amount_due) > 0 ? 'text-red-600' : 'text-green-600'}`}>
                                     {trader.amount_due}
                                 </td>
                                 <td className="px-4 py-4 text-sm text-gray-900">{trader.phone_number}</td>

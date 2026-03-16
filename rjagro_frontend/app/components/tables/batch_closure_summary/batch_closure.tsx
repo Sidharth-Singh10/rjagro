@@ -129,20 +129,20 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.initial_chicken_count.toLocaleString()}</td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.available_chicken_count.toLocaleString()}</td>
-                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">₹{closure.revenue.toLocaleString()}</td>
+                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">₹{Number(closure.revenue).toLocaleString()}</td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                                            <span className={closure.gross_profit >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                                ₹{closure.gross_profit.toLocaleString()}
+                                            <span className={Number(closure.gross_profit) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                ₹{Number(closure.gross_profit).toLocaleString()}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${calculateProfitMargin(closure.revenue, closure.gross_profit) >= 20
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${calculateProfitMargin(Number(closure.revenue), Number(closure.gross_profit)) >= 20
                                                 ? 'bg-green-100 text-green-800'
-                                                : calculateProfitMargin(closure.revenue, closure.gross_profit) >= 10
+                                                : calculateProfitMargin(Number(closure.revenue), Number(closure.gross_profit)) >= 10
                                                     ? 'bg-yellow-100 text-yellow-800'
                                                     : 'bg-red-100 text-red-800'
                                                 }`}>
-                                                {calculateProfitMargin(closure.revenue, closure.gross_profit).toFixed(1)}%
+                                                {calculateProfitMargin(Number(closure.revenue), Number(closure.gross_profit)).toFixed(1)}%
                                             </span>
                                         </td>
 

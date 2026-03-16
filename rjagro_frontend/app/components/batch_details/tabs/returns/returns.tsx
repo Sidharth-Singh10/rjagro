@@ -137,13 +137,13 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
 
                                     {isAdmin && (
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {formatCurrency(row.unit_cost)}
+                                            {formatCurrency(Number(row.unit_cost))}
                                         </td>
                                     )}
 
                                     {isAdmin && (
                                         <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                                            {formatCurrency(row.return_value)}
+                                            {formatCurrency(Number(row.return_value))}
                                         </td>
                                     )}
                                 </tr>

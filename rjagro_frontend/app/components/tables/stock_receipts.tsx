@@ -261,7 +261,7 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
                                     {receipt.received_qty}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <span className={`${receipt.remaining_qty > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    <span className={`${Number(receipt.remaining_qty) > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {receipt.remaining_qty}
                                     </span>
                                 </td>
