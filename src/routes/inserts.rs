@@ -10,6 +10,7 @@ use crate::handlers::inserts::{
     create_batch_closure_summary, create_farmer_commission, create_ledger_entry,
 };
 use crate::handlers::loans::{create_loan, create_loan_payment};
+use crate::handlers::other_expenses::create_other_expense;
 use crate::handlers::suppliers::create_supplier_payment;
 use crate::handlers::traders::create_trader_payment;
 use crate::{
@@ -51,4 +52,5 @@ pub fn insert_routes() -> Router<DatabaseConnection> {
         .route("/trader_payment", post(create_trader_payment))
         .route("/loan", post(create_loan))
         .route("/loan_payment", post(create_loan_payment))
+        .route("/other_expenses", post(create_other_expense))
 }

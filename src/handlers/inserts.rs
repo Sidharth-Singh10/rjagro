@@ -416,6 +416,7 @@ pub async fn create_batch_closure_summary(
         .into();
 
     batch.status = Set(BatchStatus::Closed);
+    batch.end_date = Set(payload.end_date);
 
     batch
         .update(&txn)

@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use entity::sea_orm_active_enums::{
-    BatchStatus, ItemCategory, LedgerAccountType, PaymentType, RequirementStatus, SupplierType,
-    UserRole,
+    BatchStatus, ItemCategory, LedgerAccountType, OtherExpenseCategory, PaymentType,
+    RequirementStatus, SupplierType, UserRole,
 };
 use sea_orm::prelude::{DateTimeWithTimeZone, Decimal};
 use sea_orm::FromQueryResult;
@@ -350,4 +350,13 @@ pub struct AllocatedRequirementDTO {
     pub allocated_qty: Decimal,
     pub allocated_value: Decimal,
     pub allocation_date: NaiveDate,
+}
+
+#[derive(Deserialize)]
+pub struct CreateOtherExpense {
+    pub category: OtherExpenseCategory,
+    pub amount: Decimal,
+    pub description: Option<String>,
+    pub expense_date: NaiveDate,
+    pub created_by: i32,
 }

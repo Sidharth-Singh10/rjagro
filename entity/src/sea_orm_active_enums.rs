@@ -138,6 +138,25 @@ pub enum PaymentType {
     Receivable,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(
+    rs_type = "String",
+    db_type = "Enum",
+    enum_name = "other_expense_category"
+)]
+pub enum OtherExpenseCategory {
+    #[sea_orm(string_value = "feed_transfer")]
+    FeedTransfer,
+    #[sea_orm(string_value = "loading_unloading")]
+    LoadingUnloading,
+    #[sea_orm(string_value = "petrol")]
+    Petrol,
+    #[sea_orm(string_value = "employee_expenses")]
+    EmployeeExpenses,
+    #[sea_orm(string_value = "misc")]
+    Misc,
+}
+
 impl fmt::Display for ItemCategory {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

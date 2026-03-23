@@ -694,3 +694,44 @@ export interface AllocatedRequirement {
   allocated_value: string;
   allocation_date: string;
 }
+
+export enum OtherExpenseCategory {
+  FeedTransfer = 'feed_transfer',
+  LoadingUnloading = 'loading_unloading',
+  Petrol = 'petrol',
+  EmployeeExpenses = 'employee_expenses',
+  Misc = 'misc',
+}
+
+export const OTHER_EXPENSE_CATEGORY_LABELS: Record<OtherExpenseCategory, string> = {
+  [OtherExpenseCategory.FeedTransfer]: 'Feed Transfer',
+  [OtherExpenseCategory.LoadingUnloading]: 'Loading/Unloading Charges',
+  [OtherExpenseCategory.Petrol]: 'Petrol',
+  [OtherExpenseCategory.EmployeeExpenses]: 'Employee Expenses',
+  [OtherExpenseCategory.Misc]: 'Misc',
+};
+
+export interface OtherExpense {
+  id: number;
+  category: OtherExpenseCategory;
+  amount: number;
+  description?: string;
+  expense_date: string;
+  created_by: number;
+  created_at: string;
+}
+
+export interface CreateOtherExpensePayload {
+  category: OtherExpenseCategory;
+  amount: number;
+  description?: string;
+  expense_date: string;
+  created_by: number;
+}
+
+export interface NewOtherExpense {
+  category: OtherExpenseCategory | '';
+  amount: number | '';
+  description: string;
+  expense_date: string;
+}

@@ -5,6 +5,7 @@ import {
     Bird,
     ClipboardCheck,
     Package,
+    Receipt,
     ShoppingCartIcon,
     Users,
     ChevronLeft,
@@ -34,6 +35,7 @@ const navItems: NavItem[] = [
     { id: 'Batches', label: 'Batches', icon: Bird },
     { id: 'Entities', label: 'Entities', icon: Users },
     { id: 'Loan', label: 'Loan', icon: Banknote },
+    { id: 'OtherExpenses', label: 'Other Expenses', icon: Receipt },
 ];
 
 const Sidebar: React.FC<SidebarProps> = memo(({ activeSection, onNavigate }) => {

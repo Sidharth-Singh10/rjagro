@@ -19,6 +19,7 @@ pub mod ledger_accounts;
 pub mod ledger_entries;
 pub mod loan_payments;
 pub mod loans;
+pub mod other_expenses;
 pub mod post;
 pub mod production_lines;
 pub mod purchases;

@@ -14,6 +14,7 @@ use crate::{
         get_production_lines_handler, get_purchases_handler, get_stock_receipts_handler,
         get_supervisors_handler, get_suppliers_handler, get_traders_handler, get_users_handler,
     },
+    handlers::other_expenses::get_all_other_expenses_handler,
 };
 use entity::sea_orm_active_enums::UserRole;
 
@@ -57,4 +58,5 @@ pub fn fetch_all() -> Router<DatabaseConnection> {
         .route("/stock_returns", get(get_paginated_returns_handler))
         .route("/loans", get(get_loans_handler))
         .route("/loan_payments", get(get_loan_payments_handler))
+        .route("/other_expenses", get(get_all_other_expenses_handler))
 }

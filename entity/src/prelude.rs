@@ -8,6 +8,7 @@ pub use super::bird_sell_history::Entity as BirdSellHistory;
 pub use super::farmers::Entity as Farmers;
 pub use super::loan_payments::Entity as LoanPayments;
 pub use super::loans::Entity as Loans;
+pub use super::other_expenses::Entity as OtherExpenses;
 pub use super::post::Entity as Post;
 pub use super::production_lines::Entity as ProductionLines;
 pub use super::purchases::Entity as Purchases;

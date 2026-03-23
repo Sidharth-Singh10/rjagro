@@ -7,6 +7,7 @@ import InventoryModule from '@/app/components/v2/inventory_module';
 import { LedgerModule } from '@/app/components/v2/ledger_module';
 import LoanModule from '@/app/components/v2/loan_module';
 import OverviewModule from '@/app/components/v2/overview_module';
+import OtherExpensesModule from '@/app/components/v2/other_expenses_module';
 import PurchasesModule from '@/app/components/v2/purchases_module';
 import Sidebar from '@/app/components/v2/side_bar';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -22,6 +23,7 @@ const SECTION_TITLES: Record<string, string> = {
     Batches: 'Batches',
     Entities: 'Entities',
     Loan: 'Loan',
+    OtherExpenses: 'Other Expenses',
 };
 
 const SECTION_COMPONENTS: Record<string, React.FC> = {
@@ -33,6 +35,7 @@ const SECTION_COMPONENTS: Record<string, React.FC> = {
     Batches: BatchesModule,
     Entities: EntitiesModule,
     Loan: LoanModule,
+    OtherExpenses: OtherExpensesModule,
 };
 
 const DashboardContent: React.FC = () => {

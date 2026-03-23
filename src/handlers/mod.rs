@@ -6,6 +6,7 @@ pub mod fetch_all;
 pub mod fetch_by_id;
 pub mod inserts;
 pub mod loans;
+pub mod other_expenses;
 pub mod purchases;
 pub mod suppliers;
 pub mod traders;
