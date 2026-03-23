@@ -429,6 +429,7 @@ const OverviewModule = () => {
             if (!itemCode) return;
             const item = itemMap[itemCode];
             if (!item || item.item_category !== 'Feed') return;
+            if (item.item_name.toUpperCase() === 'FEED DELIVERY') return;
             const qty = n(line.qty);
             const unit = item.unit ?? '';
             const kgs = unit.toLowerCase() === 'bags' ? qty * FEED_BAG_KG : qty;
