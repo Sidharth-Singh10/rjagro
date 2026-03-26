@@ -1,11 +1,10 @@
 import React from 'react';
 import { X, Save } from 'lucide-react';
-import { Batch, Farmer, Item, NewBatchRequirement, ProductionLine, SupervisorSimplified } from '@/app/types/interfaces';
+import { Batch, Item, NewBatchRequirement, ProductionLine, SupervisorSimplified } from '@/app/types/interfaces';
 
 interface BatchRequirementFormProps {
     batches: Batch[];
     lines: ProductionLine[];
-    farmers: Farmer[];
     supervisors: SupervisorSimplified[];
     items: Item[];
     newRequirement: NewBatchRequirement;
@@ -15,9 +14,13 @@ interface BatchRequirementFormProps {
 }
 
 export const BatchRequirementForm: React.FC<BatchRequirementFormProps> = ({
-    batches, lines, farmers, supervisors, items,
+    batches, lines, supervisors, items,
     newRequirement, setNewRequirement, onSave, onCancel
 }) => {
+    const openBatches = batches
+        .filter(b => b.status !== "Closed")
+        .sort((a, b) => b.batch_id - a.batch_id);
+
     return (
         <div className="p-4 border-b bg-gray-50">
             <div className="flex items-center justify-between mb-4">
@@ -36,7 +39,7 @@ export const BatchRequirementForm: React.FC<BatchRequirementFormProps> = ({
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                     >
                         <option value="">Select Batch</option>
-                        {batches.map(b => <option key={b.batch_id} value={b.batch_id}>Batch {b.batch_id}</option>)}
+                        {openBatches.map(b => <option key={b.batch_id} value={b.batch_id}>Batch {b.batch_id} - {b.farmer_name}</option>)}
                     </select>
                 </div>
 
@@ -61,18 +64,6 @@ export const BatchRequirementForm: React.FC<BatchRequirementFormProps> = ({
                     >
                         <option value="">Select Supervisor</option>
                         {supervisors.map(s => <option key={s.user_id} value={s.user_id}>{s.name}</option>)}
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Farmer *</label>
-                    <select
-                        value={newRequirement.farmer_id}
-                        onChange={(e) => setNewRequirement(prev => ({ ...prev, farmer_id: parseInt(e.target.value) }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    >
-                        <option value="">Select Farmer</option>
-                        {farmers.map(f => <option key={f.farmer_id} value={f.farmer_id}>{f.name}</option>)}
                     </select>
                 </div>
 

@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchBatchRequirements, handleAddBatchRequirement } from '@/app/api/batch_requirements';
 import { fetchBatches } from '@/app/api/batches';
 import { fetchProductionLines } from '@/app/api/production_line';
-import { fetchFarmers } from '@/app/api/farmers';
 import { fetchSupervisors } from '@/app/api/supervisors';
 import { fetchItems } from '@/app/api/items';
 import { NewBatchRequirement } from '@/app/types/interfaces';
@@ -33,12 +32,6 @@ const UserRequirementsModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: farmers = [] } = useQuery({
-        queryKey: ["farmers"],
-        queryFn: fetchFarmers,
-        staleTime: 5 * 60 * 1000,
-    });
-
     const { data: supervisors = [] } = useQuery({
         queryKey: ['supervisors'],
         queryFn: fetchSupervisors,
@@ -54,7 +47,6 @@ const UserRequirementsModule = () => {
     const [newRequirement, setNewRequirement] = useState<NewBatchRequirement>({
         batch_id: '',
         line_id: '',
-        farmer_id: '',
         supervisor_id: '',
         item_code: '',
         quantity: ''
@@ -66,7 +58,6 @@ const UserRequirementsModule = () => {
             setNewRequirement({
                 batch_id: '',
                 line_id: '',
-                farmer_id: '',
                 supervisor_id: '',
                 item_code: '',
                 quantity: ''
@@ -81,7 +72,6 @@ const UserRequirementsModule = () => {
                     requirements={requirements}
                     batches={batches}
                     lines={productionLines}
-                    farmers={farmers}
                     supervisors={supervisors}
                     items={items}
                     loading={loading}

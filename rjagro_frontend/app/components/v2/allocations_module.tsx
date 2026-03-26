@@ -7,7 +7,6 @@ import { fetchBatchAllocations } from '@/app/api/batch_allocations';
 import { fetchBatchAllocationLines, handleAddBatchAllocationLine, handleDeleteBatchAllocationLine } from '@/app/api/batch_allocation_lines';
 import { fetchBatches } from '@/app/api/batches';
 import { fetchProductionLines } from '@/app/api/production_line';
-import { fetchFarmers } from '@/app/api/farmers';
 import { fetchSupervisors } from '@/app/api/supervisors';
 import { fetchItems } from '@/app/api/items';
 import { fetchStockReceipts } from '@/app/api/stock_receipts';
@@ -55,12 +54,6 @@ const AllocationsModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: farmers = [] } = useQuery({
-        queryKey: ["farmers"],
-        queryFn: fetchFarmers,
-        staleTime: 5 * 60 * 1000,
-    });
-
     const { data: supervisors = [] } = useQuery({
         queryKey: ['supervisors'],
         queryFn: fetchSupervisors,
@@ -82,7 +75,6 @@ const AllocationsModule = () => {
     const [newRequirement, setNewRequirement] = useState<NewBatchRequirement>({
         batch_id: '',
         line_id: '',
-        farmer_id: '',
         supervisor_id: '',
         item_code: '',
         quantity: ''
@@ -149,7 +141,6 @@ const AllocationsModule = () => {
                         requirements={requirements}
                         batches={batches}
                         lines={productionLines}
-                        farmers={farmers}
                         supervisors={supervisors}
                         items={items}
                         loading={loading}

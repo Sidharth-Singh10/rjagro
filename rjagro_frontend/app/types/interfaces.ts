@@ -171,7 +171,6 @@ export interface BatchRequirement {
 export interface NewBatchRequirement {
   batch_id: number | '';
   line_id: number | '';
-  farmer_id: number | '';
   supervisor_id: number | '';
   item_code: string;
   quantity: number | '';
