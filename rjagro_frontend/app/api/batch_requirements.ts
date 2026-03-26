@@ -17,8 +17,6 @@ export const handleAddBatchRequirement = async (
 ) => {
   if (
     !payload.batch_id ||
-    !payload.line_id ||
-    !payload.supervisor_id ||
     !payload.item_code ||
     !payload.quantity
   ) {

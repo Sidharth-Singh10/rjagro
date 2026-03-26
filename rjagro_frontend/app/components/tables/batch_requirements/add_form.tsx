@@ -1,11 +1,9 @@
 import React from 'react';
 import { X, Save } from 'lucide-react';
-import { Batch, Item, NewBatchRequirement, ProductionLine, SupervisorSimplified } from '@/app/types/interfaces';
+import { Batch, Item, NewBatchRequirement } from '@/app/types/interfaces';
 
 interface BatchRequirementFormProps {
     batches: Batch[];
-    lines: ProductionLine[];
-    supervisors: SupervisorSimplified[];
     items: Item[];
     newRequirement: NewBatchRequirement;
     setNewRequirement: React.Dispatch<React.SetStateAction<NewBatchRequirement>>;
@@ -14,7 +12,7 @@ interface BatchRequirementFormProps {
 }
 
 export const BatchRequirementForm: React.FC<BatchRequirementFormProps> = ({
-    batches, lines, supervisors, items,
+    batches, items,
     newRequirement, setNewRequirement, onSave, onCancel
 }) => {
     const openBatches = batches
@@ -40,30 +38,6 @@ export const BatchRequirementForm: React.FC<BatchRequirementFormProps> = ({
                     >
                         <option value="">Select Batch</option>
                         {openBatches.map(b => <option key={b.batch_id} value={b.batch_id}>Batch {b.batch_id} - {b.farmer_name}</option>)}
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Line *</label>
-                    <select
-                        value={newRequirement.line_id}
-                        onChange={(e) => setNewRequirement(prev => ({ ...prev, line_id: parseInt(e.target.value) }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    >
-                        <option value="">Select Line</option>
-                        {lines.map(l => <option key={l.line_id} value={l.line_id}>{l.line_name}</option>)}
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor *</label>
-                    <select
-                        value={newRequirement.supervisor_id}
-                        onChange={(e) => setNewRequirement(prev => ({ ...prev, supervisor_id: parseInt(e.target.value) }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    >
-                        <option value="">Select Supervisor</option>
-                        {supervisors.map(s => <option key={s.user_id} value={s.user_id}>{s.name}</option>)}
                     </select>
                 </div>
 

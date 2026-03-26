@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { handleApproveRequirement, handleRejectRequirement } from '@/app/api/batch_requirements';
 import { useAuth } from '@/app/hooks/useAuth';
-import { Batch, BatchRequirement, Item, NewBatchRequirement, ProductionLine, SupervisorSimplified } from '@/app/types/interfaces';
+import { Batch, BatchRequirement, Item, NewBatchRequirement } from '@/app/types/interfaces';
 import { useBatchRequirementSorting } from '@/app/hooks/custom_sorting';
 import { BatchRequirementForm } from './add_form';
 import { BatchRequirementsList } from './list';
@@ -15,8 +15,6 @@ import { RejectRequirementModal } from './reject_modal';
 interface BatchRequirementsProps {
     requirements: BatchRequirement[];
     batches: Batch[];
-    lines: ProductionLine[];
-    supervisors: SupervisorSimplified[];
     items: Item[];
     loading: boolean;
     showAddForm: boolean;
@@ -27,7 +25,7 @@ interface BatchRequirementsProps {
 }
 
 const BatchRequirementsTable: React.FC<BatchRequirementsProps> = ({
-    requirements, batches, lines, supervisors, items, loading,
+    requirements, batches, items, loading,
     showAddForm, newRequirement, setShowAddForm, setNewRequirement, handleAddRequirement,
 }) => {
     const [approveModalRequirement, setApproveModalRequirement] = useState<BatchRequirement | null>(null);
@@ -119,8 +117,6 @@ const BatchRequirementsTable: React.FC<BatchRequirementsProps> = ({
             {showAddForm && (
                 <BatchRequirementForm
                     batches={batches}
-                    lines={lines}
-                    supervisors={supervisors}
                     items={items}
                     newRequirement={newRequirement}
                     setNewRequirement={setNewRequirement}

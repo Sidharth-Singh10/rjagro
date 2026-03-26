@@ -6,8 +6,6 @@ import { fetchBatchRequirements, handleAddBatchRequirement } from '@/app/api/bat
 import { fetchBatchAllocations } from '@/app/api/batch_allocations';
 import { fetchBatchAllocationLines, handleAddBatchAllocationLine, handleDeleteBatchAllocationLine } from '@/app/api/batch_allocation_lines';
 import { fetchBatches } from '@/app/api/batches';
-import { fetchProductionLines } from '@/app/api/production_line';
-import { fetchSupervisors } from '@/app/api/supervisors';
 import { fetchItems } from '@/app/api/items';
 import { fetchStockReceipts } from '@/app/api/stock_receipts';
 import { BatchAllocationLinePayload, NewBatchAllocationLine, NewBatchRequirement } from '@/app/types/interfaces';
@@ -48,18 +46,6 @@ const AllocationsModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: productionLines = [] } = useQuery({
-        queryKey: ['production_lines'],
-        queryFn: fetchProductionLines,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const { data: supervisors = [] } = useQuery({
-        queryKey: ['supervisors'],
-        queryFn: fetchSupervisors,
-        staleTime: 5 * 60 * 1000,
-    });
-
     const { data: items = [] } = useQuery({
         queryKey: ['items'],
         queryFn: fetchItems,
@@ -74,14 +60,15 @@ const AllocationsModule = () => {
 
     const [newRequirement, setNewRequirement] = useState<NewBatchRequirement>({
         batch_id: '',
-        line_id: '',
-        supervisor_id: '',
         item_code: '',
         quantity: ''
     });
 
     const onAddRequirement = () => {
-        handleAddBatchRequirement(newRequirement, queryClient, setLoading);
+        handleAddBatchRequirement(
+            { ...newRequirement, line_id: 1, supervisor_id: 2 },
+            queryClient, setLoading
+        );
     };
 
     const [newAllocationLine, setNewAllocationLine] = useState<NewBatchAllocationLine>({
@@ -140,8 +127,6 @@ const AllocationsModule = () => {
                     <BatchRequirementsTable
                         requirements={requirements}
                         batches={batches}
-                        lines={productionLines}
-                        supervisors={supervisors}
                         items={items}
                         loading={loading}
                         showAddForm={showAddForm}
