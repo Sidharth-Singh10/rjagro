@@ -1,4 +1,4 @@
-import { Batch, BatchAllocation, BatchRequirement, LedgerAccount, LedgerEntry } from "../types/interfaces";
+import { Batch, BatchAllocation, BatchRequirement, LedgerAccount, LedgerEntry, StockReceipt } from "../types/interfaces";
 import { useTableSorting } from "./sorting";
 
 export function useLedgerAccountsSorting(ledgerAccounts: LedgerAccount[]) {
@@ -100,5 +100,25 @@ export function useBatchAllocationSorting(batch_req: BatchAllocation[]) {
     );
 }
 
-
-
+export function useStockReceiptsSorting(stockReceipts: StockReceipt[]) {
+    return useTableSorting<StockReceipt>(
+        stockReceipts,
+        { key: 'lot_id', direction: 'desc' },
+        (item: StockReceipt, key: string) => {
+            switch (key) {
+                case 'lot_id':
+                    return item.lot_id;
+                case 'purchase_id':
+                    return item.purchase_id ?? 0;
+                case 'received_qty':
+                case 'remaining_qty':
+                case 'unit_cost':
+                    return parseFloat(String(item[key as keyof StockReceipt])) || 0;
+                case 'received_date':
+                    return new Date(item.received_date);
+                default:
+                    return item[key as keyof StockReceipt] as string | number;
+            }
+        }
+    );
+}

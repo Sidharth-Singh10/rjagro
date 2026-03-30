@@ -1,6 +1,8 @@
-import React from 'react';
-import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Edit, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
 import { Item, NewStockReceipt, Purchase, StockReceipt } from '@/app/types/interfaces';
+import { useStockReceiptsSorting } from '@/app/hooks/custom_sorting';
+import SortableHeader from './sortable_headers/header';
 
 interface StockReceiptsTableProps {
     stockReceipts: StockReceipt[];
@@ -28,21 +30,51 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
     handleItemCodeSelect,
     handlePurchaseSelect,
     handleAddStockReceipt,
-}) => (
+}) => {
+    const [filterItemCode, setFilterItemCode] = useState<string>('');
+
+    const filteredReceipts = useMemo(() => {
+        if (!filterItemCode) return stockReceipts;
+        return stockReceipts.filter(r => r.item_code === filterItemCode);
+    }, [stockReceipts, filterItemCode]);
+
+    const { sortedData, requestSort, getSortIcon } = useStockReceiptsSorting(filteredReceipts);
+
+    const uniqueItemCodes = useMemo(() => {
+        const codes = new Set(stockReceipts.map(r => r.item_code));
+        return Array.from(codes).sort();
+    }, [stockReceipts]);
+
+    return (
     <div className="bg-white rounded-lg shadow">
         <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-xl font-semibold text-gray-800">Stock Receipts</h2>
             <div className="flex items-center gap-3">
+                <select
+                    value={filterItemCode}
+                    onChange={(e) => setFilterItemCode(e.target.value)}
+                    className="px-3 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                    <option value="">All Item Codes</option>
+                    {uniqueItemCodes.map(code => (
+                        <option key={code} value={code}>{code}</option>
+                    ))}
+                </select>
+                {filterItemCode && (
+                    <button
+                        onClick={() => setFilterItemCode('')}
+                        className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        <X size={14} />
+                        Clear
+                    </button>
+                )}
                 <button
                     onClick={() => setShowAddForm(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
                     <Plus size={18} />
                     Add Stock Receipt
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <Filter size={18} />
-                    Filters
                 </button>
             </div>
         </div>
@@ -197,33 +229,15 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
             <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                     <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Lot ID
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Purchase ID
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Item Code
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Item Name
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Received Qty
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Remaining Qty
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Unit Cost
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Received Date
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Supplier
-                        </th>
+                        <SortableHeader<StockReceipt> columnKey="lot_id" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Lot ID</SortableHeader>
+                        <SortableHeader<StockReceipt> columnKey="purchase_id" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Purchase ID</SortableHeader>
+                        <SortableHeader<StockReceipt> columnKey="item_code" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Item Code</SortableHeader>
+                        <SortableHeader<StockReceipt> columnKey="item_name" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Item Name</SortableHeader>
+                        <SortableHeader<StockReceipt> columnKey="received_qty" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Received Qty</SortableHeader>
+                        <SortableHeader<StockReceipt> columnKey="remaining_qty" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Remaining Qty</SortableHeader>
+                        <SortableHeader<StockReceipt> columnKey="unit_cost" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Unit Cost</SortableHeader>
+                        <SortableHeader<StockReceipt> columnKey="received_date" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Received Date</SortableHeader>
+                        <SortableHeader<StockReceipt> columnKey="supplier" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Supplier</SortableHeader>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Actions
                         </th>
@@ -236,14 +250,14 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
                                 Loading...
                             </td>
                         </tr>
-                    ) : stockReceipts.length === 0 ? (
+                    ) : sortedData.length === 0 ? (
                         <tr>
                             <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
-                                No stock receipts found
+                                {filterItemCode ? 'No stock receipts found for this item code' : 'No stock receipts found'}
                             </td>
                         </tr>
                     ) : (
-                        stockReceipts.map((receipt) => (
+                        sortedData.map((receipt) => (
                             <tr key={receipt.lot_id} className="hover:bg-gray-50">
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {receipt.lot_id}
@@ -288,7 +302,8 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
 
         <div className="flex items-center justify-between px-4 py-3 border-t">
             <div className="text-sm text-gray-500">
-                Showing {stockReceipts.length} of {stockReceipts.length} results
+                Showing {sortedData.length} of {stockReceipts.length} results
+                {filterItemCode && <span className="ml-1 text-green-600">(filtered by {filterItemCode})</span>}
             </div>
             <div className="flex items-center gap-2">
                 <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
@@ -303,6 +318,7 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
             </div>
         </div>
     </div>
-);
+    );
+};
 
 export default StockReceiptsTable;
