@@ -21,43 +21,42 @@ export const BatchHeader = ({ batch, onBack }: { batch: Batch; onBack: () => voi
 
     return (
         <>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 mb-4 md:mb-6">
                 {/* Left Side: Back Button & Title */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
                     <button
                         onClick={onBack}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
                     >
-                        <ArrowLeft size={24} className="text-gray-600" />
+                        <ArrowLeft size={20} className="text-gray-600 sm:w-6 sm:h-6" />
                     </button>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800">
+                    <div className="min-w-0">
+                        <h1 className="text-lg sm:text-2xl font-bold text-gray-800">
                             Batch #{batch.batch_id}
                         </h1>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm text-gray-500 truncate">
                             {batch.farmer_name} • Started: {batch.start_date}
                         </p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${batch.status === 'Open' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium flex-shrink-0 ${batch.status === 'Open' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
                         {batch.status}
                     </span>
                 </div>
 
                 {/* Right Side: Actions */}
-                <div className="flex gap-2">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700">
-                        <Printer size={18} /> Report
+                <div className="flex gap-2 ml-8 sm:ml-0">
+                    <button className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 text-sm">
+                        <Printer size={16} /> Report
                     </button>
 
-                    {/* Dropdown Menu */}
                     <div className="relative" ref={dropdownRef}>
                         <button
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
                         >
                             Actions
-                            <ChevronDown size={18} />
+                            <ChevronDown size={16} />
                         </button>
 
                         {isDropdownOpen && (

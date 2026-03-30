@@ -81,11 +81,11 @@ const BatchRequirementsTable: React.FC<BatchRequirementsProps> = ({
     return (
         <div className="bg-white rounded-lg shadow">
             {/* Header & Filter Toolbar */}
-            <div className="flex items-center justify-between p-4 border-b">
-                <div className="flex items-center gap-4">
-                    <h2 className="text-xl font-semibold text-gray-800">Batch Requirements</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Batch Requirements</h2>
                     <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700">Filter by Status:</label>
+                        <label className="text-sm font-medium text-gray-700 hidden sm:inline">Filter by Status:</label>
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
@@ -98,16 +98,16 @@ const BatchRequirementsTable: React.FC<BatchRequirementsProps> = ({
                                 </option>
                             ))}
                         </select>
+                        {statusFilter !== 'all' && (
+                            <span className="text-sm text-gray-500">
+                                ({filteredAndSortedRequirements.length} of {requirements.length})
+                            </span>
+                        )}
                     </div>
-                    {statusFilter !== 'all' && (
-                        <span className="text-sm text-gray-500">
-                            ({filteredAndSortedRequirements.length} of {requirements.length} requirements)
-                        </span>
-                    )}
                 </div>
                 <button
                     onClick={() => setShowAddForm(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors self-start sm:self-auto"
                 >
                     <Plus size={18} /> Add Requirement
                 </button>

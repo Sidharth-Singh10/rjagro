@@ -53,7 +53,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
 
             {/* Table Section */}
             <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[600px]">
                     <thead className="bg-gray-50 border-b">
                         <tr>
                             <SortableHeader
@@ -121,32 +121,32 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                         ) : (
                             sortedData.map((row) => (
                                 <tr key={row.record_id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         #{row.record_id}
                                     </td>
 
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-700">
                                         <div className="flex items-center gap-2">
                                             <Calendar size={16} className="text-gray-400" />
                                             {new Date(row.record_date).toLocaleDateString()}
                                         </div>
                                     </td>
 
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-red-600">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm font-medium text-red-600">
                                         <div className="flex items-center gap-2">
                                             {row.deaths > 0 && <TrendingDown size={14} />}
                                             {row.deaths}
                                         </div>
                                     </td>
 
-                                    <td className="px-4 py-4 text-sm text-gray-600 max-w-xs truncate" title={row.notes}>
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 text-sm text-gray-600 max-w-xs truncate" title={row.notes}>
                                         <div className="flex items-center gap-2">
                                             {row.notes && <StickyNote size={14} className="text-gray-400 flex-shrink-0" />}
                                             <span className="truncate">{row.notes || "-"}</span>
                                         </div>
                                     </td>
 
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-500">
                                         {new Date(row.created_at).toLocaleString()}
                                     </td>
                                 </tr>
@@ -157,14 +157,14 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
             </div>
 
             {/* Pagination Footer */}
-            <div className="flex items-center justify-between px-4 py-3 border-t">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t">
                 <div className="text-sm text-gray-500">
                     Showing {sortedData.length} results
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         disabled={true}
-                        className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                         <ChevronLeft size={16} />
                         Previous
@@ -172,7 +172,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                     <button className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">1</button>
                     <button
                         disabled={true}
-                        className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                         Next
                         <ChevronRight size={16} />

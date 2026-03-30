@@ -84,7 +84,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
 
     return (
         <div
-            className="fixed bottom-20 right-6 w-[400px] h-[520px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50 overflow-hidden"
+            className="fixed bottom-20 right-3 sm:right-6 w-[calc(100vw-1.5rem)] sm:w-[400px] h-[calc(100vh-7rem)] sm:h-[520px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50 overflow-hidden"
             style={{ animation: 'dropReveal 0.25s ease-out' }}
         >
             {/* Header */}

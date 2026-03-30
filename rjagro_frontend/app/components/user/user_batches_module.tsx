@@ -69,7 +69,7 @@ const UserBatchesModule = () => {
                         </div>
 
                         <div className="overflow-x-auto">
-                            <table className="w-full">
+                            <table className="w-full min-w-[900px]">
                                 <thead className="bg-gray-50 border-b">
                                     <tr>
                                         <SortableHeader
@@ -80,13 +80,13 @@ const UserBatchesModule = () => {
                                         >
                                             Batch ID
                                         </SortableHeader>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Line ID
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Supervisor
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Farmer
                                         </th>
                                         <SortableHeader
@@ -97,19 +97,19 @@ const UserBatchesModule = () => {
                                         >
                                             Start Date
                                         </SortableHeader>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Initial Chick Count
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Current Chick Count
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Mortality %
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Status
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Days Running
                                         </th>
                                     </tr>
@@ -130,11 +130,10 @@ const UserBatchesModule = () => {
                                     ) : (
                                         sortedData.map((batch) => (
                                             <tr key={batch.batch_id} className="group relative border-b border-gray-100 hover:bg-green-50/40 hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out cursor-pointer" >
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 relative overflow-hidden">
+                                                <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm font-medium text-gray-900 relative overflow-hidden">
                                                     <div className="flex items-center gap-2 group">
                                                         <span>#{batch.batch_id}</span>
 
-                                                        {/* Sliding CTA Badge */}
                                                         <Link
                                                             href={`/dashboard/batches/${batch.batch_id}`}
                                                             target="_blank"
@@ -149,28 +148,27 @@ const UserBatchesModule = () => {
                                                             <ChevronRight size={12} className="text-green-600" />
                                                         </Link>
                                                     </div>
-                                                    {/* Subtle green accent bar on the left edge */}
                                                     <div className="absolute left-0 top-0 h-full w-1 bg-green-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
                                                 </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {batch.line_id}
                                                 </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {batch.supervisor_name}
                                                 </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {batch.farmer_name}
                                                 </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {batch.start_date}
                                                 </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {batch.initial_bird_count}
                                                 </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {batch.current_bird_count}
                                                 </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${calculateMortality(batch.initial_bird_count, batch.current_bird_count) > 10
                                                         ? 'bg-red-100 text-red-800'
                                                         : calculateMortality(batch.initial_bird_count, batch.current_bird_count) > 5
@@ -180,7 +178,7 @@ const UserBatchesModule = () => {
                                                         {calculateMortality(batch.initial_bird_count, batch.current_bird_count).toFixed(1)}%
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${batch.status === 'Closed'
                                                         ? 'bg-red-100 text-red-800'
                                                         : 'bg-green-100 text-green-800'
@@ -188,7 +186,7 @@ const UserBatchesModule = () => {
                                                         {batch.status}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {calculateDaysRunning(batch.start_date, batch.end_date, batch.status)} days
                                                 </td>
                                             </tr>
@@ -240,16 +238,16 @@ const UserBatchClosuresTable: React.FC<UserBatchClosuresTableProps> = ({
 
             {/* Table */}
             <div className="overflow-x-auto min-h-[400px]">
-                <table className="w-full">
+                <table className="w-full min-w-[650px]">
                     <thead className="bg-gray-50 border-b">
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch ID</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Farmer</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Initial Count</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available Count</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mortality %</th>
+                            <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch ID</th>
+                            <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Farmer</th>
+                            <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                            <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Initial Count</th>
+                            <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available Count</th>
+                            <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mortality %</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -264,23 +262,23 @@ const UserBatchClosuresTable: React.FC<UserBatchClosuresTableProps> = ({
                         ) : (
                             batchClosures.map((closure) => (
                                 <tr key={closure.id} className="hover:bg-gray-50">
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.id}</td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">#{closure.batch_id}</td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">{closure.id}</td>
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">#{closure.batch_id}</td>
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                         {(() => {
                                             const batch = batches.find(b => b.batch_id === closure.batch_id);
                                             return batch?.farmer_name || 'N/A';
                                         })()}
                                     </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                         <div className="text-xs">
                                             <div>{closure.start_date}</div>
                                             <div className="text-gray-500">to {closure.end_date}</div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.initial_chicken_count.toLocaleString()}</td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.available_chicken_count.toLocaleString()}</td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">{closure.initial_chicken_count.toLocaleString()}</td>
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">{closure.available_chicken_count.toLocaleString()}</td>
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm">
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${calculateMortality(closure.initial_chicken_count, closure.available_chicken_count) > 10
                                             ? 'bg-red-100 text-red-800'
                                             : calculateMortality(closure.initial_chicken_count, closure.available_chicken_count) > 5
@@ -298,7 +296,7 @@ const UserBatchClosuresTable: React.FC<UserBatchClosuresTableProps> = ({
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between px-4 py-3 border-t">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t">
                 <div className="text-sm text-gray-500">
                     Showing {batchClosures.length} results
                 </div>

@@ -28,7 +28,11 @@ export default function BatchDetailsPage() {
     const isAdmin = user?.role === 'Admin';
 
     const goToDashboardBatches = () => {
-        router.push("/dashboard/v2?tab=Batches");
+        if (isAdmin) {
+            router.push("/dashboard/v2?tab=Batches");
+        } else {
+            router.push("/dashboard/user");
+        }
     };
 
 
@@ -112,10 +116,10 @@ export default function BatchDetailsPage() {
     const mortalityRate = ((batch.initial_bird_count - batch.current_bird_count) / batch.initial_bird_count * 100).toFixed(2);
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
             <BatchHeader batch={batch} onBack={goToDashboardBatches} />
 
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-4 mb-8`}>
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-3 sm:gap-4 mb-6 sm:mb-8`}>
                 <KPICard
                     title="Current Stock"
                     value={batch.current_bird_count}
@@ -151,15 +155,15 @@ export default function BatchDetailsPage() {
                 )}
             </div>
 
-            {/* 3. Tab Navigation */}
+            {/* Tab Navigation */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[500px]">
-                <div className="border-b px-4">
-                    <nav className="flex gap-6">
+                <div className="border-b px-2 sm:px-4 overflow-x-auto">
+                    <nav className="flex gap-4 sm:gap-6 min-w-max">
                         {['allocations', 'sales', 'bird count', 'returns'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`py-4 px-2 text-sm font-medium border-b-2 transition-colors capitalize ${activeTab === tab
+                                className={`py-3 sm:py-4 px-1 sm:px-2 text-sm font-medium border-b-2 transition-colors capitalize whitespace-nowrap ${activeTab === tab
                                     ? 'border-green-600 text-green-600'
                                     : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`}

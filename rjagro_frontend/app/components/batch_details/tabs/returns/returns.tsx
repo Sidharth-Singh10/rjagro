@@ -59,7 +59,7 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
             </div>
 
             <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[500px]">
                     <thead className="bg-gray-50 border-b">
                         <tr>
                             <SortableHeader columnKey="return_id" requestSort={requestSort} getSortIcon={getSortIcon} isSortable={true}>
@@ -110,25 +110,25 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                         ) : (
                             sortedData.map((row) => (
                                 <tr key={row.return_id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         #{row.return_id}
                                     </td>
 
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-700">
                                         <div className="flex items-center gap-2">
                                             <Calendar size={16} className="text-gray-400" />
                                             {new Date(row.return_date).toLocaleDateString()}
                                         </div>
                                     </td>
 
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-600">
                                         <div className="flex items-center gap-2">
                                             <FileText size={16} className="text-gray-400" />
                                             #{row.allocation_line_id}
                                         </div>
                                     </td>
 
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm font-medium text-gray-700">
                                         <div className="flex items-center gap-2">
                                             <Package size={16} className="text-gray-400" />
                                             {row.return_qty}
@@ -136,13 +136,13 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                                     </td>
 
                                     {isAdmin && (
-                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-600">
                                             {formatCurrency(Number(row.unit_cost))}
                                         </td>
                                     )}
 
                                     {isAdmin && (
-                                        <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                                        <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm font-semibold text-green-600">
                                             {formatCurrency(Number(row.return_value))}
                                         </td>
                                     )}
@@ -154,14 +154,14 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
             </div>
 
             {/* Pagination Footer */}
-            <div className="flex items-center justify-between px-4 py-3 border-t">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t">
                 <div className="text-sm text-gray-500">
                     Showing {sortedData.length} results
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         disabled={true}
-                        className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                         <ChevronLeft size={16} />
                         Previous
@@ -169,7 +169,7 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                     <button className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">1</button>
                     <button
                         disabled={true}
-                        className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                         Next
                         <ChevronRight size={16} />
