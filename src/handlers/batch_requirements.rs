@@ -33,6 +33,18 @@ pub async fn decline_batch_requirement_handler(
         .await
     {
         Ok(Some(requirement)) => {
+            if requirement.status != RequirementStatus::Pending {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(ResponseMessage {
+                        message: format!(
+                            "Requirement {} cannot be declined — current status is {:?}",
+                            requirement_id, requirement.status
+                        ),
+                    }),
+                )
+                    .into_response();
+            }
             let mut active_model = requirement.into_active_model();
             active_model.status = Set(RequirementStatus::Decline);
 
@@ -108,6 +120,13 @@ async fn approve_and_allocate(
         .await
         .map_err(|e| format!("DB fetch error: {}", e))?
         .ok_or_else(|| format!("Requirement {} not found", requirement_id))?;
+
+    if requirement.status != RequirementStatus::Pending {
+        return Err(format!(
+            "Requirement {} cannot be approved — current status is {:?}",
+            requirement_id, requirement.status
+        ));
+    }
 
     // 2. Update requirement status -> Accept
     let mut active_model = requirement.clone().into_active_model();
