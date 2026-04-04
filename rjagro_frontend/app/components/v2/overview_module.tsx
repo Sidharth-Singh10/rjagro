@@ -1,5 +1,5 @@
 'use client'
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Banknote, TrendingUp, TrendingDown, Bird, Heart,
@@ -212,6 +212,12 @@ const OverviewModule = () => {
         });
         return Array.from(s).sort();
     }, [batchClosures, batchSales, closedBatchIds]);
+
+    useEffect(() => {
+        if (availableMonths.length > 0 && !availableMonths.includes(revExpSelectedMonth)) {
+            setRevExpSelectedMonth(availableMonths[availableMonths.length - 1]);
+        }
+    }, [availableMonths, revExpSelectedMonth]);
 
     // ── Cumulative revenue vs expenses (closed batches only) ────────
     const revenueExpenseData = useMemo(() => {
