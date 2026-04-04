@@ -210,6 +210,14 @@ const OverviewModule = () => {
         batchSales.forEach(sale => {
             if (closedBatchIds.has(sale.batch_id)) s.add(getMonthKey(sale.created_at));
         });
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+        for (let m = 1; m <= currentMonth; m++) {
+            s.add(`${currentYear}-${String(m).padStart(2, '0')}`);
+        }
+
         return Array.from(s).sort();
     }, [batchClosures, batchSales, closedBatchIds]);
 
