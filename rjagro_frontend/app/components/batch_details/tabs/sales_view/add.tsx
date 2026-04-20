@@ -49,7 +49,7 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
         rate: "",
         quantity: "",
         value: 0,
-        payment_type: "Cash",
+        payment_type: "Receivable",
         created_by: 1,
     };
 
@@ -67,7 +67,7 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
                 rate: "",
                 quantity: "",
                 value: 0,
-                payment_type: "Cash",
+                payment_type: "Receivable",
                 created_by: 1,
             });
         }
