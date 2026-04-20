@@ -14,7 +14,7 @@ const readOnlyBaseClasses = "w-full px-3.5 py-2.5 border border-slate-200 rounde
 interface AddBirdCountModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (payload: BirdCountHistoryPayload) => void;
+    onSubmit: (payload: BirdCountHistoryPayload) => Promise<void>;
     isSubmitting: boolean;
     batchId: number;
 }
@@ -50,7 +50,17 @@ const AddBirdCountModal: React.FC<AddBirdCountModalProps> = ({
         }
     }, [isOpen, batchId]);
 
-    const handleSubmit = () => {
+    const resetForm = () => {
+        setFormState({
+            batch_id: batchId,
+            record_date: new Date().toISOString().split('T')[0],
+            deaths: 0,
+            additions: 0,
+            notes: "",
+        });
+    };
+
+    const handleSubmit = async () => {
         if (!formState.record_date) {
             alert("Please select a date");
             return;
@@ -64,7 +74,8 @@ const AddBirdCountModal: React.FC<AddBirdCountModalProps> = ({
             notes: formState.notes || "",
         };
 
-        onSubmit(payload);
+        await onSubmit(payload);
+        resetForm();
     };
 
     if (!isOpen) return null;

@@ -30,9 +30,6 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
             payload,
             queryClient,
             setIsSubmitting,
-            () => {
-                setIsModalOpen(false);
-            }
         );
     };
 

@@ -25,7 +25,7 @@ interface BatchSaleFormState extends Omit<BatchSalePayload, 'trader_id' | 'avg_w
 interface AddBatchSaleModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (payload: BatchSalePayload) => void;
+    onSubmit: (payload: BatchSalePayload) => Promise<void>;
     isSubmitting: boolean;
     batchId: number;
     traders: Trader[];
@@ -88,7 +88,23 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
         }));
     };
 
-    const handleSubmit = () => {
+    const resetForm = () => {
+        setFormState({
+            batch_id: batchId,
+            trader_id: "",
+            trader_name: "",
+            item_code: "DC101",
+            item_name: "DESI CHICKEN",
+            avg_weight: "",
+            rate: "",
+            quantity: "",
+            value: 0,
+            payment_type: "Receivable",
+            created_by: 1,
+        });
+    };
+
+    const handleSubmit = async () => {
         if (!formState.trader_id || !formState.avg_weight || !formState.rate || !formState.quantity) {
             alert("Please fill in all required fields");
             return;
@@ -105,7 +121,8 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
             created_by: formState.created_by,
         };
 
-        onSubmit(payload);
+        await onSubmit(payload);
+        resetForm();
     };
 
     if (!isOpen) return null;

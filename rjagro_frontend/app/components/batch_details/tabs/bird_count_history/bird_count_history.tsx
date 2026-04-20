@@ -33,7 +33,6 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
             payload,
             queryClient,
             setIsSubmitting,
-            () => setIsModalOpen(false)
         );
     };
 
