@@ -315,9 +315,9 @@ async fn approve_and_allocate(
             .await
             .map_err(|e| format!("Failed to fetch batch {}: {}", requirement.batch_id, e))?
         {
-            let current = batch.current_bird_count.unwrap_or(0);
+            let current = batch.current_bird_count;
             let mut batch_active: batches::ActiveModel = batch.into();
-            batch_active.current_bird_count = Set(Some(current + additions_i32));
+            batch_active.current_bird_count = Set(current + additions_i32);
             batch_active
                 .update(txn)
                 .await

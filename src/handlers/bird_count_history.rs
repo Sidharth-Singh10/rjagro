@@ -32,7 +32,7 @@ pub async fn delete_bird_count_history(
         .map_err(internal_error("fetch batch"))?
         .ok_or(reqwest::StatusCode::NOT_FOUND)?;
 
-    let current = batch.current_bird_count.unwrap_or(0);
+    let current = batch.current_bird_count;
     let new_count = current - additions + deaths;
 
     if new_count < 0 {
@@ -40,7 +40,7 @@ pub async fn delete_bird_count_history(
     }
 
     let mut active_batch: batches::ActiveModel = batch.into();
-    active_batch.current_bird_count = Set(Some(new_count));
+    active_batch.current_bird_count = Set(new_count);
 
     active_batch
         .update(&txn)

@@ -200,10 +200,10 @@ pub async fn create_bird_count_history(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
         .ok_or(StatusCode::NOT_FOUND)?;
 
-    let new_count = batch.current_bird_count.unwrap_or(0) + payload.additions - payload.deaths;
+    let new_count = batch.current_bird_count + payload.additions - payload.deaths;
 
     let mut batch_model: batches::ActiveModel = batch.into();
-    batch_model.current_bird_count = Set(Some(new_count));
+    batch_model.current_bird_count = Set(new_count);
 
     batch_model
         .update(&txn)
@@ -415,7 +415,7 @@ pub async fn create_batch_closure_summary(
         .ok_or(StatusCode::NOT_FOUND)?
         .into();
 
-    batch.status = Set(BatchStatus::Closed);
+    batch.status = Set(Some(BatchStatus::Closed));
     batch.end_date = Set(payload.end_date);
 
     batch

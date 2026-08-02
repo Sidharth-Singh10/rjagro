@@ -162,8 +162,8 @@ pub struct BatchResponse {
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
     pub initial_bird_count: i32,
-    pub current_bird_count: Option<i32>,
-    pub status: BatchStatus,
+    pub current_bird_count: i32,
+    pub status: Option<BatchStatus>,
     pub created_at: DateTimeWithTimeZone,
 }
 

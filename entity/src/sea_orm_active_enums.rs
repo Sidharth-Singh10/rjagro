@@ -12,6 +12,8 @@ pub enum BatchStatus {
     Open,
     #[sea_orm(string_value = "closed")]
     Closed,
+    #[sea_orm(string_value = "live")]
+    Live,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
@@ -60,6 +62,8 @@ pub enum UserRole {
     Supervisor,
     #[sea_orm(string_value = "accountant")]
     Accountant,
+    #[sea_orm(string_value = "trader")]
+    Trader,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
@@ -155,6 +159,23 @@ pub enum OtherExpenseCategory {
     EmployeeExpenses,
     #[sea_orm(string_value = "misc")]
     Misc,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "order_status")]
+pub enum OrderStatus {
+    #[sea_orm(string_value = "PENDING")]
+    Pending,
+    #[sea_orm(string_value = "WEIGHT_ENTERED")]
+    WeightEntered,
+    #[sea_orm(string_value = "CONFIRMED")]
+    Confirmed,
+    #[sea_orm(string_value = "CANCELLED_BY_TRADER")]
+    CancelledByTrader,
+    #[sea_orm(string_value = "REJECTED_BY_SUPERVISOR")]
+    RejectedBySupervisor,
+    #[sea_orm(string_value = "EXPIRED")]
+    Expired,
 }
 
 impl fmt::Display for ItemCategory {

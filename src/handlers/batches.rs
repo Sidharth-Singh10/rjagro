@@ -92,7 +92,7 @@ async fn create_batch_with_transaction(
         start_date: Set(payload.start_date),
         end_date: Set(payload.end_date),
         initial_bird_count: Set(payload.initial_bird_count),
-        current_bird_count: Set(Some(payload.initial_bird_count)),
+        current_bird_count: Set(payload.initial_bird_count),
         ..Default::default()
     };
 

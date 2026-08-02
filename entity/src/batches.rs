@@ -15,9 +15,14 @@ pub struct Model {
     pub start_date: Date,
     pub end_date: Date,
     pub initial_bird_count: i32,
-    pub current_bird_count: Option<i32>,
-    pub status: BatchStatus,
+    pub current_bird_count: i32,
+    pub status: Option<BatchStatus>,
     pub created_at: DateTimeWithTimeZone,
+    #[sea_orm(column_type = "Decimal(Some((10, 2)))", nullable)]
+    pub avg_body_weight: Option<Decimal>,
+    pub activated_at: Option<DateTimeWithTimeZone>,
+    pub closed_at: Option<DateTimeWithTimeZone>,
+    pub farm_id: Option<i32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -56,7 +61,22 @@ pub enum Relation {
         on_update = "NoAction",
         on_delete = "NoAction"
     )]
-    Farmers, // ✅ added relation
+    Farmers,
+
+    #[sea_orm(
+        belongs_to = "super::farms::Entity",
+        from = "Column::FarmId",
+        to = "super::farms::Column::FarmId",
+        on_update = "NoAction",
+        on_delete = "NoAction"
+    )]
+    Farms,
+
+    #[sea_orm(has_many = "super::timeslots::Entity")]
+    Timeslots,
+
+    #[sea_orm(has_many = "super::orders::Entity")]
+    Orders,
 }
 
 impl Related<super::batch_requirements::Entity> for Entity {
@@ -92,6 +112,24 @@ impl Related<super::users::Entity> for Entity {
 impl Related<super::farmers::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Farmers.def()
+    }
+}
+
+impl Related<super::farms::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Farms.def()
+    }
+}
+
+impl Related<super::timeslots::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Timeslots.def()
+    }
+}
+
+impl Related<super::orders::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Orders.def()
     }
 }
 

@@ -2,7 +2,9 @@
 
 pub mod prelude;
 
+pub mod app_supervisors;
 pub mod app_traders;
+pub mod audit_log;
 pub mod batch_allocation_lines;
 pub mod batch_allocations;
 pub mod batch_closure_summary;
@@ -13,6 +15,7 @@ pub mod bird_count_history;
 pub mod bird_sell_history;
 pub mod farmer_commission_history;
 pub mod farmers;
+pub mod farms;
 pub mod inventory;
 pub mod inventory_movements;
 pub mod items;
@@ -20,6 +23,7 @@ pub mod ledger_accounts;
 pub mod ledger_entries;
 pub mod loan_payments;
 pub mod loans;
+pub mod orders;
 pub mod other_expenses;
 pub mod post;
 pub mod production_lines;
@@ -29,6 +33,7 @@ pub mod stock_receipts;
 pub mod stock_returns;
 pub mod supplier_payments;
 pub mod suppliers;
+pub mod timeslots;
 pub mod trader_payments;
 pub mod traders;
 pub mod users;
