@@ -2,6 +2,7 @@
 
 pub mod prelude;
 
+pub mod app_traders;
 pub mod batch_allocation_lines;
 pub mod batch_allocations;
 pub mod batch_closure_summary;
