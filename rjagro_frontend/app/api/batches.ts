@@ -1,4 +1,4 @@
-import { Batch, BatchClosure, BatchClosurePayload, BatchPayload, CreateFarmerCommission, FarmerCommissionHistory, GrowingChargesInputs } from '../types/interfaces';
+import { Batch, BatchClosure, BatchClosurePayload, BatchPayload, CreateFarmerCommission, FarmerCommissionHistory, GrowingChargesInputs, Timeslot } from '../types/interfaces';
 import api from '../utils/api';
 import { toast } from 'react-toastify';
 
@@ -9,6 +9,118 @@ export const fetchBatches = async (): Promise<Batch[]> => {
 
 export const fetchBatchById = async (batchId: number): Promise<Batch> => {
     const response = await api.get(`/getbyid/batches/${batchId}`);
+    return response.data;
+};
+
+// ─── Live-selling (farm-based) batch actions ────────────────────────────────
+
+export const handleAddLiveBatch = async (
+    farmId: number,
+    queryClient: any,
+    setLoading: (loading: boolean) => void,
+    onSuccess?: () => void
+) => {
+    if (!farmId) {
+        toast.error("Invalid farm selected");
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        await api.post(`/insert/batches/${farmId}`);
+        queryClient.invalidateQueries(["batches"]);
+        toast.success("Live batch created!");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        console.error("Error creating live batch:", error);
+        toast.error("Error creating live batch");
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const activateLiveBatch = async (
+    batchId: number,
+    avgBodyWeight: number,
+    queryClient: any,
+    setLoading: (loading: boolean) => void,
+    onSuccess?: () => void
+) => {
+    if (!avgBodyWeight || avgBodyWeight <= 0) {
+        toast.error("Please enter a valid average body weight");
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        await api.post(`/insert/batches/${batchId}/activate`, { avg_body_weight: avgBodyWeight });
+        queryClient.invalidateQueries(["batches"]);
+        toast.success("Batch activated!");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        console.error("Error activating batch:", error);
+        toast.error("Error activating batch");
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const closeLiveBatch = async (
+    batchId: number,
+    queryClient: any,
+    setLoading: (loading: boolean) => void,
+    onSuccess?: () => void
+) => {
+    setLoading(true);
+
+    try {
+        await api.post(`/insert/batches/${batchId}/close`);
+        queryClient.invalidateQueries(["batches"]);
+        toast.success("Batch closed!");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        console.error("Error closing batch:", error);
+        toast.error("Error closing batch");
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const addBatchTimeslot = async (
+    batchId: number,
+    slotStart: string,
+    slotEnd: string,
+    queryClient: any,
+    setLoading: (loading: boolean) => void,
+    onSuccess?: () => void
+) => {
+    if (!slotStart || !slotEnd) {
+        toast.error("Please enter slot start and end times");
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        await api.post(`/insert/batches/${batchId}/timeslots`, {
+            slot_start: slotStart,
+            slot_end: slotEnd,
+        });
+        queryClient.invalidateQueries(["timeslots", batchId]);
+        toast.success("Timeslot added!");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        console.error("Error adding timeslot:", error);
+        toast.error("Error adding timeslot");
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const fetchBatchTimeslots = async (batchId: number): Promise<Timeslot[]> => {
+    const response = await api.get(`/getbyid/batches/${batchId}/timeslots`);
     return response.data;
 };
 

@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import AllocationsModule from '@/app/components/v2/allocations_module';
 import BatchesModule from '@/app/components/v2/batches_module';
 import EntitiesModule from '@/app/components/v2/entities_module';
+import FarmsModule from '@/app/components/v2/farms_module';
 import InventoryModule from '@/app/components/v2/inventory_module';
 import { LedgerModule } from '@/app/components/v2/ledger_module';
 import LoanModule from '@/app/components/v2/loan_module';
@@ -21,6 +22,7 @@ const SECTION_TITLES: Record<string, string> = {
     Purchases: 'Purchases',
     Allocations: 'Allocations',
     Batches: 'Batches',
+    Farms: 'Farms',
     Entities: 'Entities',
     Loan: 'Loan',
     OtherExpenses: 'Other Expenses',
@@ -33,6 +35,7 @@ const SECTION_COMPONENTS: Record<string, React.FC> = {
     Inventory: InventoryModule,
     Allocations: AllocationsModule,
     Batches: BatchesModule,
+    Farms: FarmsModule,
     Entities: EntitiesModule,
     Loan: LoanModule,
     OtherExpenses: OtherExpensesModule,

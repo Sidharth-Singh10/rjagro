@@ -5,13 +5,17 @@ use sea_orm::DatabaseConnection;
 
 use crate::handlers::batch_requirements::create_stock_return;
 use crate::handlers::batch_sales::create_batch_sale;
-use crate::handlers::batches::create_batch;
+use crate::handlers::batches::{
+    activate_batch_handler, close_batch_handler, create_batch, create_farm_batch_handler,
+};
+use crate::handlers::farms::create_farm_handler;
 use crate::handlers::inserts::{
     create_batch_closure_summary, create_farmer_commission, create_ledger_entry,
 };
 use crate::handlers::loans::{create_loan, create_loan_payment};
 use crate::handlers::other_expenses::create_other_expense;
 use crate::handlers::suppliers::create_supplier_payment;
+use crate::handlers::timeslots::create_timeslot_handler;
 use crate::handlers::traders::create_trader_payment;
 use crate::{
     auth::middleware::{require_roles_middleware, RequireRoles},
@@ -53,4 +57,19 @@ pub fn insert_routes() -> Router<DatabaseConnection> {
         .route("/loan", post(create_loan))
         .route("/loan_payment", post(create_loan_payment))
         .route("/other_expenses", post(create_other_expense))
+        .merge(farm_live_routes())
+}
+
+/// Farm & live-selling batch write endpoints (Admin + Supervisor).
+fn farm_live_routes() -> Router<DatabaseConnection> {
+    Router::new()
+        .route("/farms", post(create_farm_handler))
+        .route("/batches/{farm_id}", post(create_farm_batch_handler))
+        .route("/batches/{id}/activate", post(activate_batch_handler))
+        .route("/batches/{id}/close", post(close_batch_handler))
+        .route("/batches/{id}/timeslots", post(create_timeslot_handler))
+        .layer(from_fn_with_state(
+            RequireRoles::new(&[UserRole::Admin, UserRole::Supervisor]),
+            require_roles_middleware,
+        ))
 }

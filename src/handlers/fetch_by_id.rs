@@ -5,7 +5,7 @@ use axum::{
 };
 use entity::{
     batch_allocation_lines, batch_allocations, batch_requirements, batch_sales, batches,
-    bird_count_history, farmer_commission_history, farmers,
+    bird_count_history, farmer_commission_history, farmers, farms,
     sea_orm_active_enums::RequirementStatus, stock_receipts, stock_returns, users,
 };
 use reqwest::StatusCode;
@@ -18,7 +18,7 @@ use sea_orm::{prelude::Decimal, DatabaseConnection};
 use sea_orm::{ColumnTrait, JoinType};
 use serde_json::json;
 
-use crate::models::{AllocatedRequirementDTO, BatchResponse};
+use crate::models::{AllocatedRequirementDTO, BatchResponse, FarmInfo};
 
 pub async fn get_farmer_commission_history_by_id_handler(
     State(db): State<DatabaseConnection>,
@@ -116,6 +116,13 @@ pub async fn get_batch_by_id_handler(
 
         Ok(Some((batch, user_opt, farmer_opt))) => {
             if let (Some(user), Some(farmer)) = (user_opt, farmer_opt) {
+                // Fetch the related farm separately
+                let farm = match batch.farm_id {
+                    Some(farm_id) => farms::Entity::find_by_id(farm_id).one(&db).await.ok().flatten(),
+                    None => None,
+                };
+                let farm = farm.map(FarmInfo::from);
+
                 let response = BatchResponse {
                     batch_id: batch.batch_id,
                     line_id: batch.line_id,
@@ -129,6 +136,10 @@ pub async fn get_batch_by_id_handler(
                     current_bird_count: batch.current_bird_count,
                     status: batch.status,
                     created_at: batch.created_at,
+                    avg_body_weight: batch.avg_body_weight,
+                    activated_at: batch.activated_at,
+                    closed_at: batch.closed_at,
+                    farm,
                 };
 
                 Json(response).into_response()

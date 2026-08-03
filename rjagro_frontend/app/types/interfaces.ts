@@ -139,6 +139,40 @@ export interface Batch {
   current_bird_count: number;
   status: string;
   created_at: string;
+  avg_body_weight?: string | null;
+  activated_at?: string | null;
+  closed_at?: string | null;
+  farm?: Farm | null;
+}
+
+export interface Farm {
+  farm_id: number;
+  farmer_id: number;
+  code: string;
+  name: string;
+  latitude?: string | null;
+  longitude?: string | null;
+  video_url?: string | null;
+  maps_url?: string | null;
+  created_at: string;
+}
+
+export interface FarmPayload {
+  farmer_id: number | '';
+  code: string;
+  name: string;
+  latitude: string;
+  longitude: string;
+  video_url: string;
+  maps_url: string;
+}
+
+export interface Timeslot {
+  timeslot_id: number;
+  batch_id: number;
+  slot_start: string;
+  slot_end: string;
+  created_at: string;
 }
 
 export interface BatchPayload {

@@ -1,17 +1,27 @@
-use crate::models::CreateBatch;
-use axum::{extract::State, http::StatusCode, Json};
+use crate::models::{ActivateBatchPayload, CreateBatch, CreateFarmBatch};
+use axum::{
+    extract::{Extension, Path, State},
+    http::StatusCode,
+    Json,
+};
 use chrono::Utc;
+use entity::audit_log;
 use entity::batch_allocation_lines;
 use entity::batch_allocations;
 use entity::batch_requirements;
 use entity::batches;
+use entity::farms;
 use entity::inventory;
 use entity::inventory_movements;
 use entity::items;
 use entity::ledger_accounts;
 use entity::ledger_entries;
+use entity::orders;
+use entity::production_lines;
+use entity::sea_orm_active_enums::BatchStatus;
 use entity::sea_orm_active_enums::ItemCategory;
 use entity::sea_orm_active_enums::MovementType;
+use entity::sea_orm_active_enums::OrderStatus;
 use entity::sea_orm_active_enums::RequirementStatus;
 use entity::stock_receipts;
 use num_traits::cast::ToPrimitive;
@@ -318,4 +328,143 @@ async fn create_batch_with_transaction(
     }
 
     Ok(batch_model)
+}
+
+/// POST /insert/batches/{farm_id}
+/// Creates a live-selling batch for the given farm (status=open).
+/// Legacy growing-cycle fields are filled with defaults.
+pub async fn create_farm_batch_handler(
+    State(db): State<DatabaseConnection>,
+    Path(farm_id): Path<i32>,
+    Extension(actor_id): Extension<String>,
+    body: Option<Json<CreateFarmBatch>>,
+) -> Result<Json<batches::Model>, StatusCode> {
+    let farm = farms::Entity::find_by_id(farm_id)
+        .one(&db)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    let supervisor_id = actor_id
+        .parse::<i32>()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    // line_id has a NOT NULL FK to production_lines; default to the first one
+    let line_id = match body.and_then(|b| b.line_id) {
+        Some(line_id) => line_id,
+        None => production_lines::Entity::find()
+            .order_by_asc(production_lines::Column::LineId)
+            .one(&db)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?
+            .line_id,
+    };
+
+    let today = Utc::now().date_naive();
+
+    let new_batch = batches::ActiveModel {
+        line_id: Set(line_id),
+        supervisor_id: Set(supervisor_id),
+        farmer_id: Set(farm.farmer_id),
+        start_date: Set(today),
+        end_date: Set(today),
+        initial_bird_count: Set(0),
+        current_bird_count: Set(0),
+        status: Set(Some(BatchStatus::Open)),
+        farm_id: Set(Some(farm_id)),
+        ..Default::default()
+    };
+
+    new_batch.insert(&db).await.map(Json).map_err(|e| {
+        eprintln!("Failed to create batch: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })
+}
+
+/// POST /insert/batches/{id}/activate
+/// Sets avg_body_weight and moves status open -> live.
+pub async fn activate_batch_handler(
+    State(db): State<DatabaseConnection>,
+    Path(batch_id): Path<i32>,
+    Json(payload): Json<ActivateBatchPayload>,
+) -> Result<Json<batches::Model>, StatusCode> {
+    let batch = batches::Entity::find_by_id(batch_id)
+        .one(&db)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    if batch.status.as_ref() != Some(&BatchStatus::Open) {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let mut active: batches::ActiveModel = batch.into();
+    active.status = Set(Some(BatchStatus::Live));
+    active.avg_body_weight = Set(Some(payload.avg_body_weight));
+    active.activated_at = Set(Some(Utc::now().into()));
+
+    active.update(&db).await.map(Json).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+}
+
+/// POST /insert/batches/{id}/close
+/// Moves status -> closed and auto-expires any still-PENDING orders on the batch.
+pub async fn close_batch_handler(
+    State(db): State<DatabaseConnection>,
+    Path(batch_id): Path<i32>,
+) -> Result<Json<batches::Model>, StatusCode> {
+    let txn = db.begin().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let batch = batches::Entity::find_by_id(batch_id)
+        .one(&txn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    if batch.status.as_ref() == Some(&BatchStatus::Closed) {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let mut active: batches::ActiveModel = batch.into();
+    active.status = Set(Some(BatchStatus::Closed));
+    active.closed_at = Set(Some(Utc::now().into()));
+    let updated = active
+        .update(&txn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    // Auto-expire any still-PENDING orders on this batch
+    let pending_orders = orders::Entity::find()
+        .filter(orders::Column::BatchId.eq(batch_id))
+        .filter(orders::Column::Status.eq(OrderStatus::Pending))
+        .all(&txn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let expired_at = Utc::now().into();
+    for order in pending_orders {
+        let mut order_active: orders::ActiveModel = order.clone().into();
+        order_active.status = Set(OrderStatus::Expired);
+        order_active.expired_at = Set(Some(expired_at));
+        order_active
+            .update(&txn)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let audit = audit_log::ActiveModel {
+            order_id: Set(order.order_id),
+            actor_type: Set("system".to_string()),
+            actor_id: Set(0),
+            action: Set("status_change".to_string()),
+            field_changed: Set(Some("status".to_string())),
+            old_value: Set(Some("PENDING".to_string())),
+            new_value: Set(Some("EXPIRED".to_string())),
+            ..Default::default()
+        };
+        audit.insert(&txn).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    }
+
+    txn.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(updated))
 }

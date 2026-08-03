@@ -1,12 +1,12 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::models::{
-    BatchRequirementResponse, BatchResponse, PaginationParams, ProductionLineWithSupervisor,
-    PurchaseWithItem, UserSimplified,
+    BatchListQuery, BatchRequirementResponse, BatchResponse, FarmInfo, PaginationParams,
+    ProductionLineWithSupervisor, PurchaseWithItem, UserSimplified,
 };
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use entity::{sea_orm_active_enums::UserRole, *};
+use entity::{sea_orm_active_enums::{BatchStatus, UserRole}, *};
 use sea_orm::{ColumnTrait, PaginatorTrait};
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter};
 use sea_orm::{DbBackend, QueryOrder, Statement};
@@ -105,43 +105,85 @@ pub async fn get_items_handler(State(db): State<DatabaseConnection>) -> impl Int
 
 // BATCHES
 
-pub async fn get_batches_handler(State(db): State<DatabaseConnection>) -> impl IntoResponse {
+pub async fn get_batches_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<BatchListQuery>,
+) -> impl IntoResponse {
     // Join with related entities
-    let batches_with_relations = batches::Entity::find()
+    let mut query = batches::Entity::find()
         .find_also_related(users::Entity)
-        .find_also_related(farmers::Entity)
-        .all(&db)
-        .await;
+        .find_also_related(farmers::Entity);
 
-    match batches_with_relations {
-        Ok(records) => {
-            let data: Vec<BatchResponse> = records
-                .into_iter()
-                .filter_map(|(batch, user_opt, farmer_opt)| {
-                    Some(BatchResponse {
-                        batch_id: batch.batch_id,
-                        line_id: batch.line_id,
-                        supervisor_id: batch.supervisor_id,
-                        supervisor_name: user_opt?.name, // unwrap supervisor
-                        farmer_id: batch.farmer_id,
-                        farmer_name: farmer_opt?.name, // unwrap farmer
-                        start_date: batch.start_date,
-                        end_date: batch.end_date,
-                        initial_bird_count: batch.initial_bird_count,
-                        current_bird_count: batch.current_bird_count,
-                        status: batch.status,
-                        created_at: batch.created_at,
-                    })
-                })
-                .collect();
-
-            Json(data).into_response()
-        }
-        Err(e) => {
-            eprintln!("Failed raw SQL query: {}", e);
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
-        }
+    if let Some(raw_status) = params.status {
+        let status = match raw_status.to_lowercase().as_str() {
+            "open" => BatchStatus::Open,
+            "live" => BatchStatus::Live,
+            "closed" => BatchStatus::Closed,
+            _ => return StatusCode::BAD_REQUEST.into_response(),
+        };
+        query = query.filter(batches::Column::Status.eq(status));
     }
+
+    let records = match query.all(&db).await {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("Failed to fetch batches: {}", e);
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+
+    // Fetch related farms separately (find_also_related supports at most 2 joins)
+    let farm_ids: HashSet<i32> = records
+        .iter()
+        .filter_map(|(batch, _, _)| batch.farm_id)
+        .collect();
+
+    let farms_map: HashMap<i32, farms::Model> = if farm_ids.is_empty() {
+        HashMap::new()
+    } else {
+        match farms::Entity::find()
+            .filter(farms::Column::FarmId.is_in(farm_ids.into_iter().collect::<Vec<_>>()))
+            .all(&db)
+            .await
+        {
+            Ok(list) => list.into_iter().map(|f| (f.farm_id, f)).collect(),
+            Err(e) => {
+                eprintln!("Failed to fetch farms: {}", e);
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        }
+    };
+
+    let data: Vec<BatchResponse> = records
+        .into_iter()
+        .filter_map(|(batch, user_opt, farmer_opt)| {
+            let farm = batch
+                .farm_id
+                .and_then(|fid| farms_map.get(&fid))
+                .cloned()
+                .map(FarmInfo::from);
+            Some(BatchResponse {
+                batch_id: batch.batch_id,
+                line_id: batch.line_id,
+                supervisor_id: batch.supervisor_id,
+                supervisor_name: user_opt?.name, // unwrap supervisor
+                farmer_id: batch.farmer_id,
+                farmer_name: farmer_opt?.name, // unwrap farmer
+                start_date: batch.start_date,
+                end_date: batch.end_date,
+                initial_bird_count: batch.initial_bird_count,
+                current_bird_count: batch.current_bird_count,
+                status: batch.status,
+                created_at: batch.created_at,
+                avg_body_weight: batch.avg_body_weight,
+                activated_at: batch.activated_at,
+                closed_at: batch.closed_at,
+                farm,
+            })
+        })
+        .collect();
+
+    Json(data).into_response()
 }
 // BATCH_REQUIREMENTS -> reduce query time
 pub async fn get_batch_requirements_handler(
@@ -290,6 +332,17 @@ pub async fn get_farmers_handler(State(db): State<DatabaseConnection>) -> impl I
         Ok(data) => Json(data).into_response(),
         Err(e) => {
             eprintln!("Failed to fetch farmers: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+// FARMS
+pub async fn get_farms_handler(State(db): State<DatabaseConnection>) -> impl IntoResponse {
+    match farms::Entity::find().all(&db).await {
+        Ok(data) => Json(data).into_response(),
+        Err(e) => {
+            eprintln!("Failed to fetch farms: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }

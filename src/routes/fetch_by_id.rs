@@ -12,9 +12,11 @@ use crate::{
             get_sales_by_batch_id_handler, get_stock_return_unit_cost,
             get_stock_returns_by_batch_id_handler,
         },
+        farms::get_farm_by_id_handler,
         suppliers::{
             get_supplier_ledger_handler, get_supplier_payables, get_supplier_payments_byid_handler,
         },
+        timeslots::get_timeslots_handler,
         traders::{get_trader_ledger_handler, get_trader_payments, get_trader_receivables},
     },
     pdf::draw_header::generate_pdf_handler,
@@ -22,6 +24,8 @@ use crate::{
 
 pub fn fetch_by_id() -> Router<DatabaseConnection> {
     Router::new()
+        .route("/farms/{id}", get(get_farm_by_id_handler))
+        .route("/batches/{id}/timeslots", get(get_timeslots_handler))
         .route(
             "/farmer_commission/{id}",
             get(get_farmer_commission_history_by_id_handler),

@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bird, Archive } from 'lucide-react';
+import { Bird, Archive, Store } from 'lucide-react';
 import { fetchBatchClosures, fetchBatches, handleAddBatch} from '@/app/api/batches';
 import { fetchFarmers } from '@/app/api/farmers';
 import { fetchSupervisors } from '@/app/api/supervisors';
@@ -9,10 +9,11 @@ import { fetchItems } from '@/app/api/items';
 import { BatchPayload } from '@/app/types/interfaces';
 import BatchesTable from '../tables/batches';
 import BatchClosureSummaryTable from '../tables/batch_closure_summary/batch_closure';
+import LiveSellingModule from './live_selling_module';
 
 const BatchesModule = () => {
     const queryClient = useQueryClient();
-    const [subTab, setSubTab] = useState<'Active' | 'Closures'>('Active');
+    const [subTab, setSubTab] = useState<'Active' | 'LiveSelling' | 'Closures'>('Active');
 
     // Shared Loading/Form State
     const [loading, setLoading] = useState(false);
@@ -81,6 +82,14 @@ const BatchesModule = () => {
                     <span>Active Batches</span>
                 </button>
                 <button
+                    onClick={() => { setSubTab('LiveSelling'); setShowAddForm(false); }}
+                    className={`flex items-center space-x-2 pb-2 px-1 text-sm font-medium transition-colors ${subTab === 'LiveSelling' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <Store className="w-4 h-4" />
+                    <span>Live Selling</span>
+                </button>
+                <button
                     onClick={() => { setSubTab('Closures'); setShowAddForm(false); }}
                     className={`flex items-center space-x-2 pb-2 px-1 text-sm font-medium transition-colors ${subTab === 'Closures' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700'
                         }`}
@@ -105,6 +114,10 @@ const BatchesModule = () => {
                         setNewBatch={setNewBatch}
                         handleAddBatch={onAddBatch}
                     />
+                )}
+
+                {subTab === 'LiveSelling' && (
+                    <LiveSellingModule />
                 )}
 
                 {subTab === 'Closures' && (

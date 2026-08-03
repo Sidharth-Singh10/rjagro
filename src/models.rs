@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveTime};
 use entity::sea_orm_active_enums::{
     BatchStatus, ItemCategory, LedgerAccountType, OtherExpenseCategory, PaymentType,
     RequirementStatus, SupplierType, UserRole,
@@ -151,7 +151,7 @@ pub struct UserSimplified {
     pub role: UserRole,
 }
 
-#[derive(Debug, Serialize, FromQueryResult)]
+#[derive(Debug, Serialize)]
 pub struct BatchResponse {
     pub batch_id: i32,
     pub line_id: i32,
@@ -165,6 +165,68 @@ pub struct BatchResponse {
     pub current_bird_count: i32,
     pub status: Option<BatchStatus>,
     pub created_at: DateTimeWithTimeZone,
+    pub avg_body_weight: Option<Decimal>,
+    pub activated_at: Option<DateTimeWithTimeZone>,
+    pub closed_at: Option<DateTimeWithTimeZone>,
+    pub farm: Option<FarmInfo>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct FarmInfo {
+    pub farm_id: i32,
+    pub code: String,
+    pub name: String,
+    pub latitude: Option<Decimal>,
+    pub longitude: Option<Decimal>,
+    pub video_url: Option<String>,
+    pub maps_url: Option<String>,
+}
+
+impl From<entity::farms::Model> for FarmInfo {
+    fn from(farm: entity::farms::Model) -> Self {
+        Self {
+            farm_id: farm.farm_id,
+            code: farm.code,
+            name: farm.name,
+            latitude: farm.latitude,
+            longitude: farm.longitude,
+            video_url: farm.video_url,
+            maps_url: farm.maps_url,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BatchListQuery {
+    pub status: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct CreateFarm {
+    pub farmer_id: i32,
+    pub code: String,
+    pub name: String,
+    pub latitude: Option<Decimal>,
+    pub longitude: Option<Decimal>,
+    pub video_url: Option<String>,
+    pub maps_url: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct CreateFarmBatch {
+    /// Optional; defaults to the first production line when omitted.
+    pub line_id: Option<i32>,
+}
+
+#[derive(Deserialize)]
+pub struct ActivateBatchPayload {
+    pub avg_body_weight: Decimal,
+}
+
+#[derive(Deserialize)]
+pub struct CreateTimeslot {
+    pub slot_start: NaiveTime,
+    pub slot_end: NaiveTime,
 }
 
 #[derive(Debug, Serialize)]

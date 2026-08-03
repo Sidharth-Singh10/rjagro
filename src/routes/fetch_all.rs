@@ -13,6 +13,7 @@ use crate::{
         get_loans_handler, get_paginated_returns_handler,
         get_production_lines_handler, get_purchases_handler, get_stock_receipts_handler,
         get_supervisors_handler, get_suppliers_handler, get_traders_handler, get_users_handler,
+        get_farms_handler,
     },
     handlers::other_expenses::get_all_other_expenses_handler,
 };
@@ -40,6 +41,7 @@ pub fn fetch_all() -> Router<DatabaseConnection> {
         ))
         .route("/production_lines", get(get_production_lines_handler))
         .route("/purchases", get(get_purchases_handler))
+        .route("/farms", get(get_farms_handler))
         .route("/batches", get(get_batches_handler))
         .route("/batch_requirements", get(get_batch_requirements_handler))
         .route("/batch_allocations", get(get_batch_allocations_handler))
