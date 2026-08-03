@@ -11,6 +11,7 @@ mod models;
 mod pdf;
 mod routes;
 use crate::auth::login::login_handler;
+use crate::auth::trader_login::{trader_login_handler, trader_register_handler};
 use crate::handlers::visibility::get_visibility_handler;
 use crate::routes::admin::admin::admin;
 use crate::routes::deletes::delete_routes;
@@ -49,6 +50,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "http://tauri.localhost",
         "https://tauri.localhost",
         "https://rjagro.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
     ];
     let cors = CorsLayer::new()
         .allow_origin(
@@ -81,6 +85,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // .route("/generate", post(generate))
         .layer(axum::middleware::from_fn(auth_middleware))
         .route("/login", post(login_handler))
+        .route("/trader/login", post(trader_login_handler))
+        .route("/trader/register", post(trader_register_handler))
         .with_state(db)
         .layer(cors);
 

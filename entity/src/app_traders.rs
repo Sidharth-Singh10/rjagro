@@ -9,14 +9,14 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     #[sea_orm(unique)]
-    pub google_sub: String,
-    #[sea_orm(unique)]
     pub email: String,
     pub name: String,
-    pub phone: Option<String>,
+    #[sea_orm(unique)]
+    pub phone: String,
     pub credit_limit: Option<Decimal>,
     pub credit_terms_days: Option<i32>,
     pub created_at: DateTimeWithTimeZone,
+    pub password_hash: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -32,4 +32,3 @@ impl Related<super::orders::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-

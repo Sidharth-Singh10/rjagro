@@ -1,0 +1,1027 @@
+
+
+export const fetchBatchAllocations = async (): Promise<BatchAllocation[]> => {
+  const response = await api.get("/getall/batch_allocations");
+  return response.data;
+};
+
+import api from "../utils/api";
+import { toast } from "react-toastify";
+
+// Fetch all batch requirements
+export const fetchBatchRequirements = async (): Promise<BatchRequirement[]> => {
+  const response = await api.get("/getall/batch_requirements");
+  return response.data;
+};
+
+// Add a new batch requirement
+export const handleAddBatchRequirement = async (
+  payload: any,
+  queryClient: any,
+  setLoading: (loading: boolean) => void,
+  onSuccess?: () => void
+) => {
+  if (
+    !payload.batch_id ||
+    !payload.line_id ||
+    !payload.farmer_id ||
+    !payload.supervisor_id ||
+    !payload.item_code ||
+    !payload.quantity
+  ) {
+    toast.error("Please fill in all required fields");
+    return;
+  }
+
+  setLoading(true);
+  toast.info("Adding requirement...");
+
+  try {
+    await api.post("/insert/batch_requirements", {
+      ...payload,
+      request_date: new Date().toISOString().slice(0, 10), // today
+    });
+
+    queryClient.invalidateQueries(["batch_requirements"]);
+
+    toast.success("Requirement added!");
+    if (onSuccess) onSuccess();
+  } catch (error) {
+    console.error("Error adding batch requirement:", error);
+    toast.error("Error adding requirement");
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Reject a requirement
+export const handleRejectRequirement = async (
+  requirement_id: number,
+  queryClient?: any
+) => {
+  try {
+    await api.put(`/admin/decline_batch_requirement/${requirement_id}`);
+    toast.success(`Requirement #${requirement_id} rejected!`);
+
+    queryClient?.invalidateQueries(["batch_requirements"]);
+  } catch (error) {
+    console.error("Error rejecting requirement:", error);
+    toast.error("Error rejecting requirement");
+  }
+};
+
+// Approve a requirement
+export const handleApproveRequirement = async (
+  requirement: BatchRequirement,
+  allocatedQty: number,
+  user_id?: number,
+  queryClient?: any
+) => {
+  try {
+    const payload = {
+      requirement_id: requirement.requirement_id,
+      allocated_qty: allocatedQty,
+      allocation_date: new Date().toISOString().slice(0, 10),
+      allocated_by: user_id || 1, // fallback
+    };
+
+    await api.post("/admin/approve_batch_requirement", payload);
+
+    toast.success(`Requirement #${requirement.requirement_id} approved!`);
+
+    queryClient?.invalidateQueries(["batch_requirements"]);
+  } catch (error) {
+    console.error("Error approving requirement:", error);
+    toast.error("Error approving requirement");
+  }
+};
+
+import api from '../utils/api';
+import { toast } from 'react-toastify';
+
+export const fetchBatches = async (): Promise<Batch[]> => {
+    const response = await api.get("/getall/batches");
+    return response.data;
+};
+
+export const handleAddBatch = async (
+    payload: BatchPayload,
+    queryClient: any,
+    setLoading: (loading: boolean) => void,
+    onSuccess?: () => void,
+    onError?: (error: any) => void
+) => {
+    if (
+        !payload.line_id ||
+        !payload.supervisor_id ||
+        !payload.farmer_id ||
+        !payload.initial_bird_count
+    ) {
+        toast.error("Please fill in all required fields");
+        return;
+    }
+
+    setLoading(true);
+    toast.info("Adding batch...");
+
+    try {
+        await api.post("/insert/batches", payload);
+
+        // Refresh cache instead of manual refetch
+        queryClient.invalidateQueries(["batches"]);
+
+        toast.success("Batch added successfully!");
+        if (onSuccess) onSuccess();
+    } catch (error) {
+        console.error("Error adding batch:", error);
+        toast.error("Error adding batch");
+        if (onError) onError(error);
+    } finally {
+        setLoading(false);
+    }
+};
+
+import api from "../utils/api";
+
+export const fetchSupervisors = async (): Promise<SupervisorSimplified[]> => {
+    const response = await api.get('/getall/supervisors');
+    return response.data;
+};
+
+import api from '../utils/api';
+import { toast } from 'react-toastify';
+
+export const fetchPurchases = async (): Promise<Purchase[]> => {
+    const response = await api.get('/getall/purchases');
+    return response.data;
+};
+
+export const handleAddPurchase = async (
+    payload: PurchasePayload,
+    queryClient: any,
+    setLoading: (loading: boolean) => void
+) => {
+    if (
+        !payload.item_code ||
+        !payload.cost_per_unit ||
+        !payload.total_cost ||
+        !payload.purchase_date ||
+        !payload.supplier ||
+        !payload.created_by
+    ) {
+        toast.error('Please fill in all required fields');
+        return;
+    }
+
+    setLoading(true);
+    toast.info('Adding purchase...');
+
+    try {
+        await api.post('/insert/purchases', payload);
+
+        // Invalidate cache -> refetch purchases
+        queryClient.invalidateQueries(['purchases']);
+
+        toast.success('Purchase added successfully!');
+    } catch (error) {
+        console.error('Error adding purchase:', error);
+        toast.error('Error adding purchase');
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+export interface PurchasePayload {
+    item_code: string;
+    cost_per_unit: number;
+    total_cost: number;
+    purchase_date: string;
+    supplier: string;
+    created_by: number;
+}
+
+
+
+
+/components/tables/purchases
+import React from 'react';
+import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import { calculateTotalCost } from '../../utils/helper';
+
+interface PurchasesTableProps {
+    purchases: Purchase[];
+    items: Item[];
+    loading: boolean;
+    showAddForm: boolean;
+    newPurchase: NewPurchase;
+    setShowAddForm: (show: boolean) => void;
+    setNewPurchase: React.Dispatch<React.SetStateAction<NewPurchase>>;
+    handleItemCodeSelect: (itemCode: string) => void;
+    handleAddPurchase: () => void;
+}
+
+const PurchasesTable: React.FC<PurchasesTableProps> = ({
+    purchases,
+    items,
+    loading,
+    showAddForm,
+    newPurchase,
+    setShowAddForm,
+    setNewPurchase,
+    handleItemCodeSelect,
+    handleAddPurchase,
+}) => (
+    <div className="bg-white rounded-lg shadow">
+        <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-xl font-semibold text-gray-800">Purchases</h2>
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={() => setShowAddForm(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                    <Plus size={18} />
+                    Add Purchase
+                </button>
+                <button className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <Filter size={18} />
+                    Filters
+                </button>
+            </div>
+        </div>
+
+        {/* Add Purchase Form */}
+        {showAddForm && (
+            <div className="p-4 border-b bg-gray-50">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-800">Add New Purchase</h3>
+                    <button
+                        onClick={() => setShowAddForm(false)}
+                        className="text-gray-500 hover:text-gray-700"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 text-black md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Item Code *
+                        </label>
+                        <select
+                            value={newPurchase.item_code}
+                            onChange={(e) => handleItemCodeSelect(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                            <option value="">Select Item Code</option>
+                            {items.map((item) => (
+                                <option key={item.item_code} value={item.item_code}>
+                                    {item.item_code} - {item.item_name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Item Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newPurchase.item_name}
+                            readOnly
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                            placeholder="Auto-filled"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Cost Per Unit *
+                        </label>
+                        <input
+                            type="number"
+                            value={newPurchase.cost_per_unit}
+                            onChange={(e) => setNewPurchase(prev => ({ ...prev, cost_per_unit: e.target.value ? parseFloat(e.target.value) : '' }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="0.00"
+                            step="0.01"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Quantity *
+                        </label>
+                        <input
+                            type="number"
+                            value={newPurchase.quantity}
+                            onChange={(e) => setNewPurchase(prev => ({ ...prev, quantity: e.target.value ? parseInt(e.target.value) : '' }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="0"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Supplier *
+                        </label>
+                        <input
+                            type="text"
+                            value={newPurchase.supplier}
+                            onChange={(e) => setNewPurchase(prev => ({ ...prev, supplier: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="Supplier name"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Total Cost
+                        </label>
+                        <input
+                            type="text"
+                            value={calculateTotalCost(newPurchase.cost_per_unit, newPurchase.quantity).toFixed(2)}
+                            readOnly
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                        />
+                    </div>
+
+                    <div className="flex items-end">
+                        <button
+                            onClick={handleAddPurchase}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                            <Save size={18} />
+                            Save Purchase
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        <div className="overflow-x-auto">
+            <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                    <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Purchase ID
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Item Code
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Item Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Cost Per Unit
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total Cost
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Purchase Date
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Supplier
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Created By
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                    {loading ? (
+                        <tr>
+                            <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                                Loading...
+                            </td>
+                        </tr>
+                    ) : purchases.length === 0 ? (
+                        <tr>
+                            <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                                No purchases found
+                            </td>
+                        </tr>
+                    ) : (
+                        purchases.map((purchase) => (
+                            <tr key={purchase.purchase_id} className="hover:bg-gray-50">
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {purchase.purchase_id}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {purchase.item_code}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {purchase.item_name}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {purchase.cost_per_unit}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {purchase.total_cost}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {purchase.purchase_date}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {purchase.supplier}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {purchase.created_by}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <button className="text-blue-600 hover:text-blue-800">
+                                        <Edit size={16} />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))
+                    )}
+                </tbody>
+            </table>
+        </div>
+
+        <div className="flex items-center justify-between px-4 py-3 border-t">
+            <div className="text-sm text-gray-500">
+                Showing {purchases.length} of {purchases.length} results
+            </div>
+            <div className="flex items-center gap-2">
+                <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <ChevronLeft size={16} />
+                    Previous
+                </button>
+                <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
+                <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Next
+                    <ChevronRight size={16} />
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
+export default PurchasesTable;
+
+
+/dashboard/page.tsx
+'use client'
+import React, { useState, useEffect, useContext } from 'react';
+import { fetchPurchases, handleAddPurchase, PurchasePayload } from '../api/purchases';
+import { fetchItems, handleAddItem } from '../api/items';
+import PurchasesTable from '../components/tables/purchases';
+import { useAuth } from '../hooks/useAuth';
+import ItemsTable from '../components/tables/items';
+import { fetchFarmers, handleAddFarmer } from '../api/farmers';
+import FarmersTable from '../components/tables/farmers';
+import { fetchSuppliers, handleAddSupplier } from '../api/supplier';
+import SuppliersTable from '../components/tables/suppliers';
+import { fetchTraders, handleAddTrader } from '../api/traders';
+import TradersTable from '../components/tables/traders';
+import { fetchProductionLines, handleAddProductionLine } from '../api/production_line';
+import ProductionLinesTable from '../components/tables/production_lines';
+import { fetchSupervisors } from '../api/supervisors';
+import { fetchBatches, handleAddBatch } from '../api/batches';
+import BatchesTable from '../components/tables/batches';
+import { fetchBatchRequirements, handleAddBatchRequirement } from '../api/batch_requirements';
+import BatchRequirementsTable from '../components/tables/batch_requirements';
+import { fetchBatchAllocations } from '../api/batch_allocations';
+import BatchAllocationsTable from '../components/tables/batch_allocations';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+export enum SupplierType {
+    Feed = 'Feed',
+    Chick = 'Chick',
+    Medicine = 'Medicine',
+}
+
+const Dashboard = () => {
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+
+
+    const [activeTab, setActiveTab] = useState('Purchases');
+    const { data: purchases = [], isLoading: loadingPurchases } = useQuery({
+        queryKey: ['purchases'],
+        queryFn: fetchPurchases,
+        staleTime: 5 * 60 * 1000,
+    });
+    const [loading, setLoading] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [newPurchase, setNewPurchase] = useState<NewPurchase>({
+        item_code: '',
+        item_name: '',
+        cost_per_unit: '',
+        quantity: '',
+        supplier: ''
+    });
+
+    const final: PurchasePayload = {
+        item_code: newPurchase.item_code,
+        cost_per_unit: Number(newPurchase.cost_per_unit),
+        total_cost: Number(newPurchase.cost_per_unit) * Number(newPurchase.quantity),
+        purchase_date: new Date().toISOString().slice(0, 10),
+        supplier: newPurchase.supplier,
+        // fix this shit
+        created_by: user ? user.user_id : 9999,
+    };
+
+    // items
+    const { data: items = [], isLoading: loadingItems } = useQuery({
+        queryKey: ['items'],
+        queryFn: fetchItems,
+        staleTime: 5 * 60 * 1000, // 5 minutes cache
+    });
+    const [newItem, setNewItem] = useState<Item>({
+        item_code: '',
+        item_name: '',
+        unit: '',
+    });
+    const [showAddItemForm, setShowAddItemForm] = useState(false);
+
+    // Farmers state
+    const { data: farmers = [], isLoading: loadingFarmers } = useQuery({
+        queryKey: ["farmers"],
+        queryFn: fetchFarmers,
+        staleTime: 5 * 60 * 1000,
+    });
+    const [newFarmer, setNewFarmer] = useState<NewFarmer>({
+        name: '',
+        phone_number: '',
+        address: '',
+        bank_account_no: '',
+        bank_name: '',
+        ifsc_code: '',
+        area_size: 0
+    });
+
+    //Suppliers state
+    const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery({
+        queryKey: ['suppliers'],
+        queryFn: fetchSuppliers,
+        staleTime: 5 * 60 * 1000, // cache 5 min
+    });
+    const [newSupplier, setNewSupplier] = useState<SupplierPayload>({
+        supplier_type: SupplierType.Chick,
+        name: '',
+        phone_number: '',
+        address: '',
+        bank_account_no: '',
+        bank_name: '',
+        ifsc_code: ''
+    });
+
+    // Traders state
+    const { data: traders = [], isLoading: loadingTraders } = useQuery({
+        queryKey: ['traders'],
+        queryFn: fetchTraders,
+        staleTime: 5 * 60 * 1000, // cache for 5 minutes
+    });
+
+    const [newTrader, setNewTrader] = useState<NewTrader>({
+        name: '',
+        phone_number: '',
+        address: '',
+        bank_account_no: '',
+        bank_name: '',
+        ifsc_code: '',
+        area: ''
+    });
+
+    // Production Lines state
+    const [newProductionLine, setNewProductionLine] = useState<ProductionLinePayload>({
+        line_name: '',
+        supervisor_id: 0,
+    });
+
+    const { data: productionLines = [], isLoading: loadingProductionLines } = useQuery({
+        queryKey: ['production_lines'],
+        queryFn: fetchProductionLines,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: supervisors = [], isLoading: loadingSupervisors } = useQuery({
+        queryKey: ['supervisors'],
+        queryFn: fetchSupervisors,
+        staleTime: 5 * 60 * 1000,
+    });
+    const finalProductionLine: ProductionLinePayload = {
+        line_name: newProductionLine.line_name,
+        supervisor_id: Number(newProductionLine.supervisor_id),
+    };
+
+    // Batches state
+    const { data: batches = [], isLoading: loadingBatches } = useQuery({
+        queryKey: ["batches"],
+        queryFn: fetchBatches,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const [newBatch, setNewBatch] = useState<BatchPayload>({
+        line_id: '',
+        supervisor_id: '',
+        farmer_id: '',
+        start_date: new Date().toISOString().slice(0, 10),
+        end_date: new Date().toISOString().slice(0, 10),
+        initial_bird_count: '',
+        current_bird_count: ''
+    });
+
+    // Requirements state
+    const { data: requirements = [], isLoading: loadingRequirements } = useQuery({
+        queryKey: ["batch_requirements"],
+        queryFn: fetchBatchRequirements,
+        staleTime: 5 * 60 * 1000,
+    });
+    const [newRequirement, setNewRequirement] = useState<NewBatchRequirement>({
+        batch_id: '',
+        line_id: '',
+        farmer_id: '',
+        supervisor_id: '',
+        item_code: '',
+        quantity: ''
+    });
+
+    // Batch Allocations state
+    const { data: allocations = [], isLoading: loadingAllocations } = useQuery({
+        queryKey: ["batch_allocations"],
+        queryFn: fetchBatchAllocations,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const tabs = [
+        'Users', 'Production Lines', 'Purchases', 'Items', 'Batches', 'Batch Requirements',
+        'Batch Allocations', 'Farmers', 'Traders', 'Suppliers', 'Bird Count History', 'Bird Sell History'
+    ];
+
+
+
+    const handleItemCodeSelect = (itemCode: string) => {
+        const selectedItem = items.find(item => item.item_code === itemCode);
+        if (selectedItem) {
+            setNewPurchase(prev => ({
+                ...prev,
+                item_code: itemCode,
+                item_name: selectedItem.item_name
+            }));
+        }
+    };
+
+
+
+    return (
+        <div className="min-h-screen bg-gray-100">
+            <div className="p-6">
+                <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1>
+
+                {/* Tab Navigation */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab
+                                ? 'bg-green-600 text-white'
+                                : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
+
+                {activeTab === 'Production Lines' && (
+                    <ProductionLinesTable
+                        productionLines={productionLines}
+                        supervisors={supervisors}
+                        loading={loading}
+                        showAddForm={showAddForm}
+                        newProductionLine={newProductionLine}
+                        setShowAddForm={setShowAddForm}
+                        setNewProductionLine={setNewProductionLine}
+                        handleAddProductionLine={() =>
+                            handleAddProductionLine(finalProductionLine, queryClient, setLoading)
+                        }
+                    />
+                )}
+
+                {/* Content */}
+                {activeTab === 'Purchases' && (
+                    <PurchasesTable
+                        purchases={purchases}
+                        items={items}
+                        loading={loading}
+                        showAddForm={showAddForm}
+                        newPurchase={newPurchase}
+                        setShowAddForm={setShowAddForm}
+                        setNewPurchase={setNewPurchase}
+                        handleItemCodeSelect={handleItemCodeSelect}
+                        handleAddPurchase={() =>
+                            handleAddPurchase(final, queryClient, setLoading)
+                        }
+                    />
+                )}
+
+                {activeTab === 'Items' && (
+                    <ItemsTable
+                        items={items}
+                        loading={loading}
+                        showAddForm={showAddItemForm}
+                        newItem={newItem}
+                        setShowAddForm={setShowAddItemForm}
+                        setNewItem={setNewItem}
+                        handleAddItem={() =>
+                            handleAddItem(newItem, queryClient, setLoading)
+                        }
+                    />
+                )}
+
+                {activeTab === 'Farmers' && (
+                    <FarmersTable
+                        farmers={farmers}
+                        loading={loading}
+                        showAddForm={showAddForm}
+                        newFarmer={newFarmer}
+                        setShowAddForm={setShowAddForm}
+                        setNewFarmer={setNewFarmer}
+                        handleAddFarmer={() => handleAddFarmer(newFarmer, queryClient, setLoading)}
+                    />
+                )}
+
+                {activeTab === 'Suppliers' && (
+                    <SuppliersTable
+                        suppliers={suppliers}
+                        loading={loading}
+                        showAddForm={showAddForm}
+                        newSupplier={newSupplier}
+                        setShowAddForm={setShowAddForm}
+                        setNewSupplier={setNewSupplier}
+                        handleAddSupplier={() =>
+                            handleAddSupplier(newSupplier, queryClient, setLoading)
+                        }
+                    />
+                )}
+                {activeTab === 'Traders' && (
+                    <TradersTable
+                        traders={traders}
+                        loading={loading}
+                        showAddForm={showAddForm}
+                        newTrader={newTrader}
+                        setShowAddForm={setShowAddForm}
+                        setNewTrader={setNewTrader}
+                        handleAddTrader={() =>
+                            handleAddTrader(newTrader, queryClient, setLoading)
+                        }
+                    />
+                )}
+
+                {activeTab === 'Batches' && (
+                    <BatchesTable
+                        batches={batches}
+                        farmers={farmers}
+                        supervisors={supervisors}
+                        loading={loading}
+                        showAddForm={showAddForm}
+                        newBatch={newBatch}
+                        setShowAddForm={setShowAddForm}
+                        setNewBatch={setNewBatch}
+                        handleAddBatch={() => handleAddBatch(newBatch, queryClient, setLoading)}
+                    />
+                )}
+
+                {activeTab === 'Batch Requirements' && (
+                    <BatchRequirementsTable
+                        requirements={requirements}
+                        batches={batches}
+                        lines={productionLines}
+                        farmers={farmers}
+                        supervisors={supervisors}
+                        items={items}
+                        loading={loading}
+                        showAddForm={showAddForm}
+                        newRequirement={newRequirement}
+                        setShowAddForm={setShowAddForm}
+                        setNewRequirement={setNewRequirement}
+                        handleAddRequirement={() => handleAddBatchRequirement(newRequirement, queryClient, setLoading)}
+                    />
+                )}
+
+                {activeTab === 'Batch Allocations' && (
+                    <BatchAllocationsTable
+                        batchAllocations={allocations}
+                        loading={loading}
+                        showAddForm={showAddForm}
+                        setShowAddForm={setShowAddForm}
+                    />
+                )}
+
+                {activeTab !== 'Purchases' && activeTab !== 'Items' && activeTab !== 'Farmers' && activeTab !== 'Suppliers' &&
+                    activeTab !== 'Traders' &&
+                    activeTab !== 'Production Lines' &&
+                    activeTab !== 'Batches' &&
+                    activeTab !== 'Batch Requirements' &&
+                    activeTab !== 'Batch Allocations' && (
+                        <div className="bg-white rounded-lg shadow p-8 text-center">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-2">{activeTab}</h2>
+                            <p className="text-gray-600">This section is under development</p>
+                        </div>
+                    )}
+            </div>
+        </div>
+    );
+};
+
+export default Dashboard;
+
+
+/types/interfaces.tsx
+interface Item {
+  item_code: string;
+  item_name: string;
+  unit: string;
+}
+
+interface Purchase {
+  purchase_id: number;
+  item_code: string;
+  item_name: string;
+  cost_per_unit: number;
+  total_cost: number;
+  purchase_date: string;
+  supplier: string;
+  created_by: number;
+}
+
+interface NewPurchase {
+  item_code: string;
+  item_name: string;
+  cost_per_unit: number | '';
+  quantity: number | '';
+  supplier: string;
+}
+
+interface Farmer {
+  farmer_id: number;
+  name: string;
+  phone_number: string;
+  address: string;
+  bank_account_no: string;
+  bank_name: string;
+  ifsc_code: string;
+  area_size: number;
+  created_at: string;
+}
+
+interface NewFarmer {
+  name: string;
+  phone_number: string;
+  address: string;
+  bank_account_no: string;
+  bank_name: string;
+  ifsc_code: string;
+  area_size: number | '';
+}
+
+interface Supplier {
+  supplier_id: number;
+  supplier_type: SupplierType;
+  name: string;
+  phone_number: string;
+  address: string;
+  bank_account_no: string;
+  bank_name: string;
+  ifsc_code: string;
+  created_at: string;
+}
+
+interface SupplierPayload {
+  supplier_type: SupplierType;
+  name: string;
+  phone_number: string;
+  address: string;
+  bank_account_no: string;
+  bank_name: string;
+  ifsc_code: string;
+}
+enum SupplierType {
+  Feed = 'Feed',
+  Chick = 'Chick',
+  Medicine = 'Medicine',
+}
+
+
+interface Trader {
+  trader_id: number;
+  name: string;
+  phone_number: string;
+  address: string;
+  bank_account_no: string;
+  bank_name: string;
+  ifsc_code: string;
+  area: string;
+  created_at: string;
+}
+
+interface NewTrader {
+  name: string;
+  phone_number: string;
+  address: string;
+  bank_account_no: string;
+  bank_name: string;
+  ifsc_code: string;
+  area: string;
+}
+
+interface ProductionLine {
+  line_id: number;
+  line_name: string;
+  supervisor_id: number;
+  supervisor_name: string;
+  created_at: string; 
+}
+
+interface ProductionLinePayload {
+  line_name: string;
+  supervisor_id: number | '';
+}
+
+interface SupervisorSimplified {
+    user_id: number;
+    name: string;
+    role: string;
+}
+
+
+
+
+
+  {/* Modal */}
+            {modalOpen && selectedBatch && (
+                <div className="fixed inset-0 z-50 flex items-start justify-center p-6">
+                    <div className="fixed inset-0 bg-black/40" onClick={closeModal} />
+                    <div className="relative z-60 w-full max-w-4xl bg-white rounded-lg shadow-lg overflow-hidden">
+                        <div className="flex items-center justify-between p-4 border-b">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-800">Allocations for Batch #{selectedBatch.batch_id}</h3>
+                                <p className="text-sm text-gray-500">Line {selectedBatch.line_id} — Farmer: {selectedBatch.farmer_name}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="text-sm text-gray-500">{selectedBatch.start_date} → {selectedBatch.end_date}</div>
+                                <button onClick={closeModal} className="p-2 rounded hover:bg-gray-100"><X size={18} /></button>
+                            </div>
+                        </div>
+
+                        {/* Tabs */}
+                        <div>
+                            <div className="flex border-b">
+                                {(['Feed', 'Chicks', 'Medicine'] as const).map(tab => (
+                                    <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-3 text-sm font-medium -mb-px ${activeTab === tab ? 'border-b-2 border-green-600 text-green-700' : 'text-gray-600 hover:text-gray-800'}`}>{tab}</button>
+                                ))}
+                            </div>
+
+                            {/* Tab content */}
+                            <div className="p-4 max-h-96 overflow-auto">
+                                {/* show total for the tab */}
+                                <div className="mb-4 text-black">
+                                    <strong>Total allocated value: </strong>
+                                    <span>{byCategory[activeTab].total.toFixed(2)}</span>
+                                </div>
+
+                                {byCategory[activeTab].rows.length === 0 ? (
+                                    <div className="text-gray-500">No {activeTab.toLowerCase()} allocations for this batch.</div>
+                                ) : (
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="text-left text-xs text-gray-500">
+                                                <th className="py-2">Requirement ID</th>
+                                                <th className="py-2">Item Code</th>
+                                                <th className="py-2">Item Name</th>
+                                                <th className="py-2">Requested Qty</th>
+                                                <th className="py-2">Allocated Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {byCategory[activeTab].rows.map(row => {
+                                                const req = row.requirement;
+                                                return (
+                                                    <tr key={req.requirement_id} className="border-t text-black">
+                                                        <td className="py-2">{req.requirement_id}</td>
+                                                        <td className="py-2">{req.item_code}</td>
+                                                        <td className="py-2">{req.item_name}</td>
+                                                        <td className="py-2">{req.quantity}</td>
+                                                        <td className="py-2">{row.totalAllocatedValue.toFixed(2)}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            )}
