@@ -19,5 +19,6 @@ pub use super::production_lines::Entity as ProductionLines;
 pub use super::purchases::Entity as Purchases;
 pub use super::suppliers::Entity as Suppliers;
 pub use super::timeslots::Entity as Timeslots;
+pub use super::trader_ledger_entries::Entity as TraderLedgerEntries;
 pub use super::traders::Entity as Traders;
 pub use super::users::Entity as Users;

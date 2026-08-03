@@ -1,3 +1,4 @@
+pub mod audit;
 pub mod batch_requirements;
 pub mod batch_sales;
 pub mod batches;
@@ -10,6 +11,9 @@ pub mod loans;
 pub mod other_expenses;
 pub mod purchases;
 pub mod suppliers;
+pub mod supervisor_app;
 pub mod timeslots;
+pub mod trader_app;
+pub mod trader_ledger;
 pub mod traders;
 pub mod visibility;

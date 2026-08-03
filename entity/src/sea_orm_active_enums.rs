@@ -178,6 +178,24 @@ pub enum OrderStatus {
     Expired,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "ledger_entry_type")]
+pub enum LedgerEntryType {
+    #[sea_orm(string_value = "debit")]
+    Debit,
+    #[sea_orm(string_value = "payment")]
+    Payment,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "payment_mode")]
+pub enum PaymentMode {
+    #[sea_orm(string_value = "cash")]
+    Cash,
+    #[sea_orm(string_value = "bank")]
+    Bank,
+}
+
 impl fmt::Display for ItemCategory {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

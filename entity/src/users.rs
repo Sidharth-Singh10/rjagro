@@ -14,6 +14,7 @@ pub struct Model {
     pub email: String,
     #[serde(skip)]
     pub password: String,
+    pub phone: Option<String>,
     pub role: UserRole,
     pub created_at: DateTimeWithTimeZone,
 }

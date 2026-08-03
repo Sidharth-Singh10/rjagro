@@ -422,3 +422,175 @@ pub struct CreateOtherExpense {
     pub expense_date: NaiveDate,
     pub created_by: i32,
 }
+
+// ─── Trader app (live selling) ───────────────────────────────────────────────
+
+#[derive(Deserialize)]
+pub struct CreateOrderPayload {
+    pub batch_id: i32,
+    pub timeslot_id: i32,
+    pub requested_weight: Decimal,
+}
+
+#[derive(Deserialize)]
+pub struct TraderOrderQuery {
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreditSummary {
+    pub trader_id: i32,
+    pub credit_limit: Option<Decimal>,
+    pub credit_terms_days: Option<i32>,
+    pub total_dues: Decimal,
+    pub total_paid: Decimal,
+    pub remaining_credit: Option<Decimal>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LiveBatchResponse {
+    pub batch_id: i32,
+    pub status: Option<BatchStatus>,
+    pub avg_body_weight: Option<Decimal>,
+    pub activated_at: Option<DateTimeWithTimeZone>,
+    pub farm: FarmInfo,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TimeslotInfo {
+    pub timeslot_id: i32,
+    pub slot_start: NaiveTime,
+    pub slot_end: NaiveTime,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BatchDetailResponse {
+    pub batch_id: i32,
+    pub status: Option<BatchStatus>,
+    pub avg_body_weight: Option<Decimal>,
+    pub activated_at: Option<DateTimeWithTimeZone>,
+    pub closed_at: Option<DateTimeWithTimeZone>,
+    pub created_at: DateTimeWithTimeZone,
+    pub farm: FarmInfo,
+    pub timeslots: Vec<TimeslotInfo>,
+    pub supervisor_name: Option<String>,
+    pub supervisor_email: Option<String>,
+    pub supervisor_phone: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OrderResponse {
+    pub order_id: i32,
+    pub inquiry_number: String,
+    pub trader_id: i32,
+    pub batch_id: i32,
+    pub timeslot_id: i32,
+    pub requested_weight: Decimal,
+    pub status: String,
+    pub actual_weight: Option<Decimal>,
+    pub actual_birds: Option<i32>,
+    pub entry_rate: Option<Decimal>,
+    pub total_amount: Option<Decimal>,
+    pub rejection_reason: Option<String>,
+    pub created_at: DateTimeWithTimeZone,
+    pub weight_entered_at: Option<DateTimeWithTimeZone>,
+    pub confirmed_at: Option<DateTimeWithTimeZone>,
+    pub cancelled_at: Option<DateTimeWithTimeZone>,
+    pub rejected_at: Option<DateTimeWithTimeZone>,
+    pub expired_at: Option<DateTimeWithTimeZone>,
+    pub farm_name: Option<String>,
+    pub farm_code: Option<String>,
+    pub batch_status: Option<BatchStatus>,
+    pub slot_start: Option<NaiveTime>,
+    pub slot_end: Option<NaiveTime>,
+    pub trader_name: Option<String>,
+    pub trader_phone: Option<String>,
+    pub supervisor_name: Option<String>,
+    pub supervisor_email: Option<String>,
+    pub supervisor_phone: Option<String>,
+}
+
+// ─── Trader ledger (per-trader, separate from main double-entry ledger) ─────
+
+#[derive(Deserialize)]
+pub struct CreateTraderPaymentPayload {
+    pub amount: Decimal,
+    /// "cash" | "bank"
+    pub payment_mode: String,
+    pub screenshot_url: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct LedgerStatementQuery {
+    pub from: Option<NaiveDate>,
+    pub to: Option<NaiveDate>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LedgerEntryView {
+    /// Payment entry id (None for order-derived debits)
+    pub id: Option<i32>,
+    pub order_id: Option<i32>,
+    pub inquiry_number: Option<String>,
+    pub entry_type: String,
+    pub amount: Decimal,
+    pub payment_mode: Option<String>,
+    pub screenshot_url: Option<String>,
+    pub created_at: DateTimeWithTimeZone,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TraderLedgerResponse {
+    pub trader_id: i32,
+    pub total_debits: Decimal,
+    pub total_payments: Decimal,
+    pub balance: Decimal,
+    pub entries: Vec<LedgerEntryView>,
+}
+
+// ─── Audit ───────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct AuditLogView {
+    pub audit_id: i32,
+    pub order_id: i32,
+    pub actor_type: String,
+    pub actor_id: i32,
+    pub actor_name: Option<String>,
+    pub action: String,
+    pub field_changed: Option<String>,
+    pub old_value: Option<String>,
+    pub new_value: Option<String>,
+    pub created_at: DateTimeWithTimeZone,
+}
+
+// ─── Supervisor app (live selling) ───────────────────────────────────────────
+
+#[derive(Deserialize)]
+pub struct WeightPayload {
+    pub actual_weight: Decimal,
+    pub actual_birds: i32,
+}
+
+#[derive(Deserialize)]
+pub struct CloseOrderPayload {
+    pub actual_weight: Decimal,
+    pub actual_birds: i32,
+    pub entry_rate: Decimal,
+}
+
+#[derive(Deserialize)]
+pub struct RejectOrderPayload {
+    pub reason: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SupervisorBatchResponse {
+    pub batch_id: i32,
+    pub status: Option<BatchStatus>,
+    pub avg_body_weight: Option<Decimal>,
+    pub activated_at: Option<DateTimeWithTimeZone>,
+    pub closed_at: Option<DateTimeWithTimeZone>,
+    pub farm: FarmInfo,
+    pub pending_orders: i32,
+}

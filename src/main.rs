@@ -14,9 +14,13 @@ use crate::auth::login::login_handler;
 use crate::auth::trader_login::{trader_login_handler, trader_register_handler};
 use crate::handlers::visibility::get_visibility_handler;
 use crate::routes::admin::admin::admin;
+use crate::routes::audit_app::audit_routes;
 use crate::routes::deletes::delete_routes;
 use crate::routes::fetch_by_id::fetch_by_id;
 use crate::routes::inserts::insert_routes;
+use crate::routes::ledger_app::ledger_routes;
+use crate::routes::supervisor_app::supervisor_app_routes;
+use crate::routes::trader_app::trader_app_routes;
 use crate::{auth::middleware::auth_middleware, routes::fetch_all::fetch_all};
 use tower_http::cors::CorsLayer;
 
@@ -53,6 +57,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "http://localhost:5173",
         "http://localhost:3000",
         "http://127.0.0.1:5173",
+        "http://localhost:1420",
+        "http://127.0.0.1:1420",
     ];
     let cors = CorsLayer::new()
         .allow_origin(
@@ -65,6 +71,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Method::GET,
             Method::POST,
             Method::PUT,
+            Method::PATCH,
             Method::OPTIONS,
             Method::DELETE,
         ])
@@ -81,6 +88,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/getbyid", fetch_by_id())
         .nest("/insert", insert_routes())
         .nest("/delete", delete_routes())
+        .nest("/trader", trader_app_routes())
+        .nest("/supervisor", supervisor_app_routes())
+        .nest("/ledger", ledger_routes())
+        .merge(audit_routes())
         .route("/visibility", get(get_visibility_handler))
         // .route("/generate", post(generate))
         .layer(axum::middleware::from_fn(auth_middleware))

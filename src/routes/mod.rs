@@ -1,5 +1,9 @@
 pub mod admin;
+pub mod audit_app;
 pub mod deletes;
 pub mod fetch_all;
 pub mod fetch_by_id;
 pub mod inserts;
+pub mod ledger_app;
+pub mod supervisor_app;
+pub mod trader_app;

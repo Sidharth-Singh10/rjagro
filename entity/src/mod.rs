@@ -34,6 +34,7 @@ pub mod stock_returns;
 pub mod supplier_payments;
 pub mod suppliers;
 pub mod timeslots;
+pub mod trader_ledger_entries;
 pub mod trader_payments;
 pub mod traders;
 pub mod users;
