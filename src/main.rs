@@ -10,7 +10,6 @@ mod handlers;
 mod models;
 mod pdf;
 mod routes;
-use crate::auth::google::{google_callback_handler, google_login_handler, new_google_auth_state};
 use crate::auth::login::login_handler;
 use crate::handlers::visibility::get_visibility_handler;
 use crate::routes::admin::admin::admin;
@@ -22,6 +21,7 @@ use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize tracing subscriber (use RUST_LOG to set level, e.g. RUST_LOG=info)
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
@@ -33,6 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .trim()
         .to_string();
 
+    // Connect to DB
     let db: DatabaseConnection = match Database::connect(&database_url).await {
         Ok(conn) => {
             info!("✅ Successfully connected to database");
@@ -48,9 +49,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "http://tauri.localhost",
         "https://tauri.localhost",
         "https://rjagro.vercel.app",
-        "http://localhost:3000",
-        "http://localhost:1420",
-        "http://localhost:5173",
     ];
     let cors = CorsLayer::new()
         .allow_origin(
@@ -73,33 +71,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ])
         .allow_credentials(true);
 
-    // ── Protected routes (require JWT via auth_middleware) ──
-    let protected = Router::new()
+    let router = Router::new()
         .nest("/admin", admin())
         .nest("/getall", fetch_all())
         .nest("/getbyid", fetch_by_id())
         .nest("/insert", insert_routes())
         .nest("/delete", delete_routes())
         .route("/visibility", get(get_visibility_handler))
+        // .route("/generate", post(generate))
         .layer(axum::middleware::from_fn(auth_middleware))
-        .with_state(db.clone());
-
-    // ── Google OAuth routes ──
-    let google_auth_state = new_google_auth_state(db.clone());
-    let google_auth = Router::new()
-        .route("/auth/google/login", get(google_login_handler))
-        .route("/auth/google/callback", get(google_callback_handler))
-        .with_state(google_auth_state);
-
-    // ── Password login (existing legacy route) ──
-    let legacy_login = Router::new()
         .route("/login", post(login_handler))
-        .with_state(db);
-
-    let router = Router::new()
-        .merge(protected)
-        .merge(google_auth)
-        .merge(legacy_login)
+        .with_state(db)
         .layer(cors);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
