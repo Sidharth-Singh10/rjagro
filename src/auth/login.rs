@@ -58,10 +58,18 @@ pub async fn login_handler(
         exp: (chrono::Utc::now() + chrono::Duration::days(1)).timestamp() as usize,
     };
 
+    let jwt_secret = match std::env::var("JWT_SECRET") {
+        Ok(s) => s,
+        Err(_) => {
+            eprintln!("JWT_SECRET environment variable not set");
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
     let token = match encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret("JWT_SECRET".as_ref()),
+        &EncodingKey::from_secret(jwt_secret.as_bytes()),
     ) {
         Ok(tok) => tok,
         Err(e) => {
