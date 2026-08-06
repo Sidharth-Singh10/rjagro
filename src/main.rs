@@ -3,6 +3,7 @@ use axum::routing::post;
 use axum::{routing::get, Router};
 use reqwest::Method;
 use sea_orm::{Database, DatabaseConnection};
+use tower_http::cors::CorsLayer;
 use tracing::{error, info};
 mod auth;
 mod consts;
@@ -22,7 +23,6 @@ use crate::routes::ledger_app::ledger_routes;
 use crate::routes::supervisor_app::supervisor_app_routes;
 use crate::routes::trader_app::trader_app_routes;
 use crate::{auth::middleware::auth_middleware, routes::fetch_all::fetch_all};
-use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -50,16 +50,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let allowed_origins = [
+    let mut allowed_origins: Vec<String> = vec![
         "http://tauri.localhost",
         "https://tauri.localhost",
         "https://rjagro.vercel.app",
         "http://localhost:5173",
         "http://localhost:3000",
-        "http://127.0.0.1:5173",
         "http://localhost:1420",
-        "http://127.0.0.1:1420",
-    ];
+        "http://100.79.53.70:1420",
+        "http://localhost:1421",
+        "http://100.79.53.70:1421",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect();
+
+    // Allow additional origins via env var (comma-separated URLs) —
+    // useful for testing on mobile devices, Tailscale, or staging environments.
+    if let Ok(extra) = std::env::var("CORS_EXTRA_ORIGINS") {
+        for origin in extra.split(',') {
+            let trimmed = origin.trim().to_string();
+            if !trimmed.is_empty() {
+                allowed_origins.push(trimmed);
+            }
+        }
+    }
+
     let cors = CorsLayer::new()
         .allow_origin(
             allowed_origins
