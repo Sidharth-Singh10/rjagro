@@ -216,6 +216,8 @@ pub struct CreateFarm {
 pub struct CreateFarmBatch {
     /// Optional; defaults to the first production line when omitted.
     pub line_id: Option<i32>,
+    /// Start date of the live-selling batch.
+    pub start_date: NaiveDate,
 }
 
 #[derive(Deserialize)]

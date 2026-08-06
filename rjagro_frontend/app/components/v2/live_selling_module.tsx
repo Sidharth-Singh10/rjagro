@@ -17,6 +17,7 @@ const LiveSellingModule = () => {
     const [loading, setLoading] = useState(false);
 
     const [createFarmId, setCreateFarmId] = useState<number | ''>('');
+    const [createStartDate, setCreateStartDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
     const [timeslotsFor, setTimeslotsFor] = useState<number | null>(null);
     const [actionFor, setActionFor] = useState<{ batchId: number; kind: 'activate' | 'timeslot' } | null>(null);
@@ -46,7 +47,10 @@ const LiveSellingModule = () => {
 
     const onCreateBatch = () => {
         if (!createFarmId) return;
-        handleAddLiveBatch(createFarmId, queryClient, setLoading, () => setCreateFarmId(''));
+        handleAddLiveBatch(createFarmId, createStartDate, queryClient, setLoading, () => {
+            setCreateFarmId('');
+            setCreateStartDate(new Date().toISOString().slice(0, 10));
+        });
     };
 
     const toggleTimeslots = (batchId: number) => {
@@ -80,9 +84,15 @@ const LiveSellingModule = () => {
                             <option key={f.farm_id} value={f.farm_id}>{f.code} - {f.name}</option>
                         ))}
                     </select>
+                    <input
+                        type="date"
+                        value={createStartDate}
+                        onChange={(e) => setCreateStartDate(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+                    />
                     <button
                         onClick={onCreateBatch}
-                        disabled={loading || !createFarmId}
+                        disabled={loading || !createFarmId || !createStartDate}
                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                     >
                         <Plus size={18} /> Create Live Batch

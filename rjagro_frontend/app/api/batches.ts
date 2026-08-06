@@ -16,6 +16,7 @@ export const fetchBatchById = async (batchId: number): Promise<Batch> => {
 
 export const handleAddLiveBatch = async (
     farmId: number,
+    startDate: string,
     queryClient: any,
     setLoading: (loading: boolean) => void,
     onSuccess?: () => void
@@ -25,10 +26,15 @@ export const handleAddLiveBatch = async (
         return;
     }
 
+    if (!startDate) {
+        toast.error("Select a start date");
+        return;
+    }
+
     setLoading(true);
 
     try {
-        await api.post(`/insert/batches/${farmId}`);
+        await api.post(`/insert/batches/${farmId}`, { start_date: startDate });
         queryClient.invalidateQueries(["batches"]);
         toast.success("Live batch created!");
         if (onSuccess) onSuccess();

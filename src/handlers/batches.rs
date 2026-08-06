@@ -337,7 +337,7 @@ pub async fn create_farm_batch_handler(
     State(db): State<DatabaseConnection>,
     Path(farm_id): Path<i32>,
     Extension(actor_id): Extension<String>,
-    body: Option<Json<CreateFarmBatch>>,
+    Json(payload): Json<CreateFarmBatch>,
 ) -> Result<Json<batches::Model>, StatusCode> {
     let farm = farms::Entity::find_by_id(farm_id)
         .one(&db)
@@ -350,7 +350,7 @@ pub async fn create_farm_batch_handler(
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
     // line_id has a NOT NULL FK to production_lines; default to the first one
-    let line_id = match body.and_then(|b| b.line_id) {
+    let line_id = match payload.line_id {
         Some(line_id) => line_id,
         None => {
             production_lines::Entity::find()
@@ -363,14 +363,12 @@ pub async fn create_farm_batch_handler(
         }
     };
 
-    let today = Utc::now().date_naive();
-
     let new_batch = batches::ActiveModel {
         line_id: Set(line_id),
         supervisor_id: Set(supervisor_id),
         farmer_id: Set(farm.farmer_id),
-        start_date: Set(today),
-        end_date: Set(today),
+        start_date: Set(payload.start_date),
+        end_date: Set(payload.start_date),
         initial_bird_count: Set(0),
         current_bird_count: Set(0),
         status: Set(Some(BatchStatus::Open)),
