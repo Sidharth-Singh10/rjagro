@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
-use crate::handlers::trader_app::{build_order_response, build_order_responses, order_status_str};
+use crate::handlers::batch_sales::{insert_batch_sales_ledger_entries, update_batch_financials};
+use crate::handlers::trader_app::{build_order_response, build_order_responses, order_status_str, parse_order_status};
 use crate::models::{
-    CloseOrderPayload, OrderResponse, RejectOrderPayload, SupervisorBatchResponse,
-    TraderOrderQuery, WeightPayload,
+    AppTraderView, CloseOrderPayload, OrderResponse, RejectOrderPayload, SupervisorBatchResponse,
+    SupervisorOrderQuery, TraderOrderQuery, WeightPayload,
 };
 use axum::{
     extract::{Extension, Path, Query, State},
@@ -11,8 +12,8 @@ use axum::{
     Json,
 };
 use chrono::Utc;
-use entity::sea_orm_active_enums::{BatchStatus, OrderStatus};
-use entity::{audit_log, batches, farms, orders};
+use entity::sea_orm_active_enums::{BatchStatus, OrderStatus, PaymentType};
+use entity::{app_traders, audit_log, batch_sales, batches, farms, orders};
 use sea_orm::prelude::Decimal;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
@@ -344,6 +345,51 @@ pub async fn close_order_handler(
     )
     .await?;
 
+    // Append a row to batch_sales for this closed order.
+    let app_trader = app_traders::Entity::find_by_id(order.trader_id)
+        .one(&txn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let legacy_trader_id = app_trader
+        .linked_trader_id
+        .ok_or(StatusCode::BAD_REQUEST)?;
+
+    let avg_weight = payload.actual_weight / Decimal::from(payload.actual_birds);
+
+    let new_sale = batch_sales::ActiveModel {
+        item_code: Set("DC101".to_string()),
+        batch_id: Set(order.batch_id),
+        trader_id: Set(legacy_trader_id),
+        avg_weight: Set(avg_weight),
+        rate: Set(payload.entry_rate),
+        quantity: Set(Decimal::from(payload.actual_birds)),
+        value: Set(total_amount),
+        payment_type: Set(PaymentType::Cash),
+        sale_date: Set(Utc::now().date_naive()),
+        ..Default::default()
+    };
+
+    let inserted_sale = new_sale
+        .insert(&txn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    // Replicate create_batch_sale side effects: ledger entries + closure summary.
+    insert_batch_sales_ledger_entries(&txn, &inserted_sale, actor_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    update_batch_financials(
+        &txn,
+        order.batch_id,
+        total_amount,
+        Decimal::from(payload.actual_birds),
+    )
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
     txn.commit()
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -405,4 +451,69 @@ pub async fn reject_order_handler(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     build_order_response(&db, updated).await
+}
+
+/// GET /supervisor/orders?batch_id=&status=
+pub async fn all_orders_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<SupervisorOrderQuery>,
+) -> Result<Json<Vec<OrderResponse>>, StatusCode> {
+    let mut query = orders::Entity::find();
+
+    if let Some(batch_id) = params.batch_id {
+        query = query.filter(orders::Column::BatchId.eq(batch_id));
+    }
+
+    if let Some(raw) = params.status {
+        let status = parse_order_status(&raw).ok_or(StatusCode::BAD_REQUEST)?;
+        query = query.filter(orders::Column::Status.eq(status));
+    }
+
+    let orders_list = query
+        .order_by_desc(orders::Column::CreatedAt)
+        .all(&db)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(build_order_responses(&db, orders_list).await?))
+}
+
+/// GET /supervisor/orders/{id}
+pub async fn order_detail_handler(
+    State(db): State<DatabaseConnection>,
+    Path(order_id): Path<i32>,
+) -> Result<Json<OrderResponse>, StatusCode> {
+    let order = orders::Entity::find_by_id(order_id)
+        .one(&db)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    build_order_response(&db, order).await
+}
+
+/// GET /supervisor/traders
+pub async fn all_app_traders_handler(
+    State(db): State<DatabaseConnection>,
+) -> Result<Json<Vec<AppTraderView>>, StatusCode> {
+    let traders = app_traders::Entity::find()
+        .order_by_asc(app_traders::Column::Name)
+        .all(&db)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(
+        traders
+            .into_iter()
+            .map(|t| AppTraderView {
+                id: t.id,
+                name: t.name,
+                phone: t.phone,
+                email: t.email,
+                credit_limit: t.credit_limit,
+                credit_terms_days: t.credit_terms_days,
+                linked_trader_id: t.linked_trader_id,
+            })
+            .collect(),
+    ))
 }

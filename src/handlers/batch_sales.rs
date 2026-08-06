@@ -98,7 +98,7 @@ pub async fn create_batch_sale(
     Ok(Json(inserted_sale))
 }
 
-async fn update_batch_financials(
+pub(crate) async fn update_batch_financials(
     txn: &sea_orm::DatabaseTransaction,
     batch_id: i32,
     added_value: Decimal,

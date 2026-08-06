@@ -597,6 +597,12 @@ pub struct RejectOrderPayload {
     pub reason: String,
 }
 
+#[derive(Deserialize)]
+pub struct SupervisorOrderQuery {
+    pub batch_id: Option<i32>,
+    pub status: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct SupervisorBatchResponse {
     pub batch_id: i32,
@@ -606,4 +612,15 @@ pub struct SupervisorBatchResponse {
     pub closed_at: Option<DateTimeWithTimeZone>,
     pub farm: FarmInfo,
     pub pending_orders: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AppTraderView {
+    pub id: i32,
+    pub name: String,
+    pub phone: String,
+    pub email: String,
+    pub credit_limit: Option<Decimal>,
+    pub credit_terms_days: Option<i32>,
+    pub linked_trader_id: Option<i32>,
 }

@@ -40,7 +40,7 @@ pub async fn me_handler(
     Ok(Json(trader.into()))
 }
 
-fn parse_order_status(raw: &str) -> Option<OrderStatus> {
+pub(crate) fn parse_order_status(raw: &str) -> Option<OrderStatus> {
     match raw.to_uppercase().as_str() {
         "PENDING" => Some(OrderStatus::Pending),
         "WEIGHT_ENTERED" => Some(OrderStatus::WeightEntered),

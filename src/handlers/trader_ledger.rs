@@ -13,10 +13,10 @@ use axum::{
     Json,
 };
 
-/// Admin/Accountant may view any trader; a Trader may only access their own ledger.
+/// Admin/Accountant/Supervisor may view any trader; a Trader may only access their own ledger.
 fn authorize(role: &UserRole, sub: &str, trader_id: i32) -> Result<(), StatusCode> {
     match role {
-        UserRole::Admin | UserRole::Accountant => Ok(()),
+        UserRole::Admin | UserRole::Accountant | UserRole::Supervisor => Ok(()),
         UserRole::Trader => {
             let uid = sub.parse::<i32>().map_err(|_| StatusCode::UNAUTHORIZED)?;
             if uid == trader_id {
@@ -25,7 +25,6 @@ fn authorize(role: &UserRole, sub: &str, trader_id: i32) -> Result<(), StatusCod
                 Err(StatusCode::FORBIDDEN)
             }
         }
-        _ => Err(StatusCode::FORBIDDEN),
     }
 }
 

@@ -18,7 +18,12 @@ pub fn ledger_routes() -> Router<DatabaseConnection> {
         )
         .route("/traders/{id}/statement", get(trader_statement_handler))
         .layer(from_fn_with_state(
-            RequireRoles::new(&[UserRole::Admin, UserRole::Accountant, UserRole::Trader]),
+            RequireRoles::new(&[
+                UserRole::Admin,
+                UserRole::Accountant,
+                UserRole::Trader,
+                UserRole::Supervisor,
+            ]),
             require_roles_middleware,
         ))
 }
