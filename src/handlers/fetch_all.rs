@@ -2,11 +2,14 @@ use std::collections::{HashMap, HashSet};
 
 use crate::models::{
     BatchListQuery, BatchRequirementResponse, BatchResponse, FarmInfo, PaginationParams,
-    ProductionLineWithSupervisor, PurchaseWithItem, UserSimplified,
+    ProductionLineWithSupervisor, PurchaseWithItem, StockReceiptsQuery, UserSimplified,
 };
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use entity::{sea_orm_active_enums::{BatchStatus, UserRole}, *};
+use entity::{
+    sea_orm_active_enums::{BatchStatus, UserRole},
+    *,
+};
 use sea_orm::{ColumnTrait, PaginatorTrait};
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter};
 use sea_orm::{DbBackend, QueryOrder, Statement};
@@ -530,8 +533,13 @@ pub async fn get_batch_allocation_lines_handler(
 
 pub async fn get_stock_receipts_handler(
     State(db): State<DatabaseConnection>,
+    Query(params): Query<StockReceiptsQuery>,
 ) -> Result<Json<Vec<stock_receipts::Model>>, StatusCode> {
-    match stock_receipts::Entity::find().all(&db).await {
+    let mut query = stock_receipts::Entity::find();
+    if let Some(item_code) = params.item_code {
+        query = query.filter(stock_receipts::Column::ItemCode.eq(item_code));
+    }
+    match query.all(&db).await {
         Ok(data) => Ok(Json(data)),
         Err(e) => {
             eprintln!("Failed to fetch stock receipts: {}", e);

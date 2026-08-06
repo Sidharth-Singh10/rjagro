@@ -112,7 +112,7 @@ const OverviewModule = () => {
         queryKey: ['batch_allocation_lines'], queryFn: fetchBatchAllocationLines, staleTime: STALE,
     });
     const { data: stockReceipts = [] } = useQuery({
-        queryKey: ['stock_receipts'], queryFn: fetchStockReceipts, staleTime: STALE,
+        queryKey: ['stock_receipts'], queryFn: () => fetchStockReceipts(), staleTime: STALE,
     });
 
     // ── Lookup maps ───────────────────────────────────────────────────

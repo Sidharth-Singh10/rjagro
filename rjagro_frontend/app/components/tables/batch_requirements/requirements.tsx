@@ -58,10 +58,10 @@ const BatchRequirementsTable: React.FC<BatchRequirementsProps> = ({
     }, [requirements]);
 
     // --- Handlers ---
-    const handleApproveConfirm = async (req: BatchRequirement, qty: number) => {
+    const handleApproveConfirm = async (req: BatchRequirement, lines: { lot_id: number; qty: number }[]) => {
         setProcessingRequirement(req.requirement_id);
         try {
-            await handleApproveRequirement(req, qty);
+            await handleApproveRequirement(req, lines);
             setApproveModalRequirement(null);
         } finally {
             setProcessingRequirement(null);

@@ -2,8 +2,9 @@ import { StockReceipt, StockReceiptPayload } from '../types/interfaces';
 import api from '../utils/api';
 import { toast } from 'react-toastify';
 
-export const fetchStockReceipts = async (): Promise<StockReceipt[]> => {
-    const response = await api.get('/getall/stock_receipts');
+export const fetchStockReceipts = async (itemCode?: string): Promise<StockReceipt[]> => {
+    const params = itemCode ? `?item_code=${encodeURIComponent(itemCode)}` : '';
+    const response = await api.get(`/getall/stock_receipts${params}`);
     return response.data;
 };
 

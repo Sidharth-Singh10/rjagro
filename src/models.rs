@@ -246,11 +246,22 @@ pub struct BatchRequirementResponse {
 }
 
 #[derive(serde::Deserialize)]
+pub struct AllocateLine {
+    pub lot_id: i32,
+    pub qty: Decimal,
+}
+
+#[derive(serde::Deserialize)]
 pub struct ApprovePayload {
     pub requirement_id: i32,
-    pub allocated_qty: Decimal,
+    pub lines: Vec<AllocateLine>,
     pub allocation_date: NaiveDate,
     pub allocated_by: i32,
+}
+
+#[derive(serde::Deserialize)]
+pub struct StockReceiptsQuery {
+    pub item_code: Option<String>,
 }
 #[derive(Debug, Deserialize)]
 pub struct CreateLedgerAccount {

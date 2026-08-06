@@ -54,7 +54,7 @@ const AllocationsModule = () => {
 
     const { data: stockReceipts = [] } = useQuery({
         queryKey: ['stock_receipts'],
-        queryFn: fetchStockReceipts,
+        queryFn: () => fetchStockReceipts(),
         staleTime: 5 * 60 * 1000,
     });
 

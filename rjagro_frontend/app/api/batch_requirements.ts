@@ -61,17 +61,17 @@ export const handleRejectRequirement = async (
   }
 };
 
-// Approve a requirement
+// Approve a requirement with manual lot selection
 export const handleApproveRequirement = async (
   requirement: BatchRequirement,
-  allocatedQty: number,
+  lines: { lot_id: number; qty: number }[],
   user_id?: number,
   queryClient?: any
 ) => {
   try {
     const payload = {
       requirement_id: requirement.requirement_id,
-      allocated_qty: allocatedQty,
+      lines: lines,
       allocation_date: new Date().toISOString().slice(0, 10),
       allocated_by: user_id || 1, // fallback
     };
