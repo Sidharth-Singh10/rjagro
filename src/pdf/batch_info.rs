@@ -471,7 +471,7 @@ pub fn draw_batch_sales_info_section(
         11.0,
     );
     draw_text_absolute(":", sep_x, row6_y, BuiltinFont::HelveticaBold, 11.0);
-   
+
     draw_text_absolute(
         &batch_sales.get_converted_fcr(),
         val_x,

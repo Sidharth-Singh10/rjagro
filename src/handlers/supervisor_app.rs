@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 
-use crate::handlers::trader_app::{
-    build_order_response, build_order_responses, order_status_str,
-};
+use crate::handlers::trader_app::{build_order_response, build_order_responses, order_status_str};
 use crate::models::{
-    CloseOrderPayload, OrderResponse, RejectOrderPayload, SupervisorBatchResponse, TraderOrderQuery,
-    WeightPayload,
+    CloseOrderPayload, OrderResponse, RejectOrderPayload, SupervisorBatchResponse,
+    TraderOrderQuery, WeightPayload,
 };
 use axum::{
     extract::{Extension, Path, Query, State},

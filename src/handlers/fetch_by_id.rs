@@ -118,7 +118,11 @@ pub async fn get_batch_by_id_handler(
             if let (Some(user), Some(farmer)) = (user_opt, farmer_opt) {
                 // Fetch the related farm separately
                 let farm = match batch.farm_id {
-                    Some(farm_id) => farms::Entity::find_by_id(farm_id).one(&db).await.ok().flatten(),
+                    Some(farm_id) => farms::Entity::find_by_id(farm_id)
+                        .one(&db)
+                        .await
+                        .ok()
+                        .flatten(),
                     None => None,
                 };
                 let farm = farm.map(FarmInfo::from);

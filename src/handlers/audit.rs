@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use crate::models::AuditLogView;
-use entity::sea_orm_active_enums::UserRole;
-use entity::{app_traders, audit_log, orders, users};
 use axum::{
     extract::{Extension, Path, State},
     http::StatusCode,
     Json,
 };
+use entity::sea_orm_active_enums::UserRole;
+use entity::{app_traders, audit_log, orders, users};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 
 fn authorize(role: &UserRole, sub: &str, order: &orders::Model) -> Result<(), StatusCode> {

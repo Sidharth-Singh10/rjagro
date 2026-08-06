@@ -1,11 +1,6 @@
 //! Login & registration handlers for app_traders (phone + password auth)
 
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use entity::app_traders;
 use entity::sea_orm_active_enums::UserRole;

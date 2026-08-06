@@ -352,13 +352,15 @@ pub async fn create_farm_batch_handler(
     // line_id has a NOT NULL FK to production_lines; default to the first one
     let line_id = match body.and_then(|b| b.line_id) {
         Some(line_id) => line_id,
-        None => production_lines::Entity::find()
-            .order_by_asc(production_lines::Column::LineId)
-            .one(&db)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-            .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?
-            .line_id,
+        None => {
+            production_lines::Entity::find()
+                .order_by_asc(production_lines::Column::LineId)
+                .one(&db)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+                .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?
+                .line_id
+        }
     };
 
     let today = Utc::now().date_naive();
@@ -404,7 +406,11 @@ pub async fn activate_batch_handler(
     active.avg_body_weight = Set(Some(payload.avg_body_weight));
     active.activated_at = Set(Some(Utc::now().into()));
 
-    active.update(&db).await.map(Json).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+    active
+        .update(&db)
+        .await
+        .map(Json)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
 }
 
 /// POST /insert/batches/{id}/close
@@ -413,7 +419,10 @@ pub async fn close_batch_handler(
     State(db): State<DatabaseConnection>,
     Path(batch_id): Path<i32>,
 ) -> Result<Json<batches::Model>, StatusCode> {
-    let txn = db.begin().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let txn = db
+        .begin()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let batch = batches::Entity::find_by_id(batch_id)
         .one(&txn)
@@ -461,10 +470,15 @@ pub async fn close_batch_handler(
             new_value: Set(Some("EXPIRED".to_string())),
             ..Default::default()
         };
-        audit.insert(&txn).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        audit
+            .insert(&txn)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
 
-    txn.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    txn.commit()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(updated))
 }

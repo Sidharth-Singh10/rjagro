@@ -61,7 +61,9 @@ pub async fn trader_statement_handler(
     Extension(role): Extension<UserRole>,
 ) -> Result<Json<TraderLedgerResponse>, StatusCode> {
     authorize(&role, &sub, trader_id)?;
-    Ok(Json(build_ledger(&db, trader_id, params.from, params.to).await?))
+    Ok(Json(
+        build_ledger(&db, trader_id, params.from, params.to).await?,
+    ))
 }
 
 /// POST /ledger/traders/{id}/payments

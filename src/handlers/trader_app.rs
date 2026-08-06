@@ -12,7 +12,9 @@ use axum::{
 };
 use chrono::Utc;
 use entity::sea_orm_active_enums::{BatchStatus, LedgerEntryType, OrderStatus};
-use entity::{app_traders, audit_log, batches, farms, orders, timeslots, trader_ledger_entries, users};
+use entity::{
+    app_traders, audit_log, batches, farms, orders, timeslots, trader_ledger_entries, users,
+};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait,
     PaginatorTrait, QueryFilter, QueryOrder, Set, TransactionTrait,

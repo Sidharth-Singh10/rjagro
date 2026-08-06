@@ -11,7 +11,10 @@ use chrono::Utc;
 use entity::{ledger_entries, loan_payments, loans, sea_orm_active_enums::LoanStatus};
 use reqwest::StatusCode;
 use sea_orm::prelude::Decimal;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set, TransactionTrait};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
+    TransactionTrait,
+};
 use uuid::Uuid;
 
 pub async fn create_loan(
@@ -302,10 +305,7 @@ async fn process_loan_payment_ledger<C: TransactionTrait + sea_orm::ConnectionTr
         txn_date: Set(payload.payment_date),
         reference_table: Set(Some("loan_payments".into())),
         reference_id: Set(Some(payment_id)),
-        narration: Set(Some(format!(
-            "Loan payment to {}",
-            loan.lender_name
-        ))),
+        narration: Set(Some(format!("Loan payment to {}", loan.lender_name))),
         txn_group_id: Set(txn_group_id),
         created_at: Set(Utc::now().into()),
         created_by: Set(Some(payload.created_by)),

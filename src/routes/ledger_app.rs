@@ -12,7 +12,10 @@ use crate::handlers::trader_ledger::{
 pub fn ledger_routes() -> Router<DatabaseConnection> {
     Router::new()
         .route("/traders/{id}", get(trader_ledger_handler))
-        .route("/traders/{id}/payments", post(create_trader_payment_handler))
+        .route(
+            "/traders/{id}/payments",
+            post(create_trader_payment_handler),
+        )
         .route("/traders/{id}/statement", get(trader_statement_handler))
         .layer(from_fn_with_state(
             RequireRoles::new(&[UserRole::Admin, UserRole::Accountant, UserRole::Trader]),

@@ -2,7 +2,9 @@ use crate::models::CreateOtherExpense;
 use axum::{extract::State, http::StatusCode, Json};
 use chrono::Utc;
 use entity::*;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, Set, TransactionTrait};
+use sea_orm::{
+    ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, Set, TransactionTrait,
+};
 use tracing::error;
 use uuid::Uuid;
 
@@ -42,7 +44,9 @@ pub async fn create_other_expense(
         txn_date: Set(payload.expense_date),
         reference_table: Set(Some("other_expenses".to_string())),
         reference_id: Set(Some(saved_expense.id)),
-        narration: Set(payload.description.or_else(|| Some("Other expense".to_string()))),
+        narration: Set(payload
+            .description
+            .or_else(|| Some("Other expense".to_string()))),
         txn_group_id: Set(txn_group_id),
         created_by: Set(Some(payload.created_by)),
         ..Default::default()
@@ -80,13 +84,15 @@ pub async fn create_other_expense(
                 StatusCode::INTERNAL_SERVER_ERROR
             })?
             .ok_or_else(|| {
-                error!("Other-expense account not found: {}", OTHER_EXPENSE_ACCOUNT_ID);
+                error!(
+                    "Other-expense account not found: {}",
+                    OTHER_EXPENSE_ACCOUNT_ID
+                );
                 StatusCode::INTERNAL_SERVER_ERROR
             })?
             .into();
 
-    expense_acct.current_balance =
-        Set(expense_acct.current_balance.unwrap() + payload.amount);
+    expense_acct.current_balance = Set(expense_acct.current_balance.unwrap() + payload.amount);
 
     expense_acct.update(&txn).await.map_err(|e| {
         error!("Failed to update other-expense account balance: {:?}", e);

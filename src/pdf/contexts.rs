@@ -1,4 +1,6 @@
-use ::entity::{batch_allocation_lines, batches, bird_count_history, items, stock_receipts, stock_returns};
+use ::entity::{
+    batch_allocation_lines, batches, bird_count_history, items, stock_receipts, stock_returns,
+};
 use sea_orm::*;
 
 use crate::pdf::view_models::{BatchSalesInfo, Inputs};
