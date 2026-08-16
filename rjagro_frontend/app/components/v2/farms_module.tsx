@@ -6,6 +6,7 @@ import { fetchFarms, handleAddFarm } from '@/app/api/farms';
 import { fetchFarmers } from '@/app/api/farmers';
 import { handleAddLiveBatch } from '@/app/api/batches';
 import { FarmPayload } from '@/app/types/interfaces';
+import CalendarPicker from '@/app/components/v2/calendar_picker';
 
 const emptyFarm: FarmPayload = {
     farmer_id: '',
@@ -22,6 +23,7 @@ const FarmsModule = () => {
     const [loading, setLoading] = useState(false);
     const [showAddFarm, setShowAddFarm] = useState(false);
     const [newFarm, setNewFarm] = useState<FarmPayload>(emptyFarm);
+    const [batchFarm, setBatchFarm] = useState<number | null>(null);
 
     const { data: farms = [] } = useQuery({
         queryKey: ['farms'],
@@ -40,6 +42,13 @@ const FarmsModule = () => {
             setNewFarm(emptyFarm);
             setShowAddFarm(false);
         });
+    };
+
+    const onSelectBatchDate = (date: string) => {
+        if (batchFarm === null) return;
+        const farmId = batchFarm;
+        setBatchFarm(null);
+        handleAddLiveBatch(farmId, date, queryClient, setLoading);
     };
 
     return (
@@ -185,7 +194,7 @@ const FarmsModule = () => {
                                         </td>
                                         <td className="px-4 py-4 text-sm">
                                             <button
-                                                onClick={() => handleAddLiveBatch(farm.farm_id, queryClient, setLoading)}
+                                                onClick={() => setBatchFarm(farm.farm_id)}
                                                 disabled={loading}
                                                 className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 disabled:opacity-50"
                                             >
@@ -199,6 +208,15 @@ const FarmsModule = () => {
                     </tbody>
                 </table>
             </div>
+
+            {batchFarm !== null && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/30" onClick={() => setBatchFarm(null)} />
+                    <div className="relative">
+                        <CalendarPicker onConfirm={onSelectBatchDate} onClose={() => setBatchFarm(null)} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
