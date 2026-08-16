@@ -17,4 +17,4 @@
    - `npm i`
    - `npm run dev`
    - set .env
-   - remove `Bearer` prefix from `/utils/api.ts` from line 24
+   - `app/utils/api.ts` already sends the `Bearer ` prefix, which the backend expects
