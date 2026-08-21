@@ -55,11 +55,6 @@ export const handleDeletePurchase = async (
     }
 };
 
-// Map UI display values ("Cash"/"Payable") to backend enum values ("CASH"/"PAYABLE").
-const toBackendPaymentType = (paymentType: string): string => {
-    return paymentType.toUpperCase();
-};
-
 export const handleAddPurchaseOrder = async (
     payload: PurchaseOrderPayload,
     queryClient: any,
@@ -81,10 +76,7 @@ export const handleAddPurchaseOrder = async (
     toast.info('Adding purchase order...');
 
     try {
-        await api.post('/insert/purchase_orders', {
-            ...payload,
-            payment_type: toBackendPaymentType(payload.payment_type),
-        });
+        await api.post('/insert/purchase_orders', payload);
         queryClient.invalidateQueries(['purchases']);
         toast.success('Purchase order added successfully!');
         if (onSuccess) onSuccess();
