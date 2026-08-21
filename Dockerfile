@@ -12,7 +12,6 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY entity ./entity
-COPY migration ./migration
 COPY assets ./assets
 
 RUN  cargo build --release
