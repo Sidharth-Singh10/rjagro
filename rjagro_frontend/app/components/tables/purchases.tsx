@@ -260,7 +260,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
 
                         {orderItems.length === 0 ? (
                             <p className="text-sm text-gray-500 border border-dashed border-gray-300 rounded-lg p-4 text-center">
-                                No items added yet. Click "Add Item" to add line items.
+                                No items added yet. Click &quot;Add Item&quot; to add line items.
                             </p>
                         ) : (
                             <div className="space-y-2">

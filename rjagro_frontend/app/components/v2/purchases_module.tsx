@@ -14,7 +14,7 @@ const PurchasesModule = () => {
     const [subTab, setSubTab] = useState<'Purchases'>('Purchases');
 
     // Shared Loading/Form State
-    const [loading, setLoading] = useState(false);
+    const [loading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
 
     // --- Data Fetching ---
