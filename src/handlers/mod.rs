@@ -9,6 +9,7 @@ pub mod fetch_by_id;
 pub mod inserts;
 pub mod loans;
 pub mod other_expenses;
+pub mod purchase_orders;
 pub mod purchases;
 pub mod supervisor_app;
 pub mod suppliers;

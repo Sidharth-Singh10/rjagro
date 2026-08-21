@@ -16,6 +16,7 @@ pub use super::orders::Entity as Orders;
 pub use super::other_expenses::Entity as OtherExpenses;
 pub use super::post::Entity as Post;
 pub use super::production_lines::Entity as ProductionLines;
+pub use super::purchase_orders::Entity as PurchaseOrders;
 pub use super::purchases::Entity as Purchases;
 pub use super::suppliers::Entity as Suppliers;
 pub use super::timeslots::Entity as Timeslots;

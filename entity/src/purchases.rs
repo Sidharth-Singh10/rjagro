@@ -20,6 +20,7 @@ pub struct Model {
     pub supplier_id: i32,
     pub payment_type: Option<PaymentType>,
     pub created_by: Option<i32>,
+    pub purchase_order_id: Option<i32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -51,6 +52,15 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     Suppliers,
+
+    #[sea_orm(
+        belongs_to = "super::purchase_orders::Entity",
+        from = "Column::PurchaseOrderId",
+        to = "super::purchase_orders::Column::PurchaseOrderId",
+        on_update = "Cascade",
+        on_delete = "Restrict"
+    )]
+    PurchaseOrders,
 }
 
 impl Related<super::users::Entity> for Entity {
@@ -68,6 +78,12 @@ impl Related<super::items::Entity> for Entity {
 impl Related<super::suppliers::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Suppliers.def()
+    }
+}
+
+impl Related<super::purchase_orders::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::PurchaseOrders.def()
     }
 }
 

@@ -4,3 +4,8 @@ pub const REVENUE_ACCOUNT_ID: i32 = 108;
 pub const RECEIVABLE_ACCOUNT_ID: i32 = 110;
 pub const LOAN_ACCOUNT_ID: i32 = 111;
 pub const INTEREST_ACCOUNT_ID: i32 = 112;
+
+// Inventory (asset) accounts, derived from an item's category.
+pub const FEED_INVENTORY_ACCOUNT_ID: i32 = 103;
+pub const MEDICINE_INVENTORY_ACCOUNT_ID: i32 = 102;
+pub const CHICKS_INVENTORY_ACCOUNT_ID: i32 = 104;

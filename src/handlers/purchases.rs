@@ -5,6 +5,7 @@ use axum::{
 };
 use chrono::Utc;
 use entity::sea_orm_active_enums::MovementType;
+use entity::sea_orm_active_enums::PaymentType;
 use entity::{
     inventory, inventory_movements, ledger_accounts, ledger_entries, purchases, stock_receipts,
 };
@@ -17,6 +18,19 @@ use sea_orm::{prelude::Decimal, QueryFilter};
 use sea_orm::{ActiveValue::Set, DatabaseConnection};
 use uuid::Uuid;
 
+pub(crate) struct PurchaseLineData {
+    pub item_code: String,
+    pub quantity: Decimal,
+    pub cost_per_unit: Decimal,
+    pub purchase_date: chrono::NaiveDate,
+    pub supplier_id: i32,
+    pub supplier: Option<String>,
+    pub created_by: i32,
+    pub inventory_account_id: i32,
+    pub payment_account_id: i32,
+    pub payment_type: PaymentType,
+}
+
 pub async fn create_purchase(
     State(db): State<DatabaseConnection>,
     Json(payload): Json<CreatePurchase>,
@@ -26,20 +40,20 @@ pub async fn create_purchase(
         .await
         .map_err(internal_error("begin transaction"))?;
 
-    // 1. Insert purchase
-    let purchase = insert_purchase(&txn, &payload).await?;
+    let line = PurchaseLineData {
+        item_code: payload.item_code,
+        quantity: payload.quantity,
+        cost_per_unit: payload.cost_per_unit,
+        purchase_date: payload.purchase_date,
+        supplier_id: payload.supplier_id,
+        supplier: payload.supplier,
+        created_by: payload.created_by.unwrap_or_default(),
+        inventory_account_id: payload.inventory_account_id,
+        payment_account_id: payload.payment_account_id,
+        payment_type: payload.payment_type.clone(),
+    };
 
-    // 2. Insert stock receipt
-    insert_stock_receipt(&txn, &payload, purchase.purchase_id).await?;
-
-    // 3. Update or create inventory
-    upsert_inventory(&txn, &payload).await?;
-
-    // 4. Insert inventory movement
-    insert_inventory_movement(&txn, &payload, purchase.purchase_id).await?;
-
-    // 5. Insert ledger entries
-    insert_ledger_entries(&txn, &payload, &purchase).await?;
+    let purchase = insert_purchase_line(&txn, &line, None).await?;
 
     txn.commit()
         .await
@@ -48,20 +62,47 @@ pub async fn create_purchase(
     Ok(Json(purchase))
 }
 
+/// Inserts a single purchase line and all of its side effects (stock receipt,
+/// inventory, inventory movement, ledger entries) within a transaction.
+pub(crate) async fn insert_purchase_line<C: TransactionTrait + sea_orm::ConnectionTrait>(
+    txn: &C,
+    data: &PurchaseLineData,
+    purchase_order_id: Option<i32>,
+) -> Result<purchases::Model, StatusCode> {
+    // 1. Insert purchase
+    let purchase = insert_purchase(txn, data, purchase_order_id).await?;
+
+    // 2. Insert stock receipt
+    insert_stock_receipt(txn, data, purchase.purchase_id).await?;
+
+    // 3. Update or create inventory
+    upsert_inventory(txn, data).await?;
+
+    // 4. Insert inventory movement
+    insert_inventory_movement(txn, data, purchase.purchase_id).await?;
+
+    // 5. Insert ledger entries
+    insert_ledger_entries(txn, data, &purchase).await?;
+
+    Ok(purchase)
+}
+
 async fn insert_purchase<C: TransactionTrait + sea_orm::ConnectionTrait>(
     txn: &C,
-    payload: &CreatePurchase,
+    data: &PurchaseLineData,
+    purchase_order_id: Option<i32>,
 ) -> Result<purchases::Model, StatusCode> {
-    let computed_total_cost = Some(payload.cost_per_unit * payload.quantity);
+    let computed_total_cost = Some(data.cost_per_unit * data.quantity);
     let new_purchase = purchases::ActiveModel {
-        item_code: Set(payload.item_code.clone()),
-        cost_per_unit: Set(payload.cost_per_unit),
+        item_code: Set(data.item_code.clone()),
+        cost_per_unit: Set(data.cost_per_unit),
         total_cost: Set(computed_total_cost),
-        quantity: Set(payload.quantity),
-        purchase_date: Set(payload.purchase_date),
-        supplier_id: Set(payload.supplier_id),
-        created_by: Set(payload.created_by),
-        payment_type: Set(Some(payload.payment_type.clone())),
+        quantity: Set(data.quantity),
+        purchase_date: Set(data.purchase_date),
+        supplier_id: Set(data.supplier_id),
+        created_by: Set(Some(data.created_by)),
+        payment_type: Set(Some(data.payment_type.clone())),
+        purchase_order_id: Set(purchase_order_id),
         ..Default::default()
     };
 
@@ -73,17 +114,17 @@ async fn insert_purchase<C: TransactionTrait + sea_orm::ConnectionTrait>(
 
 async fn insert_stock_receipt<C: TransactionTrait + sea_orm::ConnectionTrait>(
     txn: &C,
-    payload: &CreatePurchase,
+    data: &PurchaseLineData,
     purchase_id: i32,
 ) -> Result<(), StatusCode> {
     let new_receipt = stock_receipts::ActiveModel {
         purchase_id: Set(Some(purchase_id)),
-        item_code: Set(payload.item_code.clone()),
-        received_qty: Set(payload.quantity),
-        remaining_qty: Set(payload.quantity),
-        unit_cost: Set(payload.cost_per_unit),
-        received_date: Set(payload.purchase_date),
-        supplier: Set(payload.supplier.clone()),
+        item_code: Set(data.item_code.clone()),
+        received_qty: Set(data.quantity),
+        remaining_qty: Set(data.quantity),
+        unit_cost: Set(data.cost_per_unit),
+        received_date: Set(data.purchase_date),
+        supplier: Set(data.supplier.clone()),
         ..Default::default()
     };
 
@@ -96,16 +137,15 @@ async fn insert_stock_receipt<C: TransactionTrait + sea_orm::ConnectionTrait>(
 
 async fn upsert_inventory<C: TransactionTrait + sea_orm::ConnectionTrait>(
     txn: &C,
-    payload: &CreatePurchase,
+    data: &PurchaseLineData,
 ) -> Result<(), StatusCode> {
-    if let Some(inv) = inventory::Entity::find_by_id(payload.item_code.clone())
+    if let Some(inv) = inventory::Entity::find_by_id(data.item_code.clone())
         .one(txn)
         .await
         .map_err(internal_error("fetch inventory"))?
     {
         let mut active_inv: inventory::ActiveModel = inv.into();
-        active_inv.current_qty =
-            Set(active_inv.current_qty.take().unwrap_or_default() + payload.quantity);
+        active_inv.current_qty = Set(active_inv.current_qty.take().unwrap_or_default() + data.quantity);
         active_inv.last_updated = Set(Utc::now().into());
         active_inv
             .update(txn)
@@ -113,8 +153,8 @@ async fn upsert_inventory<C: TransactionTrait + sea_orm::ConnectionTrait>(
             .map_err(internal_error("update inventory"))?;
     } else {
         let new_inv = inventory::ActiveModel {
-            item_code: Set(payload.item_code.clone()),
-            current_qty: Set(payload.quantity),
+            item_code: Set(data.item_code.clone()),
+            current_qty: Set(data.quantity),
             last_updated: Set(Utc::now().into()),
         };
         new_inv
@@ -127,13 +167,13 @@ async fn upsert_inventory<C: TransactionTrait + sea_orm::ConnectionTrait>(
 
 async fn insert_inventory_movement<C: TransactionTrait + sea_orm::ConnectionTrait>(
     txn: &C,
-    payload: &CreatePurchase,
+    data: &PurchaseLineData,
     purchase_id: i32,
 ) -> Result<(), StatusCode> {
     let movement = inventory_movements::ActiveModel {
-        item_code: Set(payload.item_code.clone()),
+        item_code: Set(data.item_code.clone()),
         movement_type: Set(MovementType::Purchase),
-        qty_change: Set(payload.quantity),
+        qty_change: Set(data.quantity),
         reference_id: Set(Some(purchase_id)),
         ..Default::default()
     };
@@ -147,14 +187,14 @@ async fn insert_inventory_movement<C: TransactionTrait + sea_orm::ConnectionTrai
 
 async fn insert_ledger_entries<C: TransactionTrait + sea_orm::ConnectionTrait>(
     txn: &C,
-    payload: &CreatePurchase,
+    data: &PurchaseLineData,
     purchase: &purchases::Model,
 ) -> Result<(), StatusCode> {
     let total_cost = purchase.total_cost;
     let txn_group_id = Uuid::new_v4();
 
-    let inventory_account_id = payload.inventory_account_id;
-    let payment_account_id = payload.payment_account_id;
+    let inventory_account_id = data.inventory_account_id;
+    let payment_account_id = data.payment_account_id;
 
     // Debit entry → Inventory (Asset)
     let debit_entry = ledger_entries::ActiveModel {
@@ -166,11 +206,11 @@ async fn insert_ledger_entries<C: TransactionTrait + sea_orm::ConnectionTrait>(
         reference_id: Set(Some(purchase.purchase_id)),
         narration: Set(Some(format!(
             "Purchase of {} (item {})",
-            payload.quantity, payload.item_code
+            data.quantity, data.item_code
         ))),
         txn_group_id: Set(txn_group_id),
         created_at: Set(Utc::now().into()),
-        created_by: Set(payload.created_by),
+        created_by: Set(Some(data.created_by)),
         ..Default::default()
     };
 
@@ -189,11 +229,11 @@ async fn insert_ledger_entries<C: TransactionTrait + sea_orm::ConnectionTrait>(
         reference_id: Set(Some(purchase.purchase_id)),
         narration: Set(Some(format!(
             "Payment for purchase of {} (item {})",
-            payload.quantity, payload.item_code
+            data.quantity, data.item_code
         ))),
         txn_group_id: Set(txn_group_id),
         created_at: Set(Utc::now().into()),
-        created_by: Set(payload.created_by),
+        created_by: Set(Some(data.created_by)),
         ..Default::default()
     };
 

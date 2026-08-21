@@ -27,6 +27,7 @@ pub mod orders;
 pub mod other_expenses;
 pub mod post;
 pub mod production_lines;
+pub mod purchase_orders;
 pub mod purchases;
 pub mod sea_orm_active_enums;
 pub mod stock_receipts;

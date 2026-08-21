@@ -4,10 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = [".","migration", "entity"]
+members = [".", "entity"]
 
 [dependencies]
-migration = { path = "migration" }
 entity = {path = "entity"}
 axum = { version = "0.8", features = ["multipart","macros"] }
 tokio = {version= "1.47.1", features = ["full"]}
@@ -23,7 +22,7 @@ reqwest = "0.12.22"
 tower-http = { version = "0.6.1", features = ["cors"] }
 uuid = { version = "1.18.0", features = ["v4"] }
 tracing = "0.1.41"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 num-traits = "0.2.19"
 printpdf = { version = "0.8.2", features = ["ico","png"] }
 image = "0.24.7"

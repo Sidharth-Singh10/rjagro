@@ -19,6 +19,22 @@ export interface Purchase {
   supplier_id: number;
   created_by: number;
   payment_account?: LedgerAccountType;
+  purchase_order_id?: number | null;
+}
+
+export interface PurchaseOrderItem {
+  item_code: string;
+  quantity: number;
+  cost_per_unit: number;
+}
+
+export interface PurchaseOrderPayload {
+  supplier_id: number;
+  supplier: string;
+  purchase_date: string;
+  payment_type: string;
+  created_by: number;
+  items: PurchaseOrderItem[];
 }
 
 export interface NewPurchase {

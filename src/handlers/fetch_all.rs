@@ -83,6 +83,7 @@ pub async fn get_purchases_handler(State(db): State<DatabaseConnection>) -> impl
                     supplier_id: p.supplier_id,
                     supplier_name: None,
                     created_by: p.created_by,
+                    purchase_order_id: p.purchase_order_id,
                 })
                 .collect();
 

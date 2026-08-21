@@ -1,18 +1,16 @@
 'use client'
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/app/hooks/useAuth';
-import { fetchPurchases, handleAddPurchase } from '@/app/api/purchases';
+import { fetchPurchases } from '@/app/api/purchases';
 import { fetchSuppliers } from '@/app/api/supplier';
 import { fetchItems } from '@/app/api/items';
-import { LedgerAccountType, NewPurchase, PurchasePayload } from '@/app/types/interfaces';
 import { ShoppingCart } from 'lucide-react';
 import PurchasesTable from '../tables/purchases';
 
 
 const PurchasesModule = () => {
     const { user } = useAuth();
-    const queryClient = useQueryClient();
     const [subTab, setSubTab] = useState<'Purchases'>('Purchases');
 
     // Shared Loading/Form State
@@ -38,51 +36,6 @@ const PurchasesModule = () => {
         queryFn: fetchItems,
         staleTime: 5 * 60 * 1000,
     });
-
-    // --- State: New Purchase ---
-    const [newPurchase, setNewPurchase] = useState<NewPurchase>({
-        item_code: '',
-        item_name: '',
-        cost_per_unit: '',
-        quantity: '',
-        supplier: '',
-        purchase_date: new Date().toISOString().slice(0, 10),
-        payment_type: '',
-        supplier_id: undefined,
-        payment_account: undefined,
-        inventory_account_id: undefined,
-        payment_account_id: undefined
-    });
-
-    // --- Handlers: Purchase Logic ---
-    const handleItemCodeSelect = (itemCode: string) => {
-        const selectedItem = items.find(item => item.item_code === itemCode);
-        if (selectedItem) {
-            setNewPurchase(prev => ({
-                ...prev,
-                item_code: itemCode,
-                item_name: selectedItem.item_name
-            }));
-        }
-    };
-
-    const onAddPurchase = () => {
-        const final: PurchasePayload = {
-            item_code: newPurchase.item_code,
-            cost_per_unit: Number(newPurchase.cost_per_unit),
-            quantity: Number(newPurchase.quantity),
-            purchase_date: newPurchase.purchase_date,
-            supplier: newPurchase.supplier,
-            supplier_id: newPurchase.supplier_id,
-            payment_account: newPurchase.payment_account ?? LedgerAccountType.Asset,
-            created_by: user ? user.user_id : 9999,
-            payment_type: newPurchase.payment_type,
-            inventory_account_id: newPurchase.inventory_account_id!,
-            payment_account_id: newPurchase.payment_account_id!
-        };
-
-        handleAddPurchase(final, queryClient, setLoading);
-    };
 
 
 
@@ -110,11 +63,8 @@ const PurchasesModule = () => {
                         suppliers={suppliers}
                         loading={loading}
                         showAddForm={showAddForm}
-                        newPurchase={newPurchase}
                         setShowAddForm={setShowAddForm}
-                        setNewPurchase={setNewPurchase}
-                        handleItemCodeSelect={handleItemCodeSelect}
-                        handleAddPurchase={onAddPurchase}
+                        createdBy={user ? user.user_id : 9999}
                     />
                 )}
 

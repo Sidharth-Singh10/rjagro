@@ -12,7 +12,7 @@ pub struct ResponseMessage {
     pub message: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct PurchaseWithItem {
     pub purchase_id: i32,
     pub item_code: String,
@@ -25,6 +25,7 @@ pub struct PurchaseWithItem {
     pub supplier_id: i32,
     pub supplier_name: Option<String>,
     pub created_by: Option<i32>,
+    pub purchase_order_id: Option<i32>,
 }
 #[derive(serde::Deserialize)]
 pub struct CreateItem {
@@ -52,6 +53,35 @@ pub struct CreatePurchase {
     pub inventory_account_id: i32,
     pub payment_account_id: i32,
     pub payment_type: PaymentType,
+}
+
+#[derive(Deserialize)]
+pub struct PurchaseOrderItem {
+    pub item_code: String,
+    pub quantity: Decimal,
+    pub cost_per_unit: Decimal,
+}
+
+#[derive(Deserialize)]
+pub struct CreatePurchaseOrder {
+    pub supplier_id: i32,
+    pub supplier: Option<String>,
+    pub purchase_date: chrono::NaiveDate,
+    pub payment_type: PaymentType,
+    pub created_by: i32,
+    pub items: Vec<PurchaseOrderItem>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PurchaseOrderResponse {
+    pub purchase_order_id: i32,
+    pub supplier_id: i32,
+    pub supplier_name: Option<String>,
+    pub purchase_date: chrono::NaiveDate,
+    pub payment_type: Option<PaymentType>,
+    pub created_by: i32,
+    pub total_cost: Decimal,
+    pub lines: Vec<PurchaseWithItem>,
 }
 
 #[derive(Deserialize)]
