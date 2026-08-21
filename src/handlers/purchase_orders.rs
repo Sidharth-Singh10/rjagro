@@ -12,12 +12,15 @@ use axum::{
     Json,
 };
 use entity::sea_orm_active_enums::{ItemCategory, PaymentType};
-use entity::{inventory, inventory_movements, items, ledger_entries, purchase_orders, purchases, stock_receipts, suppliers};
+use entity::{
+    batch_allocation_lines, inventory, inventory_movements, items, ledger_entries, purchase_orders,
+    purchases, stock_receipts, suppliers,
+};
 use reqwest::StatusCode;
 use sea_orm::prelude::Decimal;
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait,
-    QueryFilter, QueryOrder, TransactionTrait,
+    PaginatorTrait, QueryFilter, QueryOrder, TransactionTrait,
 };
 use std::collections::HashMap;
 
@@ -139,44 +142,192 @@ pub async fn create_purchase_order(
     Json(order).into_response()
 }
 
-pub async fn delete_purchase_order(
+pub async fn update_purchase_order(
     State(db): State<DatabaseConnection>,
     Path(order_id): Path<i32>,
-) -> Result<reqwest::StatusCode, reqwest::StatusCode> {
-    let txn = db
-        .begin()
-        .await
-        .map_err(internal_error("begin transaction"))?;
+    Json(payload): Json<CreatePurchaseOrder>,
+) -> impl IntoResponse {
+    if payload.items.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Purchase order must contain at least one item",
+        )
+            .into_response();
+    }
 
-    let _order = purchase_orders::Entity::find_by_id(order_id)
-        .one(&txn)
-        .await
-        .map_err(internal_error("fetch purchase order"))?
-        .ok_or(reqwest::StatusCode::NOT_FOUND)?;
+    let txn = match db.begin().await {
+        Ok(txn) => txn,
+        Err(e) => {
+            eprintln!("Failed to start transaction: {:?}", e);
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
 
-    let lines = purchases::Entity::find()
+    // Fetch the order header (must exist).
+    let order = match purchase_orders::Entity::find_by_id(order_id).one(&txn).await {
+        Ok(Some(o)) => o,
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                format!("Purchase order {} not found", order_id),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            eprintln!("Failed to fetch purchase order: {:?}", e);
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+
+    let existing_lines = match purchases::Entity::find()
         .filter(purchases::Column::PurchaseOrderId.eq(Some(order_id)))
         .all(&txn)
         .await
-        .map_err(internal_error("fetch purchase lines"))?;
+    {
+        Ok(lines) => lines,
+        Err(e) => {
+            eprintln!("Failed to fetch purchase lines: {:?}", e);
+            txn.rollback().await.ok();
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
 
-    // Reverse each line's side effects (ledger, inventory, movements, stock
-    // receipts) by delegating to the existing line-level deletion logic.
-    for line in lines {
-        delete_purchase_line(&txn, line.purchase_id).await?;
+    // Guard: block modification if any of this order's stock has been
+    // allocated to batches (batch_allocation_lines references stock_receipts
+    // with ON DELETE RESTRICT, so the receipts can no longer be touched).
+    let line_ids: Vec<i32> = existing_lines.iter().map(|l| l.purchase_id).collect();
+    let lot_ids: Vec<i32> = if line_ids.is_empty() {
+        Vec::new()
+    } else {
+        match stock_receipts::Entity::find()
+            .filter(stock_receipts::Column::PurchaseId.is_in(line_ids))
+            .all(&txn)
+            .await
+        {
+            Ok(receipts) => receipts.into_iter().map(|r| r.lot_id).collect(),
+            Err(e) => {
+                eprintln!("Failed to fetch stock receipts: {:?}", e);
+                txn.rollback().await.ok();
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        }
+    };
+
+    if !lot_ids.is_empty() {
+        let allocated_count = match batch_allocation_lines::Entity::find()
+            .filter(batch_allocation_lines::Column::LotId.is_in(lot_ids))
+            .count(&txn)
+            .await
+        {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("Failed to check batch allocations: {:?}", e);
+                txn.rollback().await.ok();
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        };
+        if allocated_count > 0 {
+            return (
+                StatusCode::CONFLICT,
+                "Stock for this order has already been allocated to batches — cannot modify",
+            )
+                .into_response();
+        }
     }
 
-    // Delete the order header.
-    purchase_orders::Entity::delete_by_id(order_id)
-        .exec(&txn)
+    // Pre-fetch item categories so we can derive the per-line inventory account.
+    let item_codes: Vec<String> = payload.items.iter().map(|i| i.item_code.clone()).collect();
+    let item_rows = match items::Entity::find()
+        .filter(items::Column::ItemCode.is_in(item_codes))
+        .all(&txn)
         .await
-        .map_err(internal_error("delete purchase order"))?;
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            eprintln!("Failed to fetch items: {:?}", e);
+            txn.rollback().await.ok();
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+    let category_map: HashMap<String, ItemCategory> = item_rows
+        .into_iter()
+        .map(|i| (i.item_code, i.item_category))
+        .collect();
 
-    txn.commit()
-        .await
-        .map_err(internal_error("commit transaction"))?;
+    let total_cost: Decimal = payload
+        .items
+        .iter()
+        .map(|i| i.cost_per_unit * i.quantity)
+        .sum();
 
-    Ok(reqwest::StatusCode::NO_CONTENT)
+    // 1. Update the order header in place (purchase_order_id is preserved).
+    let mut order_active: purchase_orders::ActiveModel = order.into();
+    order_active.supplier_id = Set(payload.supplier_id);
+    order_active.purchase_date = Set(payload.purchase_date);
+    order_active.payment_type = Set(Some(payload.payment_type.clone()));
+    order_active.total_cost = Set(total_cost);
+    if let Err(e) = order_active.update(&txn).await {
+        eprintln!("Failed to update purchase order: {:?}", e);
+        txn.rollback().await.ok();
+        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    }
+
+    // 2. Reverse each existing line's side effects.
+    for line in &existing_lines {
+        if let Err(e) = delete_purchase_line(&txn, line.purchase_id).await {
+            eprintln!(
+                "Failed to delete existing purchase line {}: {:?}",
+                line.purchase_id, e
+            );
+            txn.rollback().await.ok();
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    }
+
+    // 3. Insert the new lines against the same order id.
+    for item in &payload.items {
+        let category = category_map
+            .get(&item.item_code)
+            .cloned()
+            .unwrap_or(ItemCategory::Feed);
+
+        let line = PurchaseLineData {
+            item_code: item.item_code.clone(),
+            quantity: item.quantity,
+            cost_per_unit: item.cost_per_unit,
+            purchase_date: payload.purchase_date,
+            supplier_id: payload.supplier_id,
+            supplier: payload.supplier.clone(),
+            created_by: payload.created_by,
+            inventory_account_id: inventory_account_for(&category),
+            payment_account_id: payment_account_for(&payload.payment_type),
+            payment_type: payload.payment_type.clone(),
+        };
+
+        if let Err(e) = insert_purchase_line(&txn, &line, Some(order_id)).await {
+            eprintln!(
+                "Failed to insert purchase line for item {}: {:?}",
+                item.item_code, e
+            );
+            txn.rollback().await.ok();
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    }
+
+    if let Err(e) = txn.commit().await {
+        eprintln!("Failed to commit transaction: {:?}", e);
+        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    }
+
+    Json(purchase_orders::Model {
+        purchase_order_id: order_id,
+        supplier_id: payload.supplier_id,
+        purchase_date: payload.purchase_date,
+        payment_type: Some(payload.payment_type),
+        created_by: payload.created_by,
+        total_cost,
+    })
+    .into_response()
 }
 
 // Reuses the same reversal steps as the single-purchase delete, but operates on

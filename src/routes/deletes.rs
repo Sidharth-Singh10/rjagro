@@ -8,12 +8,10 @@ use crate::handlers::batch_sales::delete_batch_sale;
 use crate::handlers::bird_count_history::delete_bird_count_history;
 use crate::handlers::loans::{delete_loan, delete_loan_payment};
 use crate::handlers::purchases::delete_purchase;
-use crate::handlers::purchase_orders::delete_purchase_order;
 
 pub fn delete_routes() -> Router<DatabaseConnection> {
     Router::new()
         .route("/purchases/{id}", delete(delete_purchase))
-        .route("/purchase_orders/{id}", delete(delete_purchase_order))
         .route("/batch_sales/{id}", delete(delete_batch_sale))
         .route(
             "/bird_count_history/{id}",

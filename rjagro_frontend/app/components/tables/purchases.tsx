@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
-import { Item, Purchase, Supplier } from '@/app/types/interfaces';
+import { Item, Purchase, PurchaseOrderPayload, Supplier } from '@/app/types/interfaces';
 import { useQueryClient } from '@tanstack/react-query';
-import { handleAddPurchaseOrder, handleDeletePurchase, handleDeletePurchaseOrder } from '@/app/api/purchases';
+import { handleAddPurchaseOrder, handleUpdatePurchaseOrder } from '@/app/api/purchases';
 import { TableConfigs, useTableSorting } from '@/app/hooks/sorting';
 import TableActionsDropdown from '../utils/table_actions';
 
@@ -43,12 +43,14 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
     const [purchaseDate, setPurchaseDate] = useState(() => new Date().toISOString().slice(0, 10));
     const [paymentType, setPaymentType] = useState('');
     const [orderItems, setOrderItems] = useState<OrderItemRow[]>([]);
+    const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
 
     const resetForm = () => {
         setSupplierId('');
         setPurchaseDate(new Date().toISOString().slice(0, 10));
         setPaymentType('');
         setOrderItems([]);
+        setEditingOrderId(null);
     };
 
     const handleOpenForm = () => {
@@ -59,6 +61,23 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
     const handleCloseForm = () => {
         setShowAddForm(false);
         resetForm();
+    };
+
+    const openEditOrderForm = (orderId: number) => {
+        const lines = purchases.filter(p => p.purchase_order_id === orderId);
+        if (lines.length === 0) return;
+        setSupplierId(lines[0].supplier_id);
+        setPurchaseDate(lines[0].purchase_date);
+        setPaymentType(lines[0].payment_type || '');
+        setOrderItems(lines.map((line, idx) => ({
+            id: Date.now() + idx,
+            item_code: line.item_code,
+            item_name: line.item_name,
+            cost_per_unit: Number(line.cost_per_unit),
+            quantity: Number(line.quantity),
+        })));
+        setEditingOrderId(orderId);
+        setShowAddForm(true);
     };
 
     const addItemRow = () => {
@@ -112,26 +131,41 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
             return;
         }
 
-        await handleAddPurchaseOrder(
-            {
-                supplier_id: Number(supplierId),
-                supplier: supplierName(),
-                purchase_date: purchaseDate,
-                payment_type: paymentType,
-                created_by: createdBy,
-                items: validItems.map(row => ({
-                    item_code: row.item_code,
-                    cost_per_unit: Number(row.cost_per_unit),
-                    quantity: Number(row.quantity),
-                })),
-            },
-            queryClient,
-            () => {},
-            () => {
-                setShowAddForm(false);
-                resetForm();
-            }
-        );
+        const payload: PurchaseOrderPayload = {
+            supplier_id: Number(supplierId),
+            supplier: supplierName(),
+            purchase_date: purchaseDate,
+            payment_type: paymentType,
+            created_by: createdBy,
+            items: validItems.map(row => ({
+                item_code: row.item_code,
+                cost_per_unit: Number(row.cost_per_unit),
+                quantity: Number(row.quantity),
+            })),
+        };
+
+        if (editingOrderId != null) {
+            await handleUpdatePurchaseOrder(
+                editingOrderId,
+                payload,
+                queryClient,
+                () => {},
+                () => {
+                    setShowAddForm(false);
+                    resetForm();
+                }
+            );
+        } else {
+            await handleAddPurchaseOrder(
+                payload,
+                queryClient,
+                () => {},
+                () => {
+                    setShowAddForm(false);
+                    resetForm();
+                }
+            );
+        }
     };
 
     const { sortedData, requestSort, getSortIcon } = useTableSorting(
@@ -189,7 +223,9 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
             {showAddForm && (
                 <div className="p-4 border-b bg-gray-50">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-medium text-gray-800">Add New Purchase Order</h3>
+                        <h3 className="text-lg font-medium text-gray-800">
+                            {editingOrderId != null ? `Modify Purchase Order #${editingOrderId}` : 'Add New Purchase Order'}
+                        </h3>
                         <button
                             onClick={handleCloseForm}
                             className="text-gray-500 hover:text-gray-700"
@@ -335,7 +371,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Save size={18} />
-                            Save Purchase Order
+                            {editingOrderId != null ? 'Update Purchase Order' : 'Save Purchase Order'}
                         </button>
                     </div>
                 </div>
@@ -415,29 +451,22 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                         {purchase.created_by}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 relative">
-                                        <TableActionsDropdown
-                                            rowId={purchase.purchase_id}
-                                            openMenuId={openMenuId}
-                                            onMenuToggle={(id) => setOpenMenuId(typeof id === 'number' ? id : null)}
-                                            actions={[
-                                                {
-                                                    label: 'Delete',
-                                                    icon: <Trash2 size={14} />,
-                                                    variant: 'danger',
-                                                    onClick: () => {
-                                                        if (purchase.purchase_order_id) {
-                                                            const confirmed = window.confirm(`Delete purchase order #${purchase.purchase_order_id} (all items)?`);
-                                                            if (!confirmed) return;
-                                                            handleDeletePurchaseOrder(purchase.purchase_order_id, queryClient);
-                                                        } else {
-                                                            const confirmed = window.confirm(`Delete purchase #${purchase.purchase_id}?`);
-                                                            if (!confirmed) return;
-                                                            handleDeletePurchase(purchase.purchase_id, queryClient);
-                                                        }
+                                        {purchase.purchase_order_id ? (
+                                            <TableActionsDropdown
+                                                rowId={purchase.purchase_id}
+                                                openMenuId={openMenuId}
+                                                onMenuToggle={(id) => setOpenMenuId(typeof id === 'number' ? id : null)}
+                                                actions={[
+                                                    {
+                                                        label: 'Modify',
+                                                        icon: <Save size={14} />,
+                                                        onClick: () => openEditOrderForm(purchase.purchase_order_id!)
                                                     }
-                                                }
-                                            ]}
-                                        />
+                                                ]}
+                                            />
+                                        ) : (
+                                            <span className="text-gray-300">—</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))

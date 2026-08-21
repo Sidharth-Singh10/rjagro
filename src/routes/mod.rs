@@ -7,3 +7,4 @@ pub mod inserts;
 pub mod ledger_app;
 pub mod supervisor_app;
 pub mod trader_app;
+pub mod updates;

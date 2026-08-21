@@ -88,16 +88,40 @@ export const handleAddPurchaseOrder = async (
     }
 };
 
-export const handleDeletePurchaseOrder = async (
+export const handleUpdatePurchaseOrder = async (
     purchaseOrderId: number,
-    queryClient?: any
+    payload: PurchaseOrderPayload,
+    queryClient: any,
+    setLoading: (loading: boolean) => void,
+    onSuccess?: () => void
 ) => {
+    if (
+        !payload.supplier_id ||
+        !payload.purchase_date ||
+        !payload.created_by ||
+        !payload.payment_type ||
+        payload.items.length === 0
+    ) {
+        toast.error('Please fill in all required fields and add at least one item');
+        return;
+    }
+
+    setLoading(true);
+    toast.info('Updating purchase order...');
+
     try {
-        await api.delete(`/delete/purchase_orders/${purchaseOrderId}`);
-        toast.success(`Purchase order #${purchaseOrderId} deleted!`);
-        queryClient?.invalidateQueries(['purchases']);
-    } catch (error) {
-        console.error('Error deleting purchase order:', error);
-        toast.error('Error deleting purchase order');
+        await api.patch(`/update/purchase_orders/${purchaseOrderId}`, payload);
+        queryClient.invalidateQueries(['purchases']);
+        toast.success('Purchase order updated successfully!');
+        if (onSuccess) onSuccess();
+    } catch (error: any) {
+        console.error('Error updating purchase order:', error);
+        const message =
+            error?.response?.data?.message ||
+            error?.response?.data ||
+            'Error updating purchase order';
+        toast.error(typeof message === 'string' ? message : 'Error updating purchase order');
+    } finally {
+        setLoading(false);
     }
 };

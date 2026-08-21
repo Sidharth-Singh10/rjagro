@@ -22,6 +22,7 @@ use crate::routes::inserts::insert_routes;
 use crate::routes::ledger_app::ledger_routes;
 use crate::routes::supervisor_app::supervisor_app_routes;
 use crate::routes::trader_app::trader_app_routes;
+use crate::routes::updates::update_routes;
 use crate::{auth::middleware::auth_middleware, routes::fetch_all::fetch_all};
 
 #[tokio::main]
@@ -104,6 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/getbyid", fetch_by_id())
         .nest("/insert", insert_routes())
         .nest("/delete", delete_routes())
+        .nest("/update", update_routes())
         .nest("/trader", trader_app_routes())
         .nest("/supervisor", supervisor_app_routes())
         .nest("/ledger", ledger_routes())
