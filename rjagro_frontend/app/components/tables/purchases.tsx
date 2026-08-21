@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useMemo, useState } from 'react';
-import { Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, Trash2, ChevronDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
 import { Item, Purchase, Supplier } from '@/app/types/interfaces';
 import { useQueryClient } from '@tanstack/react-query';
 import { handleAddPurchaseOrder, handleDeletePurchase, handleDeletePurchaseOrder } from '@/app/api/purchases';
@@ -37,7 +37,6 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
 }) => {
     const queryClient = useQueryClient();
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-    const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set());
 
     // Multi-item order form state
     const [supplierId, setSupplierId] = useState<number | ''>('');
@@ -135,63 +134,11 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
         );
     };
 
-    const { requestSort, getSortIcon } = useTableSorting(
+    const { sortedData, requestSort, getSortIcon } = useTableSorting(
         purchases,
         { key: 'purchase_date', direction: 'desc' },
         TableConfigs.purchases.getValueFn
     );
-
-    interface OrderGroup {
-        sortKey: number;
-        orderId: number | null;
-        supplierId: number;
-        purchaseDate: string;
-        paymentType: string;
-        createdBy: number;
-        totalCost: number;
-        lines: Purchase[];
-    }
-
-    const groupedOrders = useMemo<OrderGroup[]>(() => {
-        const groups = new Map<string, OrderGroup>();
-        for (const p of purchases) {
-            const isOrder = p.purchase_order_id != null && p.purchase_order_id > 0;
-            const key = isOrder ? `o:${p.purchase_order_id}` : `p:${p.purchase_id}`;
-            let group = groups.get(key);
-            if (!group) {
-                group = {
-                    sortKey: isOrder ? p.purchase_order_id! : p.purchase_id,
-                    orderId: isOrder ? p.purchase_order_id! : null,
-                    supplierId: p.supplier_id,
-                    purchaseDate: p.purchase_date,
-                    paymentType: p.payment_type || 'N/A',
-                    createdBy: p.created_by,
-                    totalCost: 0,
-                    lines: [],
-                };
-                groups.set(key, group);
-            }
-            group.lines.push(p);
-            group.totalCost += Number(p.total_cost) || 0;
-            if (p.purchase_date < group.purchaseDate) group.purchaseDate = p.purchase_date;
-        }
-        return Array.from(groups.values()).sort((a, b) => b.sortKey - a.sortKey);
-    }, [purchases]);
-
-    const toggleOrder = (orderId: number | null, fallbackPurchaseId: number) => {
-        const key = orderId != null ? orderId : -fallbackPurchaseId;
-        setExpandedOrders(prev => {
-            const next = new Set(prev);
-            if (next.has(key)) next.delete(key);
-            else next.add(key);
-            return next;
-        });
-    };
-
-    const isExpanded = (orderId: number | null, fallbackPurchaseId: number) => {
-        const key = orderId != null ? orderId : -fallbackPurchaseId;
-        return expandedOrders.has(key);
-    };
 
     const getSupplierName = (supplierId: number) => {
         const supplier = suppliers.find(s => s.supplier_id === supplierId);
@@ -425,151 +372,75 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                     Loading...
                                 </td>
                             </tr>
-                        ) : groupedOrders.length === 0 ? (
+                        ) : sortedData.length === 0 ? (
                             <tr>
                                 <td colSpan={12} className="px-4 py-8 text-center text-gray-500">
                                     No purchases found
                                 </td>
                             </tr>
                         ) : (
-                            groupedOrders.map((group) => {
-                                const isLegacy = group.orderId == null;
-                                const expanded = isExpanded(group.orderId, group.lines[0].purchase_id);
-                                return (
-                                    <React.Fragment key={group.orderId != null ? `o-${group.orderId}` : `p-${group.lines[0].purchase_id}`}>
-                                        <tr
-                                            className="hover:bg-gray-50 cursor-pointer"
-                                            onClick={() => toggleOrder(group.orderId, group.lines[0].purchase_id)}
-                                        >
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {group.orderId != null ? `#${group.orderId}` : '-'}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {isLegacy ? group.lines[0].purchase_id : '—'}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {isLegacy ? group.lines[0].item_code : `${group.lines.length} item(s)`}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {isLegacy ? group.lines[0].item_name : ''}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {isLegacy ? group.lines[0].cost_per_unit : ''}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                                ₹{group.totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {isLegacy ? group.lines[0].quantity : ''}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {group.purchaseDate}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {getSupplierName(group.supplierId)}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {group.paymentType}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {group.createdBy}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 relative">
-                                                <div className="flex items-center gap-1">
-                                                    {!isLegacy && (
-                                                        <button
-                                                            className="text-gray-400 hover:text-gray-700 p-1"
-                                                            onClick={(e) => { e.stopPropagation(); toggleOrder(group.orderId, group.lines[0].purchase_id); }}
-                                                            aria-label={expanded ? 'Collapse order' : 'Expand order'}
-                                                        >
-                                                            <ChevronDown size={16} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
-                                                        </button>
-                                                    )}
-                                                    <TableActionsDropdown
-                                                        rowId={group.orderId != null ? group.orderId : group.lines[0].purchase_id}
-                                                        openMenuId={openMenuId}
-                                                        onMenuToggle={(id) => setOpenMenuId(typeof id === 'number' ? id : null)}
-                                                        actions={[
-                                                            {
-                                                                label: 'Delete',
-                                                                icon: <Trash2 size={14} />,
-                                                                variant: 'danger',
-                                                                onClick: () => {
-                                                                    if (group.orderId != null) {
-                                                                        const confirmed = window.confirm(`Delete purchase order #${group.orderId} (all items)?`);
-                                                                        if (!confirmed) return;
-                                                                        handleDeletePurchaseOrder(group.orderId, queryClient);
-                                                                    } else {
-                                                                        const confirmed = window.confirm(`Delete purchase #${group.lines[0].purchase_id}?`);
-                                                                        if (!confirmed) return;
-                                                                        handleDeletePurchase(group.lines[0].purchase_id, queryClient);
-                                                                    }
-                                                                }
-                                                            }
-                                                        ]}
-                                                    />
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {expanded && !isLegacy && group.lines.map((line) => (
-                                            <tr key={line.purchase_id} className="bg-gray-50/50">
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-400 pl-8">
-                                                    ↳
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                    {line.purchase_id}
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                    {line.item_code}
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                    {line.item_name}
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                    {line.cost_per_unit}
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                    {line.total_cost}
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                    {line.quantity}
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                    {line.purchase_date}
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                    {getSupplierName(line.supplier_id)}
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                    {line.payment_type || 'N/A'}
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                    {line.created_by}
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 relative">
-                                                    <TableActionsDropdown
-                                                        rowId={line.purchase_id}
-                                                        openMenuId={openMenuId}
-                                                        onMenuToggle={(id) => setOpenMenuId(typeof id === 'number' ? id : null)}
-                                                        actions={[
-                                                            {
-                                                                label: 'Delete Line',
-                                                                icon: <Trash2 size={14} />,
-                                                                variant: 'danger',
-                                                                onClick: () => {
-                                                                    const confirmed = window.confirm(`Delete purchase line #${line.purchase_id}?`);
-                                                                    if (!confirmed) return;
-                                                                    handleDeletePurchase(line.purchase_id, queryClient);
-                                                                }
-                                                            }
-                                                        ]}
-                                                    />
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </React.Fragment>
-                                );
-                            })
+                            sortedData.map((purchase) => (
+                                <tr key={purchase.purchase_id} className="hover:bg-gray-50">
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {purchase.purchase_order_id ? `#${purchase.purchase_order_id}` : '-'}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {purchase.purchase_id}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {purchase.item_code}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {purchase.item_name}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {purchase.cost_per_unit}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {purchase.total_cost}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {purchase.quantity}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {purchase.purchase_date}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {getSupplierName(purchase.supplier_id)}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {purchase.payment_type || 'N/A'}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {purchase.created_by}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 relative">
+                                        <TableActionsDropdown
+                                            rowId={purchase.purchase_id}
+                                            openMenuId={openMenuId}
+                                            onMenuToggle={(id) => setOpenMenuId(typeof id === 'number' ? id : null)}
+                                            actions={[
+                                                {
+                                                    label: 'Delete',
+                                                    icon: <Trash2 size={14} />,
+                                                    variant: 'danger',
+                                                    onClick: () => {
+                                                        if (purchase.purchase_order_id) {
+                                                            const confirmed = window.confirm(`Delete purchase order #${purchase.purchase_order_id} (all items)?`);
+                                                            if (!confirmed) return;
+                                                            handleDeletePurchaseOrder(purchase.purchase_order_id, queryClient);
+                                                        } else {
+                                                            const confirmed = window.confirm(`Delete purchase #${purchase.purchase_id}?`);
+                                                            if (!confirmed) return;
+                                                            handleDeletePurchase(purchase.purchase_id, queryClient);
+                                                        }
+                                                    }
+                                                }
+                                            ]}
+                                        />
+                                    </td>
+                                </tr>
+                            ))
                         )}
                     </tbody>
                 </table>
