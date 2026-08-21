@@ -195,7 +195,6 @@ export default function BatchDetailsPage() {
                                 traders={traders}
                                 batchId={batchId}
                                 queryClient={queryClient}
-                                batchStatus={batch.status}
                             />
                         </div>
                     )}
