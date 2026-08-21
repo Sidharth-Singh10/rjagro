@@ -743,11 +743,12 @@ export interface AllocatedRequirement {
 }
 
 export enum OtherExpenseCategory {
-  FeedTransfer = 'feed_transfer',
-  LoadingUnloading = 'loading_unloading',
-  Petrol = 'petrol',
-  EmployeeExpenses = 'employee_expenses',
-  Misc = 'misc',
+  FeedTransfer = 'FeedTransfer',
+  LoadingUnloading = 'LoadingUnloading',
+  Petrol = 'Petrol',
+  EmployeeExpenses = 'EmployeeExpenses',
+  Misc = 'Misc',
+  FeedDelivery = 'FeedDelivery',
 }
 
 export const OTHER_EXPENSE_CATEGORY_LABELS: Record<OtherExpenseCategory, string> = {
@@ -756,6 +757,7 @@ export const OTHER_EXPENSE_CATEGORY_LABELS: Record<OtherExpenseCategory, string>
   [OtherExpenseCategory.Petrol]: 'Petrol',
   [OtherExpenseCategory.EmployeeExpenses]: 'Employee Expenses',
   [OtherExpenseCategory.Misc]: 'Misc',
+  [OtherExpenseCategory.FeedDelivery]: 'Feed Delivery',
 };
 
 export interface OtherExpense {

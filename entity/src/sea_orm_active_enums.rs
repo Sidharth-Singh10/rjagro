@@ -159,6 +159,8 @@ pub enum OtherExpenseCategory {
     EmployeeExpenses,
     #[sea_orm(string_value = "misc")]
     Misc,
+    #[sea_orm(string_value = "feed_delivery")]
+    FeedDelivery,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]

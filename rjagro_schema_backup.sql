@@ -2,15 +2,14 @@
 -- PostgreSQL database dump
 --
 
-\restrict mzi23G0afUNrKXLrbRS0EfYXRhgLgEfKH1HtJNaZJ6zic9vhllewXwd1XAjEm0k
+\restrict JtnHBVTxCNRcWhhXKtJBlqeWTMAcsxhIed5T16HPN1rPjTfKKQJiLxho3DQFn0c
 
 -- Dumped from database version 16.11
--- Dumped by pg_dump version 18.3
+-- Dumped by pg_dump version 16.11
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -78,6 +77,18 @@ CREATE TYPE public.ledger_account_type AS ENUM (
 ALTER TYPE public.ledger_account_type OWNER TO admin;
 
 --
+-- Name: ledger_entry_type; Type: TYPE; Schema: public; Owner: admin
+--
+
+CREATE TYPE public.ledger_entry_type AS ENUM (
+    'debit',
+    'payment'
+);
+
+
+ALTER TYPE public.ledger_entry_type OWNER TO admin;
+
+--
 -- Name: loan_status; Type: TYPE; Schema: public; Owner: admin
 --
 
@@ -128,11 +139,24 @@ CREATE TYPE public.other_expense_category AS ENUM (
     'loading_unloading',
     'petrol',
     'employee_expenses',
-    'misc'
+    'misc',
+    'feed_delivery'
 );
 
 
 ALTER TYPE public.other_expense_category OWNER TO admin;
+
+--
+-- Name: payment_mode; Type: TYPE; Schema: public; Owner: admin
+--
+
+CREATE TYPE public.payment_mode AS ENUM (
+    'cash',
+    'bank'
+);
+
+
+ALTER TYPE public.payment_mode OWNER TO admin;
 
 --
 -- Name: payment_type; Type: TYPE; Schema: public; Owner: admin
@@ -261,13 +285,14 @@ ALTER SEQUENCE public.app_supervisors_id_seq OWNED BY public.app_supervisors.id;
 
 CREATE TABLE public.app_traders (
     id integer NOT NULL,
-    google_sub character varying(255) NOT NULL,
     email character varying(255) NOT NULL,
     name character varying(150) NOT NULL,
-    phone character varying(15),
+    phone character varying(15) NOT NULL,
     credit_limit numeric(18,2),
     credit_terms_days integer,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    password_hash character varying(255) NOT NULL,
+    linked_trader_id integer
 );
 
 
@@ -1198,6 +1223,44 @@ ALTER SEQUENCE public.production_lines_line_id_seq OWNED BY public.production_li
 
 
 --
+-- Name: purchase_orders; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.purchase_orders (
+    purchase_order_id integer NOT NULL,
+    supplier_id integer NOT NULL,
+    purchase_date date NOT NULL,
+    payment_type public.payment_type,
+    created_by integer NOT NULL,
+    total_cost numeric(12,2) DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public.purchase_orders OWNER TO admin;
+
+--
+-- Name: purchase_orders_purchase_order_id_seq; Type: SEQUENCE; Schema: public; Owner: admin
+--
+
+CREATE SEQUENCE public.purchase_orders_purchase_order_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.purchase_orders_purchase_order_id_seq OWNER TO admin;
+
+--
+-- Name: purchase_orders_purchase_order_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: admin
+--
+
+ALTER SEQUENCE public.purchase_orders_purchase_order_id_seq OWNED BY public.purchase_orders.purchase_order_id;
+
+
+--
 -- Name: purchases; Type: TABLE; Schema: public; Owner: admin
 --
 
@@ -1210,7 +1273,8 @@ CREATE TABLE public.purchases (
     purchase_date date NOT NULL,
     created_by integer NOT NULL,
     payment_type public.payment_type,
-    supplier_id integer NOT NULL
+    supplier_id integer NOT NULL,
+    purchase_order_id integer
 );
 
 
@@ -1450,6 +1514,46 @@ ALTER SEQUENCE public.timeslots_timeslot_id_seq OWNED BY public.timeslots.timesl
 
 
 --
+-- Name: trader_ledger_entries; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.trader_ledger_entries (
+    id integer NOT NULL,
+    trader_id integer NOT NULL,
+    order_id integer,
+    type public.ledger_entry_type NOT NULL,
+    amount numeric(18,2) NOT NULL,
+    payment_mode public.payment_mode,
+    screenshot_url text,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.trader_ledger_entries OWNER TO admin;
+
+--
+-- Name: trader_ledger_entries_id_seq; Type: SEQUENCE; Schema: public; Owner: admin
+--
+
+CREATE SEQUENCE public.trader_ledger_entries_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.trader_ledger_entries_id_seq OWNER TO admin;
+
+--
+-- Name: trader_ledger_entries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: admin
+--
+
+ALTER SEQUENCE public.trader_ledger_entries_id_seq OWNED BY public.trader_ledger_entries.id;
+
+
+--
 -- Name: trader_payments; Type: TABLE; Schema: public; Owner: admin
 --
 
@@ -1541,7 +1645,8 @@ CREATE TABLE public.users (
     email character varying(100) NOT NULL,
     password character varying(100) NOT NULL,
     role public.user_role NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    phone character varying(15)
 );
 
 
@@ -1738,6 +1843,13 @@ ALTER TABLE ONLY public.production_lines ALTER COLUMN line_id SET DEFAULT nextva
 
 
 --
+-- Name: purchase_orders purchase_order_id; Type: DEFAULT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.purchase_orders ALTER COLUMN purchase_order_id SET DEFAULT nextval('public.purchase_orders_purchase_order_id_seq'::regclass);
+
+
+--
 -- Name: purchases purchase_id; Type: DEFAULT; Schema: public; Owner: admin
 --
 
@@ -1777,6 +1889,13 @@ ALTER TABLE ONLY public.suppliers ALTER COLUMN supplier_id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.timeslots ALTER COLUMN timeslot_id SET DEFAULT nextval('public.timeslots_timeslot_id_seq'::regclass);
+
+
+--
+-- Name: trader_ledger_entries id; Type: DEFAULT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.trader_ledger_entries ALTER COLUMN id SET DEFAULT nextval('public.trader_ledger_entries_id_seq'::regclass);
 
 
 --
@@ -1833,11 +1952,11 @@ ALTER TABLE ONLY public.app_traders
 
 
 --
--- Name: app_traders app_traders_google_sub_key; Type: CONSTRAINT; Schema: public; Owner: admin
+-- Name: app_traders app_traders_phone_key; Type: CONSTRAINT; Schema: public; Owner: admin
 --
 
 ALTER TABLE ONLY public.app_traders
-    ADD CONSTRAINT app_traders_google_sub_key UNIQUE (google_sub);
+    ADD CONSTRAINT app_traders_phone_key UNIQUE (phone);
 
 
 --
@@ -2057,6 +2176,14 @@ ALTER TABLE ONLY public.production_lines
 
 
 --
+-- Name: purchase_orders purchase_orders_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.purchase_orders
+    ADD CONSTRAINT purchase_orders_pkey PRIMARY KEY (purchase_order_id);
+
+
+--
 -- Name: purchases purchases_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -2118,6 +2245,14 @@ ALTER TABLE ONLY public.suppliers
 
 ALTER TABLE ONLY public.timeslots
     ADD CONSTRAINT timeslots_pkey PRIMARY KEY (timeslot_id);
+
+
+--
+-- Name: trader_ledger_entries trader_ledger_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.trader_ledger_entries
+    ADD CONSTRAINT trader_ledger_entries_pkey PRIMARY KEY (id);
 
 
 --
@@ -2204,6 +2339,20 @@ CREATE INDEX idx_loans_status ON public.loans USING btree (status);
 
 
 --
+-- Name: idx_purchase_orders_supplier_id; Type: INDEX; Schema: public; Owner: admin
+--
+
+CREATE INDEX idx_purchase_orders_supplier_id ON public.purchase_orders USING btree (supplier_id);
+
+
+--
+-- Name: idx_purchases_purchase_order_id; Type: INDEX; Schema: public; Owner: admin
+--
+
+CREATE INDEX idx_purchases_purchase_order_id ON public.purchases USING btree (purchase_order_id);
+
+
+--
 -- Name: idx_purchases_supplier_id; Type: INDEX; Schema: public; Owner: admin
 --
 
@@ -2222,6 +2371,13 @@ CREATE INDEX idx_stock_returns_batch_id ON public.stock_returns USING btree (bat
 --
 
 CREATE INDEX idx_supplier_payments_trader_id ON public.supplier_payments USING btree (supplier_id);
+
+
+--
+-- Name: idx_trader_ledger_entries_trader_id; Type: INDEX; Schema: public; Owner: admin
+--
+
+CREATE INDEX idx_trader_ledger_entries_trader_id ON public.trader_ledger_entries USING btree (trader_id);
 
 
 --
@@ -2316,6 +2472,14 @@ ALTER TABLE ONLY public.batch_allocation_lines
 
 ALTER TABLE ONLY public.batch_allocation_lines
     ADD CONSTRAINT fk_allocation_lines_lot FOREIGN KEY (lot_id) REFERENCES public.stock_receipts(lot_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: app_traders fk_app_traders_linked_trader_id; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.app_traders
+    ADD CONSTRAINT fk_app_traders_linked_trader_id FOREIGN KEY (linked_trader_id) REFERENCES public.traders(trader_id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -2479,6 +2643,14 @@ ALTER TABLE ONLY public.purchases
 
 
 --
+-- Name: purchases fk_purchases_purchase_order; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.purchases
+    ADD CONSTRAINT fk_purchases_purchase_order FOREIGN KEY (purchase_order_id) REFERENCES public.purchase_orders(purchase_order_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: purchases fk_purchases_supplier_id; Type: FK CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -2591,6 +2763,22 @@ ALTER TABLE ONLY public.timeslots
 
 
 --
+-- Name: trader_ledger_entries trader_ledger_entries_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.trader_ledger_entries
+    ADD CONSTRAINT trader_ledger_entries_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(order_id);
+
+
+--
+-- Name: trader_ledger_entries trader_ledger_entries_trader_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.trader_ledger_entries
+    ADD CONSTRAINT trader_ledger_entries_trader_id_fkey FOREIGN KEY (trader_id) REFERENCES public.app_traders(id);
+
+
+--
 -- Name: trader_payments trader_payments_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -2617,5 +2805,5 @@ REVOKE USAGE ON SCHEMA public FROM PUBLIC;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict mzi23G0afUNrKXLrbRS0EfYXRhgLgEfKH1HtJNaZJ6zic9vhllewXwd1XAjEm0k
+\unrestrict JtnHBVTxCNRcWhhXKtJBlqeWTMAcsxhIed5T16HPN1rPjTfKKQJiLxho3DQFn0c
 
