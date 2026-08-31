@@ -17,7 +17,7 @@
 `id, name, role (trader|supervisor|admin), phone, credit_limit (nullable, display-only), credit_terms_days (nullable, display-only), created_at`
 
 **Farm**
-`id, code, name, latitude, longitude, distance_km, video_url, maps_url, created_at`
+`id, code, name, location, video_url, gmaps_url, created_at`
 
 **Batch** (one live-selling cycle for a farm)
 `id, farm_id, status (open|live|closed), avg_body_weight, activated_at, closed_at, created_at`
@@ -70,7 +70,7 @@ Every transition + every field edit (weight, birds, rate) writes an `AuditLog` r
 ### Farms & Batches
 | Method | Endpoint | Notes |
 |---|---|---|
-| POST | `/farms` | code, geo, video_url, maps_url |
+| POST | `/farms` | code, location, video_url, gmaps_url |
 | GET | `/farms/{id}` | |
 | POST | `/batches` | create batch for a farm, status=open |
 | GET | `/batches?status=open\|live\|closed` | |

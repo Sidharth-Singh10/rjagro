@@ -166,10 +166,9 @@ export interface Farm {
   farmer_id: number;
   code: string;
   name: string;
-  latitude?: string | null;
-  longitude?: string | null;
+  location?: string | null;
   video_url?: string | null;
-  maps_url?: string | null;
+  gmaps_url?: string | null;
   created_at: string;
 }
 
@@ -177,10 +176,9 @@ export interface FarmPayload {
   farmer_id: number | '';
   code: string;
   name: string;
-  latitude: string;
-  longitude: string;
+  location: string;
   video_url: string;
-  maps_url: string;
+  gmaps_url: string;
 }
 
 export interface Timeslot {

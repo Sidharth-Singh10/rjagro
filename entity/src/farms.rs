@@ -12,14 +12,12 @@ pub struct Model {
     #[sea_orm(unique)]
     pub code: String,
     pub name: String,
-    #[sea_orm(column_type = "Decimal(Some((10, 7)))", nullable)]
-    pub latitude: Option<Decimal>,
-    #[sea_orm(column_type = "Decimal(Some((10, 7)))", nullable)]
-    pub longitude: Option<Decimal>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub location: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
     pub video_url: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
-    pub maps_url: Option<String>,
+    pub gmaps_url: Option<String>,
     pub created_at: DateTimeWithTimeZone,
 }
 

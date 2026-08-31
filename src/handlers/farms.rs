@@ -15,10 +15,9 @@ pub async fn create_farm_handler(
         farmer_id: Set(payload.farmer_id),
         code: Set(payload.code),
         name: Set(payload.name),
-        latitude: Set(payload.latitude),
-        longitude: Set(payload.longitude),
+        location: Set(payload.location),
         video_url: Set(payload.video_url),
-        maps_url: Set(payload.maps_url),
+        gmaps_url: Set(payload.gmaps_url),
         ..Default::default()
     };
 

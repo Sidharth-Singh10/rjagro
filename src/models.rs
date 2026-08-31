@@ -206,10 +206,9 @@ pub struct FarmInfo {
     pub farm_id: i32,
     pub code: String,
     pub name: String,
-    pub latitude: Option<Decimal>,
-    pub longitude: Option<Decimal>,
+    pub location: Option<String>,
     pub video_url: Option<String>,
-    pub maps_url: Option<String>,
+    pub gmaps_url: Option<String>,
 }
 
 impl From<entity::farms::Model> for FarmInfo {
@@ -218,10 +217,9 @@ impl From<entity::farms::Model> for FarmInfo {
             farm_id: farm.farm_id,
             code: farm.code,
             name: farm.name,
-            latitude: farm.latitude,
-            longitude: farm.longitude,
+            location: farm.location,
             video_url: farm.video_url,
-            maps_url: farm.maps_url,
+            gmaps_url: farm.gmaps_url,
         }
     }
 }
@@ -236,10 +234,9 @@ pub struct CreateFarm {
     pub farmer_id: i32,
     pub code: String,
     pub name: String,
-    pub latitude: Option<Decimal>,
-    pub longitude: Option<Decimal>,
+    pub location: Option<String>,
     pub video_url: Option<String>,
-    pub maps_url: Option<String>,
+    pub gmaps_url: Option<String>,
 }
 
 #[derive(Deserialize)]

@@ -12,10 +12,9 @@ const emptyFarm: FarmPayload = {
     farmer_id: '',
     code: '',
     name: '',
-    latitude: '',
-    longitude: '',
+    location: '',
     video_url: '',
-    maps_url: '',
+    gmaps_url: '',
 };
 
 const FarmsModule = () => {
@@ -100,21 +99,13 @@ const FarmsModule = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                             <input
                                 type="text"
-                                value={newFarm.latitude}
-                                onChange={(e) => setNewFarm(prev => ({ ...prev, latitude: e.target.value }))}
+                                value={newFarm.location}
+                                onChange={(e) => setNewFarm(prev => ({ ...prev, location: e.target.value }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
-                            <input
-                                type="text"
-                                value={newFarm.longitude}
-                                onChange={(e) => setNewFarm(prev => ({ ...prev, longitude: e.target.value }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                placeholder="e.g. Village, District, State"
                             />
                         </div>
                         <div>
@@ -127,11 +118,11 @@ const FarmsModule = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Maps URL</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">GMaps URL</label>
                             <input
                                 type="text"
-                                value={newFarm.maps_url}
-                                onChange={(e) => setNewFarm(prev => ({ ...prev, maps_url: e.target.value }))}
+                                value={newFarm.gmaps_url}
+                                onChange={(e) => setNewFarm(prev => ({ ...prev, gmaps_url: e.target.value }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                             />
                         </div>
@@ -173,14 +164,12 @@ const FarmsModule = () => {
                                         <td className="px-4 py-4 text-sm text-gray-900">{farm.name}</td>
                                         <td className="px-4 py-4 text-sm text-gray-900">{farmer?.name ?? farm.farmer_id}</td>
                                         <td className="px-4 py-4 text-sm text-gray-500">
-                                            {farm.latitude && farm.longitude
-                                                ? `${Number(farm.latitude).toFixed(4)}, ${Number(farm.longitude).toFixed(4)}`
-                                                : '-'}
+                                            {farm.location || '-'}
                                         </td>
                                         <td className="px-4 py-4 text-sm text-gray-500">
                                             <div className="flex items-center gap-3">
-                                                {farm.maps_url && (
-                                                    <a href={farm.maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-green-700 hover:underline">
+                                                {farm.gmaps_url && (
+                                                    <a href={farm.gmaps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-green-700 hover:underline">
                                                         <MapPin size={14} /> Maps
                                                     </a>
                                                 )}
@@ -189,7 +178,7 @@ const FarmsModule = () => {
                                                         <Video size={14} /> Video
                                                     </a>
                                                 )}
-                                                {!farm.maps_url && !farm.video_url && '-'}
+                                                {!farm.gmaps_url && !farm.video_url && '-'}
                                             </div>
                                         </td>
                                         <td className="px-4 py-4 text-sm">
