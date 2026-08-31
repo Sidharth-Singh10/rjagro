@@ -95,7 +95,7 @@ const LiveSellingModule = () => {
                         disabled={loading || !createFarmId || !createStartDate}
                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                     >
-                        <Plus size={18} /> Create Live Batch
+                        <Plus size={18} /> Create Batch
                     </button>
                 </div>
             </div>

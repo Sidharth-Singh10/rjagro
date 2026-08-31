@@ -1,22 +1,17 @@
 'use client'
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Bird, Archive, Store } from 'lucide-react';
-import { fetchBatchClosures, fetchBatches, handleAddBatch} from '@/app/api/batches';
-import { fetchFarmers } from '@/app/api/farmers';
-import { fetchSupervisors } from '@/app/api/supervisors';
-import { fetchItems } from '@/app/api/items';
-import { BatchPayload } from '@/app/types/interfaces';
+import { fetchBatchClosures, fetchBatches } from '@/app/api/batches';
 import BatchesTable from '../tables/batches';
 import BatchClosureSummaryTable from '../tables/batch_closure_summary/batch_closure';
 import LiveSellingModule from './live_selling_module';
 
 const BatchesModule = () => {
-    const queryClient = useQueryClient();
     const [subTab, setSubTab] = useState<'Active' | 'LiveSelling' | 'Closures'>('Active');
 
     // Shared Loading/Form State
-    const [loading, setLoading] = useState(false);
+    const loading = false;
     const [showAddForm, setShowAddForm] = useState(false);
 
     // --- Data Fetching ---
@@ -32,49 +27,12 @@ const BatchesModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    // Dependencies for Batches Table
-    const { data: farmers = [] } = useQuery({
-        queryKey: ["farmers"],
-        queryFn: fetchFarmers,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const { data: supervisors = [] } = useQuery({
-        queryKey: ['supervisors'],
-        queryFn: fetchSupervisors,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const { data: items = [] } = useQuery({
-        queryKey: ['items'],
-        queryFn: fetchItems,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    // --- STATE: New Batch ---
-    const [newBatch, setNewBatch] = useState<BatchPayload>({
-        line_id: '',
-        supervisor_id: '',
-        farmer_id: '',
-        start_date: new Date().toISOString().slice(0, 10),
-        end_date: new Date().toISOString().slice(0, 10),
-        initial_bird_count: '',
-        current_bird_count: '',
-        chick_item_code: [],
-        created_by: '',
-    });
-
-    // --- Handlers ---
-    const onAddBatch = () => {
-        handleAddBatch(newBatch, queryClient, setLoading);
-    };
-
     return (
         <div className="space-y-6">
             {/* Inner Module Navigation */}
             <div className="flex flex-wrap items-center gap-4 border-b border-gray-200 pb-2">
                 <button
-                    onClick={() => { setSubTab('Active'); setShowAddForm(false); }}
+                    onClick={() => setSubTab('Active')}
                     className={`flex items-center space-x-2 pb-2 px-1 text-sm font-medium transition-colors ${subTab === 'Active' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700'
                         }`}
                 >
@@ -82,7 +40,7 @@ const BatchesModule = () => {
                     <span>Active Batches</span>
                 </button>
                 <button
-                    onClick={() => { setSubTab('LiveSelling'); setShowAddForm(false); }}
+                    onClick={() => setSubTab('LiveSelling')}
                     className={`flex items-center space-x-2 pb-2 px-1 text-sm font-medium transition-colors ${subTab === 'LiveSelling' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700'
                         }`}
                 >
@@ -90,7 +48,7 @@ const BatchesModule = () => {
                     <span>Live Selling</span>
                 </button>
                 <button
-                    onClick={() => { setSubTab('Closures'); setShowAddForm(false); }}
+                    onClick={() => setSubTab('Closures')}
                     className={`flex items-center space-x-2 pb-2 px-1 text-sm font-medium transition-colors ${subTab === 'Closures' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700'
                         }`}
                 >
@@ -104,15 +62,7 @@ const BatchesModule = () => {
                 {subTab === 'Active' && (
                     <BatchesTable
                         batches={batches}
-                        farmers={farmers}
-                        supervisors={supervisors}
-                        items={items}
                         loading={loading}
-                        showAddForm={showAddForm}
-                        newBatch={newBatch}
-                        setShowAddForm={setShowAddForm}
-                        setNewBatch={setNewBatch}
-                        handleAddBatch={onAddBatch}
                     />
                 )}
 

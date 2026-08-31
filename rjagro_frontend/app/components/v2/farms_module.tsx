@@ -187,7 +187,7 @@ const FarmsModule = () => {
                                                 disabled={loading}
                                                 className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 disabled:opacity-50"
                                             >
-                                                <Plus size={14} /> Create Live Batch
+                                                <Plus size={14} /> Create Batch
                                             </button>
                                         </td>
                                     </tr>
