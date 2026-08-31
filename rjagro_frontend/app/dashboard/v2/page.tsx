@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import AllocationsModule from '@/app/components/v2/allocations_module';
+import AppTradersModule from '@/app/components/v2/app_traders_module';
 import BatchesModule from '@/app/components/v2/batches_module';
 import EntitiesModule from '@/app/components/v2/entities_module';
 import FarmsModule from '@/app/components/v2/farms_module';
@@ -24,6 +25,7 @@ const SECTION_TITLES: Record<string, string> = {
     Batches: 'Batches',
     Farms: 'Farms',
     Entities: 'Entities',
+    AppTraders: 'App Traders',
     Loan: 'Loan',
     OtherExpenses: 'Other Expenses',
 };
@@ -37,6 +39,7 @@ const SECTION_COMPONENTS: Record<string, React.FC> = {
     Batches: BatchesModule,
     Farms: FarmsModule,
     Entities: EntitiesModule,
+    AppTraders: AppTradersModule,
     Loan: LoanModule,
     OtherExpenses: OtherExpensesModule,
 };

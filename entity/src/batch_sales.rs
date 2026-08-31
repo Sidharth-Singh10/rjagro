@@ -12,6 +12,7 @@ pub struct Model {
     pub item_code: String,
     pub batch_id: i32,
     pub trader_id: i32,
+    pub app_trader_id: Option<i32>,
     pub avg_weight: Decimal,
     pub rate: Decimal,
     pub quantity: Decimal,
@@ -49,6 +50,15 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Traders,
+
+    #[sea_orm(
+        belongs_to = "super::app_traders::Entity",
+        from = "Column::AppTraderId",
+        to = "super::app_traders::Column::Id",
+        on_update = "NoAction",
+        on_delete = "SetNull"
+    )]
+    AppTraders,
 }
 
 impl Related<super::items::Entity> for Entity {
@@ -66,6 +76,12 @@ impl Related<super::batches::Entity> for Entity {
 impl Related<super::traders::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Traders.def()
+    }
+}
+
+impl Related<super::app_traders::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::AppTraders.def()
     }
 }
 

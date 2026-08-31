@@ -327,6 +327,7 @@ pub struct CreateBatchSale {
     pub quantity: Decimal,
     pub payment_type: PaymentType,
     pub created_by: i32,
+    pub app_trader_id: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]

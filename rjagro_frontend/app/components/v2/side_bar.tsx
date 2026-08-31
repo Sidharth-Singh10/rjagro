@@ -7,6 +7,7 @@ import {
     Package,
     Receipt,
     ShoppingCartIcon,
+    Smartphone,
     Store,
     Users,
     ChevronLeft,
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
     { id: 'Batches', label: 'Batches', icon: Bird },
     { id: 'Farms', label: 'Farms', icon: Store },
     { id: 'Entities', label: 'Entities', icon: Users },
+    { id: 'AppTraders', label: 'App Traders', icon: Smartphone },
     { id: 'Loan', label: 'Loan', icon: Banknote },
     { id: 'OtherExpenses', label: 'Other Expenses', icon: Receipt },
 ];

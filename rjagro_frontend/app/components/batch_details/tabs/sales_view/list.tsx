@@ -1,17 +1,25 @@
-import { BatchSale, Trader } from "@/app/types/interfaces";
+import { AppTrader, BatchSale, Trader } from "@/app/types/interfaces";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface BatchSalesListProps {
     batchSales: BatchSale[];
     traders: Trader[];
+    appTraders: AppTrader[];
     loading: boolean;
 }
 
 const BatchSalesList: React.FC<BatchSalesListProps> = ({
     batchSales,
     traders,
+    appTraders,
     loading,
 }) => {
+    const traderName = (sale: BatchSale): string => {
+        if (sale.app_trader_id) {
+            return appTraders.find((t) => t.id === sale.app_trader_id)?.name || "Unknown Trader";
+        }
+        return traders.find((t) => t.trader_id === sale.trader_id)?.name || "Unknown Trader";
+    };
     return (
         <>
             <div className="overflow-x-auto">
@@ -48,7 +56,7 @@ const BatchSalesList: React.FC<BatchSalesListProps> = ({
                                         </div>
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {traders.find((t) => t.trader_id === sale.trader_id)?.name || "Unknown Trader"}
+                                        {traderName(sale)}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{sale.avg_weight}</td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{sale.rate}</td>

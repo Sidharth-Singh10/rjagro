@@ -12,8 +12,9 @@ const api: AxiosInstance = axios.create({
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    const token = Cookies.get("token");
+    let token = Cookies.get("token");
     if (!token) return config;
+    if (token.startsWith("Bearer ")) token = token.slice(7);
     // console.log("token is:: ", token);
 
 

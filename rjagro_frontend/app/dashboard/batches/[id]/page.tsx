@@ -1,5 +1,6 @@
 'use client'
 import { fetchAllocationsByBatchId } from "@/app/api/batch_allocations";
+import { fetchAppTraders } from "@/app/api/app_traders";
 import { fetchBatchSalesByBatchId } from "@/app/api/batch_sales";
 import { fetchBatchById } from "@/app/api/batches";
 import { fetchBirdCountHistoryById } from "@/app/api/bird_count_history";
@@ -69,6 +70,11 @@ export default function BatchDetailsPage() {
 
 
     const { data: traders = [] } = useTraders();
+    const { data: appTraders = [] } = useQuery({
+        queryKey: ["app-traders"],
+        queryFn: fetchAppTraders,
+        staleTime: 1000 * 60 * 10,
+    });
     const { data: items = [] } = useItems();
 
     const totalExpenses = useMemo(() => {
@@ -193,6 +199,7 @@ export default function BatchDetailsPage() {
                                 batchSales={batchSales}
                                 loading={isSalesLoading}
                                 traders={traders}
+                                appTraders={appTraders}
                                 batchId={batchId}
                                 queryClient={queryClient}
                             />

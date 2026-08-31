@@ -1,4 +1,4 @@
-import { BatchSalePayload, Trader } from "@/app/types/interfaces";
+import { AppTrader, BatchSalePayload, Trader } from "@/app/types/interfaces";
 import { Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -12,8 +12,9 @@ const inputBaseClasses = "w-full px-3.5 py-2.5 border border-gray-300 rounded-lg
 
 const readOnlyBaseClasses = "w-full px-3.5 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 font-medium cursor-not-allowed select-none";
 
-interface BatchSaleFormState extends Omit<BatchSalePayload, 'trader_id' | 'avg_weight' | 'rate' | 'quantity'> {
+interface BatchSaleFormState extends Omit<BatchSalePayload, 'trader_id' | 'app_trader_id' | 'avg_weight' | 'rate' | 'quantity'> {
     trader_id: number | string;
+    app_trader_id: number | '';
     avg_weight: number | string;
     rate: number | string;
     quantity: number | string;
@@ -29,6 +30,7 @@ interface AddBatchSaleModalProps {
     isSubmitting: boolean;
     batchId: number;
     traders: Trader[];
+    appTraders: AppTrader[];
 }
 
 const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
@@ -38,10 +40,12 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
     isSubmitting,
     batchId,
     traders,
+    appTraders,
 }) => {
     const initialFormState: BatchSaleFormState = {
         batch_id: batchId,
         trader_id: "",
+        app_trader_id: "",
         trader_name: "",
         item_code: "DC101",
         item_name: "DESI CHICKEN",
@@ -60,6 +64,7 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
             setFormState({
                 batch_id: batchId,
                 trader_id: "",
+                app_trader_id: "",
                 trader_name: "",
                 item_code: "DC101",
                 item_name: "DESI CHICKEN",
@@ -79,19 +84,40 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
         return Math.round(w * r * 100) / 100;
     };
 
-    const handleTraderSelect = (id: string) => {
-        const trader = traders.find((t) => t.trader_id === Number(id));
-        setFormState((prev) => ({
-            ...prev,
-            trader_id: id,
-            trader_name: trader ? trader.name : "",
-        }));
+    const handleTraderSelect = (value: string) => {
+        if (value.startsWith("app-")) {
+            const id = Number(value.slice(4));
+            const trader = appTraders.find((t) => t.id === id);
+            setFormState((prev) => ({
+                ...prev,
+                trader_id: "",
+                app_trader_id: id,
+                trader_name: trader ? trader.name : "",
+            }));
+        } else if (value.startsWith("legacy-")) {
+            const id = Number(value.slice(7));
+            const trader = traders.find((t) => t.trader_id === id);
+            setFormState((prev) => ({
+                ...prev,
+                trader_id: id,
+                app_trader_id: "",
+                trader_name: trader ? trader.name : "",
+            }));
+        } else {
+            setFormState((prev) => ({
+                ...prev,
+                trader_id: "",
+                app_trader_id: "",
+                trader_name: "",
+            }));
+        }
     };
 
     const resetForm = () => {
         setFormState({
             batch_id: batchId,
             trader_id: "",
+            app_trader_id: "",
             trader_name: "",
             item_code: "DC101",
             item_name: "DESI CHICKEN",
@@ -105,7 +131,8 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
     };
 
     const handleSubmit = async () => {
-        if (!formState.trader_id || !formState.avg_weight || !formState.rate || !formState.quantity) {
+        const traderSelected = formState.trader_id !== "" || formState.app_trader_id !== "";
+        if (!traderSelected || !formState.avg_weight || !formState.rate || !formState.quantity) {
             alert("Please fill in all required fields");
             return;
         }
@@ -113,12 +140,13 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
         const payload: BatchSalePayload = {
             item_code: formState.item_code,
             batch_id: formState.batch_id,
-            trader_id: Number(formState.trader_id),
+            trader_id: formState.trader_id !== "" ? Number(formState.trader_id) : 0,
             avg_weight: Number(formState.avg_weight),
             rate: Number(formState.rate),
             quantity: Number(formState.quantity),
             payment_type: formState.payment_type,
             created_by: formState.created_by,
+            app_trader_id: formState.app_trader_id !== "" ? Number(formState.app_trader_id) : undefined,
         };
 
         await onSubmit(payload);
@@ -167,16 +195,29 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
                     <div className="md:col-span-2">
                         <Label required>Trader</Label>
                         <select
-                            value={formState.trader_id}
+                            value={formState.app_trader_id !== "" ? `app-${formState.app_trader_id}` : formState.trader_id !== "" ? `legacy-${formState.trader_id}` : ""}
                             onChange={(e) => handleTraderSelect(e.target.value)}
                             className={`${inputBaseClasses} bg-white`}
                         >
                             <option value="">Select Trader</option>
-                            {traders.map((trader) => (
-                                <option key={trader.trader_id} value={trader.trader_id}>
-                                    {trader.name}
-                                </option>
-                            ))}
+                            <optgroup label="App Traders (Mobile)">
+                                {appTraders.map((trader) => (
+                                    <option
+                                        key={`app-${trader.id}`}
+                                        value={`app-${trader.id}`}
+                                        disabled={!trader.linked_trader_id}
+                                    >
+                                        {trader.name}{trader.linked_trader_id ? "" : " (no linked trader)"}
+                                    </option>
+                                ))}
+                            </optgroup>
+                            <optgroup label="Other Traders">
+                                {traders.map((trader) => (
+                                    <option key={`legacy-${trader.trader_id}`} value={`legacy-${trader.trader_id}`}>
+                                        {trader.name}
+                                    </option>
+                                ))}
+                            </optgroup>
                         </select>
                     </div>
 

@@ -21,7 +21,8 @@ export const handleAddBatchSale = async (
   if (
     !payload.item_code ||
     !payload.batch_id ||
-    !payload.trader_id ||
+    (payload.trader_id === undefined && !payload.app_trader_id) ||
+    (!payload.trader_id && !payload.app_trader_id) ||
     !payload.avg_weight ||
     !payload.rate ||
     !payload.quantity ||

@@ -13,8 +13,9 @@ use entity::batch_allocation_lines;
 use entity::batch_closure_summary;
 use entity::batch_sales;
 use entity::ledger_entries;
-use entity::sea_orm_active_enums::PaymentType;
+use entity::sea_orm_active_enums::{LedgerEntryType, PaymentType};
 use entity::stock_returns;
+use entity::{app_traders, trader_ledger_entries};
 use num_traits::ToPrimitive;
 use reqwest::StatusCode;
 use sea_orm::prelude::Decimal;
@@ -57,10 +58,38 @@ pub async fn create_batch_sale(
 
     let computed_value = payload.avg_weight * payload.rate;
 
+    // When the sale is made to an app trader (mobile-app user), resolve the
+    // legacy trader via linked_trader_id (batch_sales.trader_id FKs to
+    // `traders`). The app trader id is recorded separately for attribution.
+    let (trader_id, app_trader_id) = if let Some(app_trader_id) = payload.app_trader_id {
+        let app_trader = app_traders::Entity::find_by_id(app_trader_id)
+            .one(&txn)
+            .await
+            .map_err(|err| {
+                eprintln!("Failed to fetch app trader {}: {:?}", app_trader_id, err);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?
+            .ok_or_else(|| {
+                eprintln!("App trader {} not found", app_trader_id);
+                StatusCode::NOT_FOUND
+            })?;
+        let linked = app_trader.linked_trader_id.ok_or_else(|| {
+            eprintln!(
+                "App trader {} has no linked legacy trader",
+                app_trader_id
+            );
+            StatusCode::BAD_REQUEST
+        })?;
+        (linked, Some(app_trader_id))
+    } else {
+        (payload.trader_id, None)
+    };
+
     let new_sale = batch_sales::ActiveModel {
         item_code: Set(payload.item_code),
         batch_id: Set(payload.batch_id),
-        trader_id: Set(payload.trader_id),
+        trader_id: Set(trader_id),
+        app_trader_id: Set(app_trader_id),
         avg_weight: Set(payload.avg_weight),
         rate: Set(payload.rate),
         quantity: Set(payload.quantity),
@@ -73,6 +102,29 @@ pub async fn create_batch_sale(
         eprintln!("Failed to insert batch sale: {:?}", err);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
+
+    // For receivable sales to an app trader, post a debit to their per-trader
+    // ledger so the sale shows up in the trader/supervisor mobile apps.
+    if let Some(app_trader_id) = inserted_sale.app_trader_id {
+        if inserted_sale.payment_type == PaymentType::Receivable {
+            let ledger_entry = trader_ledger_entries::ActiveModel {
+                trader_id: Set(app_trader_id),
+                order_id: Set(None),
+                entry_type: Set(LedgerEntryType::Debit),
+                amount: Set(inserted_sale.value),
+                payment_mode: Set(None),
+                screenshot_url: Set(None),
+                ..Default::default()
+            };
+            ledger_entry.insert(&txn).await.map_err(|err| {
+                eprintln!(
+                    "Failed to insert trader ledger debit for sale {}: {:?}",
+                    inserted_sale.id, err
+                );
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+        }
+    }
 
     if let Err(err_status) =
         insert_batch_sales_ledger_entries(&txn, &inserted_sale, payload.created_by).await

@@ -518,6 +518,7 @@ export interface BatchSale {
   item_name: string;
   batch_id: number;
   trader_id: number;
+  app_trader_id?: number | null;
   avg_weight: number;
   rate: number;
   quantity: number;
@@ -534,6 +535,42 @@ export interface BatchSalePayload {
   quantity: number;
   payment_type: string;
   created_by: number;
+  app_trader_id?: number;
+}
+
+export interface AppTrader {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  credit_limit?: string | null;
+  credit_terms_days?: number | null;
+  linked_trader_id?: number | null;
+}
+
+export interface TraderLedgerView {
+  trader_id: number;
+  total_debits: string;
+  total_payments: string;
+  balance: string;
+  entries: TraderLedgerEntryView[];
+}
+
+export interface TraderLedgerEntryView {
+  id?: number | null;
+  order_id?: number | null;
+  inquiry_number?: string | null;
+  entry_type: string;
+  amount: string;
+  payment_mode?: string | null;
+  screenshot_url?: string | null;
+  created_at: string;
+}
+
+export interface CreateTraderPaymentPayload {
+  amount: number;
+  payment_mode: string;
+  screenshot_url?: string;
 }
 
 export interface NewBatchSale {

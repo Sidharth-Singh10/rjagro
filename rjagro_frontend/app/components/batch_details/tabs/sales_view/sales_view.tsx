@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { handleAddBatchSale } from "@/app/api/batch_sales";
-import { BatchSale, BatchSalePayload, Trader } from "@/app/types/interfaces";
+import { AppTrader, BatchSale, BatchSalePayload, Trader } from "@/app/types/interfaces";
 import BatchSalesHeader from "./header";
 import BatchSalesList from "./list";
 import AddBatchSaleModal from "./add";
@@ -8,6 +8,7 @@ import AddBatchSaleModal from "./add";
 interface BatchSalesTableProps {
     batchSales: BatchSale[];
     traders: Trader[];
+    appTraders: AppTrader[];
     loading: boolean;
     batchId: number;
     queryClient: any;
@@ -16,6 +17,7 @@ interface BatchSalesTableProps {
 const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
     batchSales,
     traders,
+    appTraders,
     loading,
     batchId,
     queryClient,
@@ -38,6 +40,7 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
             <BatchSalesList
                 batchSales={batchSales}
                 traders={traders}
+                appTraders={appTraders}
                 loading={loading}
             />
 
@@ -48,6 +51,7 @@ const BatchSalesTable: React.FC<BatchSalesTableProps> = ({
                 isSubmitting={isSubmitting}
                 batchId={batchId}
                 traders={traders}
+                appTraders={appTraders}
             />
         </div>
     );

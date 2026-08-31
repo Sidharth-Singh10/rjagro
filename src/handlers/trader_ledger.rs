@@ -143,6 +143,15 @@ async fn build_ledger(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    // Manual debits (e.g. batch sales recorded directly from the web app)
+    // are stored in trader_ledger_entries with entry_type = debit.
+    let manual_debits = trader_ledger_entries::Entity::find()
+        .filter(trader_ledger_entries::Column::TraderId.eq(trader_id))
+        .filter(trader_ledger_entries::Column::EntryType.eq(LedgerEntryType::Debit))
+        .all(db)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
     let in_range = |d: NaiveDate| -> bool {
         let ok_from = from.map(|f| d >= f).unwrap_or(true);
         let ok_to = to.map(|t| d <= t).unwrap_or(true);
@@ -186,6 +195,24 @@ async fn build_ledger(
             payment_mode: Some(payment_mode_str(p.payment_mode)),
             screenshot_url: p.screenshot_url,
             created_at: p.created_at,
+        });
+    }
+
+    for d in manual_debits {
+        let date = d.created_at.date_naive();
+        if !in_range(date) {
+            continue;
+        }
+        total_debits += d.amount;
+        entries.push(LedgerEntryView {
+            id: Some(d.id),
+            order_id: d.order_id,
+            inquiry_number: None,
+            entry_type: "debit".to_string(),
+            amount: d.amount,
+            payment_mode: None,
+            screenshot_url: None,
+            created_at: d.created_at,
         });
     }
 

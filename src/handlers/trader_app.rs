@@ -87,6 +87,19 @@ pub async fn credit_summary_handler(
             acc + o.total_amount.unwrap_or_default()
         });
 
+    // Manual debits (e.g. batch sales recorded directly from the web app)
+    // are stored in trader_ledger_entries with entry_type = debit.
+    let manual_debits = trader_ledger_entries::Entity::find()
+        .filter(trader_ledger_entries::Column::TraderId.eq(trader_id))
+        .filter(trader_ledger_entries::Column::EntryType.eq(LedgerEntryType::Debit))
+        .all(&db)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .into_iter()
+        .fold(sea_orm::prelude::Decimal::ZERO, |acc, e| acc + e.amount);
+
+    let dues = dues + manual_debits;
+
     // Payments recorded on the per-trader ledger (trader_ledger_entries).
     // NOTE: the legacy `trader_payments` table references the old `traders`
     // table (not `app_traders`), so it must not be used for app traders.
