@@ -390,7 +390,66 @@ pub async fn create_batch_closure_summary(
     let total_expenses = compute_total_expenses(&txn, payload.batch_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let gross_profit = payload.revenue - total_expenses;
+
+    // Authoritative revenue: sum of recorded sales for the batch.
+    // Falls back to the payload value (manual adjustment) when no sales exist.
+    use sea_orm::{ColumnTrait, QueryFilter};
+    let sales_total: Decimal = batch_sales::Entity::find()
+        .filter(batch_sales::Column::BatchId.eq(payload.batch_id))
+        .all(&txn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .iter()
+        .map(|s| s.value)
+        .sum();
+    let revenue = if sales_total > Decimal::ZERO {
+        sales_total
+    } else {
+        payload.revenue
+    };
+    let gross_profit = revenue - total_expenses;
+
+    // Upsert: re-closing an already-closed batch updates the existing row
+    // instead of inserting a duplicate.
+    if let Some(existing) = batch_closure_summary::Entity::find()
+        .filter(batch_closure_summary::Column::BatchId.eq(payload.batch_id))
+        .one(&txn)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    {
+        let mut am: batch_closure_summary::ActiveModel = existing.into();
+        am.start_date = Set(payload.start_date);
+        am.end_date = Set(payload.end_date);
+        am.initial_chicken_count = Set(payload.initial_chicken_count);
+        am.available_chicken_count = Set(payload.available_chicken_count);
+        am.revenue = Set(revenue);
+        am.gross_profit = Set(gross_profit);
+        let updated = am
+            .update(&txn)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let mut batch: batches::ActiveModel = batches::Entity::find_by_id(payload.batch_id)
+            .one(&txn)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            .ok_or(StatusCode::NOT_FOUND)?
+            .into();
+
+        batch.status = Set(Some(BatchStatus::Closed));
+        batch.end_date = Set(payload.end_date);
+
+        batch
+            .update(&txn)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        txn.commit()
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        return Ok(Json(updated));
+    }
 
     let new_record = batch_closure_summary::ActiveModel {
         batch_id: Set(payload.batch_id),
@@ -398,7 +457,7 @@ pub async fn create_batch_closure_summary(
         end_date: Set(payload.end_date),
         initial_chicken_count: Set(payload.initial_chicken_count),
         available_chicken_count: Set(payload.available_chicken_count),
-        revenue: Set(payload.revenue),
+        revenue: Set(revenue),
         gross_profit: Set(gross_profit),
         ..Default::default()
     };

@@ -1,6 +1,7 @@
 import { handleCloseBatch } from "@/app/api/batches";
+import { fetchBatchSalesByBatchId } from "@/app/api/batch_sales";
 import { Batch } from "@/app/types/interfaces";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, ChevronDown, Printer, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -109,6 +110,20 @@ const CloseBatchModal = ({ batch, onClose }: { batch: Batch; onClose: () => void
         revenue: 0,
         gross_profit: 0
     });
+    const [revenueEdited, setRevenueEdited] = useState(false);
+
+    // Auto-fill revenue from recorded sales so closing doesn't default to 0.
+    const { data: batchSales = [] } = useQuery({
+        queryKey: ["batch_sales_close", batch.batch_id],
+        queryFn: () => fetchBatchSalesByBatchId(batch.batch_id),
+    });
+    const salesTotal = batchSales.reduce((s, x) => s + (Number(x.value) || 0), 0);
+
+    useEffect(() => {
+        if (!revenueEdited && salesTotal > 0) {
+            setFormData((prev) => ({ ...prev, revenue: salesTotal }));
+        }
+    }, [salesTotal, revenueEdited]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -160,9 +175,12 @@ const CloseBatchModal = ({ batch, onClose }: { batch: Batch; onClose: () => void
                             <input
                                 type="number"
                                 value={formData.revenue}
-                                onChange={(e) => setFormData({ ...formData, revenue: Number(e.target.value) })}
+                                onChange={(e) => { setRevenueEdited(true); setFormData({ ...formData, revenue: Number(e.target.value) }); }}
                                 className="w-full text-black px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
                             />
+                            {salesTotal > 0 && (
+                                <p className="text-xs text-gray-500">Auto-filled from {batchSales.length} recorded sale(s) (₹{salesTotal.toLocaleString('en-IN')}). You can adjust if needed — the server recomputes it from sales on close.</p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700">Gross Profit</label>
