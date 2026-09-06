@@ -47,13 +47,10 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                                 Batch ID
                             </SortableHeader>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Line ID
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Supervisor
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Farmer
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Farm Code
                             </th>
                             <SortableHeader
                                 columnKey="start_date"
@@ -83,13 +80,13 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                                     Loading...
                                 </td>
                             </tr>
                         ) : batches.length === 0 ? (
                             <tr>
-                                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                                     No batches found
                                 </td>
                             </tr>
@@ -119,13 +116,10 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                                         <div className="absolute left-0 top-0 h-full w-1 bg-green-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {batch.line_id}
-                                    </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {batch.supervisor_name}
-                                    </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {batch.farmer_name}
+                                    </td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {batch.farm?.code ?? '-'}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {batch.start_date}
