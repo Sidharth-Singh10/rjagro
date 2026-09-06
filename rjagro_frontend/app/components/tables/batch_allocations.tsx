@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, Filter, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Inbox,  Edit, Filter, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { BatchAllocation } from '@/app/types/interfaces';
 import { useBatchAllocationSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from './sortable_headers/header';
@@ -80,14 +80,13 @@ const BatchAllocationsTable: React.FC<BatchAllocationsTableProps> = ({
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                                    Loading...
-                                </td>
+                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">Loading...</td>
                             </tr>
                         ) : batchAllocations.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                                    No batch allocations found
+                                <td colSpan={6} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No batch allocations found</p>
                                 </td>
                             </tr>
                         ) : (
@@ -112,7 +111,7 @@ const BatchAllocationsTable: React.FC<BatchAllocationsTableProps> = ({
                                         {allocation.allocated_by}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <button className="text-blue-600 hover:text-blue-800">
+                                        <button className="text-green-600 hover:text-green-700">
                                             <Edit size={16} />
                                         </button>
                                     </td>
@@ -128,12 +127,12 @@ const BatchAllocationsTable: React.FC<BatchAllocationsTableProps> = ({
                     Showing {batchAllocations.length} of {batchAllocations.length} results
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
                         <ChevronLeft size={16} />
                         Previous
                     </button>
-                    <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
-                    <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
+                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
                         Next
                         <ChevronRight size={16} />
                     </button>

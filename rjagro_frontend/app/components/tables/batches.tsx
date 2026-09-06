@@ -1,6 +1,6 @@
 'use client'
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
+import { Inbox,  ChevronRight } from 'lucide-react';
 import { Batch } from '@/app/types/interfaces';
 import { useBatchesSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from './sortable_headers/header';
@@ -80,14 +80,13 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-                                    Loading...
-                                </td>
+                                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">Loading...</td>
                             </tr>
                         ) : batches.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-                                    No batches found
+                                <td colSpan={9} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No batches found</p>
                                 </td>
                             </tr>
                         ) : (

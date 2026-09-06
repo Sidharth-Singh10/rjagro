@@ -72,7 +72,7 @@ const DownloadGCModal: React.FC<DownloadGCModalProps> = ({ isOpen, onClose, batc
                     value={formData[name] || ''}
                     onChange={handleChange}
                     placeholder={placeholder}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-green-500/30 focus:border-green-600 transition-all outline-none"
                 />
             </div>
         </div>
@@ -90,17 +90,17 @@ const DownloadGCModal: React.FC<DownloadGCModalProps> = ({ isOpen, onClose, batc
             <div className="relative z-10 w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all animate-in slide-in-from-bottom-4 duration-300">
 
                 {/* Header with Gradient */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100 p-6">
+                <div className="bg-gray-50 border-b border-gray-100 p-6">
                     <div className="flex items-start justify-between">
                         <div className="flex gap-4">
-                            <div className="p-3 bg-white rounded-xl shadow-sm border border-blue-100">
-                                <FileText className="text-blue-600" size={24} />
+                            <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100">
+                                <FileText className="text-green-600" size={24} />
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold text-gray-900">
                                     Growing Charges
                                 </h3>
-                                <p className="text-sm text-blue-600 font-medium mt-1">
+                                <p className="text-sm text-green-600 font-medium mt-1">
                                     Batch #{batchId}
                                 </p>
                             </div>
@@ -147,7 +147,7 @@ const DownloadGCModal: React.FC<DownloadGCModalProps> = ({ isOpen, onClose, batc
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/30 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-sm"
+                            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-500/30 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-sm"
                         >
                             {loading ? (
                                 <span className="flex items-center gap-2">

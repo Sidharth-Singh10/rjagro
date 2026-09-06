@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, Trash2 } from 'lucide-react';
+import { Inbox,  Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, Trash2 } from 'lucide-react';
 import { BatchAllocation, BatchAllocationLine, NewBatchAllocationLine, StockReceipt } from '@/app/types/interfaces';
 
 interface BatchAllocationLinesTableProps {
@@ -77,7 +77,7 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 text-black md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 text-gray-900 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Batch Allocation *
@@ -212,15 +212,14 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-                  Loading...
-                </td>
+                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">Loading...</td>
               </tr>
             ) : allocationLines.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-                  No allocation lines found
-                </td>
+                <td colSpan={9} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No allocation lines found</p>
+                                </td>
               </tr>
             ) : (
               allocationLines.map((line) => (
@@ -251,7 +250,7 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center gap-2">
-                      <button className="text-blue-600 hover:text-blue-800">
+                      <button className="text-green-600 hover:text-green-700">
                         <Edit size={16} />
                       </button>
                       {handleDeleteAllocationLine && (
@@ -276,12 +275,12 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
           Showing {allocationLines.length} of {allocationLines.length} results
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
             <ChevronLeft size={16} />
             Previous
           </button>
-          <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
-          <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
+          <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
             Next
             <ChevronRight size={16} />
           </button>

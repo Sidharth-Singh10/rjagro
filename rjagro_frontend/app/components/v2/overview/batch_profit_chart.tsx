@@ -1,5 +1,6 @@
 'use client'
 import { memo, useMemo } from 'react';
+import { chart } from "./chart_colors";
 import {
     ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, Legend, ResponsiveContainer,
@@ -83,7 +84,7 @@ const MarginDot = (props: any) => {
             </g>
         );
     }
-    return <circle cx={cx} cy={cy} r={3} fill="#7c3aed" />;
+    return <circle cx={cx} cy={cy} r={3} fill={chart.amber} />;
 };
 
 export const BatchProfitChart = memo(({ data }: Props) => {
@@ -133,14 +134,14 @@ export const BatchProfitChart = memo(({ data }: Props) => {
                     <Tooltip content={<CustomTooltip />} />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
                     <Bar yAxisId="left" dataKey="clampedRevenue" name="Revenue" fill="#16a34a" radius={[3, 3, 0, 0]} />
-                    <Bar yAxisId="left" dataKey="clampedGrossProfit" name="Gross Profit" fill="#14b8a6" radius={[3, 3, 0, 0]} />
+                    <Bar yAxisId="left" dataKey="clampedGrossProfit" name="Gross Profit" fill={chart.teal} radius={[3, 3, 0, 0]} />
                     <Bar yAxisId="left" dataKey="clampedCostPerBird" name="Cost/Bird" fill="#f59e0b" radius={[3, 3, 0, 0]} />
                     <Line
                         yAxisId="right"
                         type="monotone"
                         dataKey="clampedMarginPct"
                         name="Margin %"
-                        stroke="#7c3aed"
+                        stroke={chart.amber}
                         strokeWidth={2}
                         dot={<MarginDot />}
                         activeDot={{ r: 5 }}

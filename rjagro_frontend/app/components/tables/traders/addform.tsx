@@ -28,7 +28,7 @@ const AddTraderForm: React.FC<AddTraderFormProps> = ({
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 text-black md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 text-gray-900 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <InputField
                     label="Name"
                     value={newTrader.name}

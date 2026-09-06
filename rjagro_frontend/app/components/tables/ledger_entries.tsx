@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-import { Filter, ChevronLeft, ChevronRight, Plus, X, Save, DollarSign } from 'lucide-react';
+import { Inbox,  Filter, ChevronLeft, ChevronRight, Plus, X, Save, DollarSign } from 'lucide-react';
 import { LedgerAccount, LedgerEntry, LedgerEntryPayload, NewLedgerEntry } from '@/app/types/interfaces';
 import { capitalizeWords } from '@/app/utils/helper';
 import { useLedgerEntriesSorting } from '@/app/hooks/custom_sorting';
@@ -156,7 +156,7 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
                         </button>
                     </div>
 
-                    <div className="space-y-4 text-black">
+                    <div className="space-y-4 text-gray-900">
                         {/* Info Note */}
                         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-gray-700">
                             <p><strong>Assets & Expenses</strong> → Debit increases, Credit decreases</p>
@@ -396,8 +396,9 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
                             </tr>
                         ) : ledgerEntries.length === 0 ? (
                             <tr>
-                                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
-                                    No ledger entries found
+                                <td colSpan={10} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No ledger entries found</p>
                                 </td>
                             </tr>
                         ) : (
@@ -482,12 +483,12 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
                     Showing {ledgerEntries.length} of {ledgerEntries.length} results
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
                         <ChevronLeft size={16} />
                         Previous
                     </button>
-                    <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
-                    <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
+                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
                         Next
                         <ChevronRight size={16} />
                     </button>

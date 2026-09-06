@@ -1,5 +1,6 @@
 'use client'
 import { memo, useEffect, useMemo, useState } from 'react';
+import { chart } from "./overview/chart_colors";
 import { useQuery } from '@tanstack/react-query';
 import {
     Banknote, TrendingUp, TrendingDown, Bird, Heart,
@@ -37,11 +38,6 @@ const n = (v: unknown): number => Number(v) || 0;
 const fmt = (v: number) =>
     `₹${n(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const isInMonth = (dateStr: string, ref: Date) => {
-    const d = new Date(dateStr);
-    return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth();
-};
-
 const getMonthKey = (dateStr: string) => {
     const d = new Date(dateStr);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -60,16 +56,19 @@ const OverviewKPI = memo(({ title, value, subtext, icon: Icon, color }: {
     icon: LucideIcon;
     color: string;
 }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md transition-shadow duration-200">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
         <div
             className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: `${color}14` }}
+            style={{
+                backgroundColor: `color-mix(in srgb, ${color} 10%, white)`,
+                color,
+            }}
         >
-            <Icon size={22} style={{ color }} strokeWidth={1.8} />
+            <Icon size={22} strokeWidth={1.8} />
         </div>
         <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{title}</p>
-            <p className="text-xl font-bold text-gray-900 truncate mt-0.5">{value}</p>
+            <p className="text-xs font-medium text-gray-500">{title}</p>
+            <p className="text-xl font-semibold text-gray-900 truncate mt-0.5 tnum">{value}</p>
             <p className="text-[11px] text-gray-400 mt-0.5 truncate">{subtext}</p>
         </div>
     </div>
@@ -135,42 +134,53 @@ const OverviewModule = () => {
 
         const cashBalance = n(ledgerAccounts.find(a => a.account_id === 101)?.current_balance);
 
-        const revenueThisMonth = batchSales
-            .filter(s => isInMonth(s.created_at, now))
-            .reduce((sum, s) => sum + n(s.value), 0);
-        const revenueLastMonth = batchSales
-            .filter(s => isInMonth(s.created_at, lastMonth))
-            .reduce((sum, s) => sum + n(s.value), 0);
+        // Single pass over sales and purchases computing both months' totals.
+        let revenueThisMonth = 0, revenueLastMonth = 0, expensesThisMonth = 0, expensesLastMonth = 0;
+        const thisYear = now.getFullYear(), thisMonth = now.getMonth();
+        for (const s of batchSales) {
+            const d = new Date(s.created_at);
+            const v = n(s.value);
+            if (d.getFullYear() === thisYear && d.getMonth() === thisMonth) revenueThisMonth += v;
+            else if (d.getFullYear() === lastMonth.getFullYear() && d.getMonth() === lastMonth.getMonth()) revenueLastMonth += v;
+        }
+        for (const p of purchases) {
+            const d = new Date(p.purchase_date);
+            const v = n(p.total_cost);
+            if (d.getFullYear() === thisYear && d.getMonth() === thisMonth) expensesThisMonth += v;
+            else if (d.getFullYear() === lastMonth.getFullYear() && d.getMonth() === lastMonth.getMonth()) expensesLastMonth += v;
+        }
         const revenueDelta = revenueLastMonth > 0
             ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100
             : 0;
 
-        const expensesThisMonth = purchases
-            .filter(p => isInMonth(p.purchase_date, now))
-            .reduce((sum, p) => sum + n(p.total_cost), 0);
-        const expensesLastMonth = purchases
-            .filter(p => isInMonth(p.purchase_date, lastMonth))
-            .reduce((sum, p) => sum + n(p.total_cost), 0);
         const expensesDelta = expensesLastMonth > 0
             ? ((expensesThisMonth - expensesLastMonth) / expensesLastMonth) * 100
             : 0;
 
         const activeBatches = batches.filter(b => b.status === 'Open');
-        const totalBirds = activeBatches.reduce((s, b) => s + n(b.current_bird_count), 0);
-        const totalInitial = activeBatches.reduce((s, b) => s + n(b.initial_bird_count), 0);
+        let totalBirds = 0, totalInitial = 0;
+        for (const b of activeBatches) {
+            totalBirds += n(b.current_bird_count);
+            totalInitial += n(b.initial_bird_count);
+        }
         const overallMortality = totalInitial > 0
             ? ((totalInitial - totalBirds) / totalInitial) * 100
             : 0;
 
-        const activeLoans = loans.filter(l => l.status === 'Active');
-        const outstandingLoanBalance = activeLoans.reduce((s, l) => s + n(l.outstanding_balance), 0);
+        let outstandingLoanBalance = 0;
+        for (const l of loans) {
+            if (l.status === 'Active') outstandingLoanBalance += n(l.outstanding_balance);
+        }
 
         const last5Closures = batchClosures
             .slice()
             .sort((a, b) => b.end_date.localeCompare(a.end_date))
             .slice(0, 5);
-        const totalClosedRevenue = last5Closures.reduce((s, c) => s + n(c.revenue), 0);
-        const totalBirdsPlaced = last5Closures.reduce((s, c) => s + n(c.initial_chicken_count), 0);
+        let totalClosedRevenue = 0, totalBirdsPlaced = 0;
+        for (const c of last5Closures) {
+            totalClosedRevenue += n(c.revenue);
+            totalBirdsPlaced += n(c.initial_chicken_count);
+        }
         const avgRevenuePerBird = totalBirdsPlaced > 0
             ? totalClosedRevenue / totalBirdsPlaced
             : 0;
@@ -185,7 +195,7 @@ const OverviewModule = () => {
             totalBirds,
             overallMortality,
             outstandingLoanBalance,
-            activeLoanCount: activeLoans.length,
+            activeLoanCount: loans.filter(l => l.status === 'Active').length,
             avgRevenuePerBird,
         };
     }, [ledgerAccounts, batchSales, purchases, batches, loans, batchClosures]);
@@ -328,10 +338,10 @@ const OverviewModule = () => {
         });
 
         const colors: Record<string, string> = {
-            Feed: '#f59e0b',
-            Chicks: '#38bdf8',
-            Medicine: '#fb7185',
-            FinishedBirds: '#a78bfa',
+            Feed: chart.amber,
+            Chicks: chart.blue,
+            Medicine: chart.rose,
+            FinishedBirds: chart.violet,
         };
 
         const data = Object.entries(byCategory).map(([name, value]) => ({
@@ -525,7 +535,7 @@ const OverviewModule = () => {
     return (
         <div className="space-y-6">
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 <OverviewKPI
                     title="Cash Balance"
                     value={fmt(kpis.cashBalance)}
@@ -542,7 +552,7 @@ const OverviewModule = () => {
                             : 'This month'
                     }
                     icon={TrendingUp}
-                    color="#10b981"
+                    color={chart.brand}
                 />
                 <OverviewKPI
                     title="Expenses (Month)"
@@ -553,35 +563,35 @@ const OverviewModule = () => {
                             : 'This month'
                     }
                     icon={TrendingDown}
-                    color="#f97316"
+                    color={chart.orange}
                 />
                 <OverviewKPI
                     title="Active Batches"
                     value={String(kpis.activeBatchCount)}
                     subtext={`${kpis.totalBirds.toLocaleString('en-IN')} total birds`}
                     icon={Bird}
-                    color="#0ea5e9"
+                    color={chart.blue}
                 />
                 <OverviewKPI
                     title="Total Live Birds"
                     value={kpis.totalBirds.toLocaleString('en-IN')}
                     subtext={`${kpis.overallMortality.toFixed(2)}% overall mortality`}
                     icon={Heart}
-                    color="#f43f5e"
+                    color={chart.rose}
                 />
                 <OverviewKPI
                     title="Outstanding Loans"
                     value={fmt(kpis.outstandingLoanBalance)}
                     subtext={`${kpis.activeLoanCount} active loan${kpis.activeLoanCount !== 1 ? 's' : ''}`}
                     icon={Landmark}
-                    color="#8b5cf6"
+                    color={chart.violet}
                 />
                 <OverviewKPI
                     title="Revenue Per Bird"
                     value={fmt(kpis.avgRevenuePerBird)}
                     subtext="Avg across last 5 closed batches"
                     icon={IndianRupee}
-                    color="#d946ef"
+                    color={chart.magenta}
                 />
             </div>
 

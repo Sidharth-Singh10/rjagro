@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Bird, Archive, ChevronRight } from 'lucide-react';
+import { Inbox,  Bird, Archive, ChevronRight } from 'lucide-react';
 import { fetchBatchClosures, fetchBatches } from '@/app/api/batches';
 import { useBatchesSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from '../tables/sortable_headers/header';
@@ -117,15 +117,14 @@ const UserBatchesModule = () => {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
-                                                Loading...
-                                            </td>
+                                            <td colSpan={10} className="px-4 py-8 text-center text-gray-500">Loading...</td>
                                         </tr>
                                     ) : batches.length === 0 ? (
                                         <tr>
-                                            <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
-                                                No batches found
-                                            </td>
+                                            <td colSpan={10} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No batches found</p>
+                                </td>
                                         </tr>
                                     ) : (
                                         sortedData.map((batch) => (
@@ -257,7 +256,10 @@ const UserBatchClosuresTable: React.FC<UserBatchClosuresTableProps> = ({
                             </tr>
                         ) : batchClosures.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No batch closure summaries found</td>
+                                <td colSpan={7} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No batch closure summaries found</p>
+                                </td>
                             </tr>
                         ) : (
                             batchClosures.map((closure) => (

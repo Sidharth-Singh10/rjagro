@@ -157,7 +157,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({ activeSection, onNavigate, is
                 <div className="p-4 border-t border-gray-200 bg-white z-10">
                     <div className="flex items-center justify-between overflow-hidden">
                         <div className="flex items-center">
-                            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all">
+                            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-green-600 flex items-center justify-center text-white font-bold cursor-pointer hover:ring-2 hover:ring-green-300 transition-all">
                                 {user?.name?.charAt(0).toUpperCase() || 'U'}
                             </div>
                             {effectiveOpen && (

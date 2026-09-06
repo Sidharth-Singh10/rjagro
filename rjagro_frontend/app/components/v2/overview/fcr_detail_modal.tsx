@@ -1,9 +1,7 @@
 'use client';
 
-import { memo, useEffect, useState, useCallback } from 'react';
-import { X, Loader2, Sparkles } from 'lucide-react';
-import ReactMarkdown, { type Components } from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { memo } from 'react';
+import { X, Sparkles } from 'lucide-react';
 import type { FCRData } from './fcr_chart';
 
 interface Props {
@@ -12,19 +10,6 @@ interface Props {
     data: FCRData | null;
 }
 
-const mdComponents: Components = {
-    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-    h1: ({ children }) => <h1 className="text-sm font-bold mt-3 mb-1 first:mt-0">{children}</h1>,
-    h2: ({ children }) => <h2 className="text-xs font-bold mt-3 mb-1 first:mt-0">{children}</h2>,
-    h3: ({ children }) => <h3 className="text-xs font-semibold mt-2 mb-0.5 first:mt-0">{children}</h3>,
-    ul: ({ children }) => <ul className="my-1.5 ml-4 list-disc space-y-1">{children}</ul>,
-    ol: ({ children }) => <ol className="my-1.5 ml-4 list-decimal space-y-1">{children}</ol>,
-    li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-    strong: ({ children }) => <strong className="font-semibold text-gray-800">{children}</strong>,
-    code: ({ children, ...props }) => (
-        <code className="px-1 py-0.5 rounded bg-purple-100/60 font-mono text-[11px]" {...props}>{children}</code>
-    ),
-};
 
 const getColor = (fcr: number) => {
     if (fcr <= 1.7) return '#16a34a';
@@ -39,49 +24,27 @@ const getVerdict = (fcr: number) => {
     return { text: 'Poor', bg: 'bg-red-50', border: 'border-red-200', fg: 'text-red-700' };
 };
 
+
+const getRecommendation = (fcr: number): string[] => {
+    if (fcr <= 1.6) return [
+        'Feed conversion is well within target. Maintain the current feed and feeding schedule.',
+        'Keep monitoring weekly so any regression is caught early.',
+    ];
+    if (fcr <= 1.8) return [
+        'FCR is acceptable but has room to improve toward the 1.6 target.',
+        'Review feed storage for moisture or spillage, and confirm feeders are calibrated to reduce waste.',
+    ];
+    if (fcr <= 2.0) return [
+        'FCR is above target. Check for feed wastage, uneven feeder line height, and pellet quality.',
+        'Review bird weights against the standard growth curve — uneven growth usually points to feeding or temperature issues.',
+    ];
+    return [
+        'FCR is poor. Audit feed inventory records against deliveries to rule out shrinkage.',
+        'Check for disease pressure, heat stress or ventilation problems, and review mortality timing against the feeding program.',
+    ];
+};
+
 export const FCRDetailModal = memo(({ isOpen, onClose, data }: Props) => {
-    const [analysis, setAnalysis] = useState<string | null>(null);
-    const [analysisLoading, setAnalysisLoading] = useState(false);
-    const [analysisError, setAnalysisError] = useState<string | null>(null);
-
-    const fetchAnalysis = useCallback(async (d: FCRData) => {
-        setAnalysisLoading(true);
-        setAnalysisError(null);
-        setAnalysis(null);
-        try {
-            const res = await fetch('/api/fcr-analysis', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    batchId: d.batchId,
-                    fcr: d.fcr,
-                    totalFeedKg: d.totalFeedKg,
-                    totalWeightKg: d.totalWeightKg,
-                    feedBreakdown: d.feedBreakdown,
-                    salesBreakdown: d.salesBreakdown,
-                }),
-            });
-            if (!res.ok) throw new Error('Failed to fetch analysis');
-            const json = await res.json();
-            setAnalysis(json.analysis);
-        } catch (e) {
-            setAnalysisError(e instanceof Error ? e.message : 'Something went wrong');
-        } finally {
-            setAnalysisLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (isOpen && data && data.fcr > 1.6) {
-            fetchAnalysis(data);
-        }
-        if (!isOpen) {
-            setAnalysis(null);
-            setAnalysisError(null);
-            setAnalysisLoading(false);
-        }
-    }, [isOpen, data, fetchAnalysis]);
-
     if (!isOpen || !data) return null;
 
     const verdict = getVerdict(data.fcr);
@@ -204,43 +167,22 @@ export const FCRDetailModal = memo(({ isOpen, onClose, data }: Props) => {
                         </div>
                     </section>
 
-                    {/* Gemini AI Analysis (only when FCR > 1.6) */}
-                    {data.fcr > 1.6 && (
-                        <section>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Sparkles size={14} className="text-purple-500" />
-                                <h3 className="text-sm font-semibold text-gray-700">
-                                    AI Analysis &amp; Recommendations
-                                </h3>
-                            </div>
-                            <div className="border border-purple-100 bg-purple-50/50 rounded-lg p-4">
-                                {analysisLoading && (
-                                    <div className="flex items-center gap-2 text-sm text-purple-600">
-                                        <Loader2 size={16} className="animate-spin" />
-                                        <span>Analyzing batch performance...</span>
-                                    </div>
-                                )}
-                                {analysisError && (
-                                    <div className="text-sm text-red-600">
-                                        <p>Failed to load analysis: {analysisError}</p>
-                                        <button
-                                            onClick={() => fetchAnalysis(data)}
-                                            className="mt-2 text-xs text-purple-600 underline hover:no-underline"
-                                        >
-                                            Retry
-                                        </button>
-                                    </div>
-                                )}
-                                {analysis && (
-                                    <div className="text-xs text-gray-700 leading-relaxed">
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-                                            {analysis}
-                                        </ReactMarkdown>
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-                    )}
+                    {/* Recommendations */}
+                    <section>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Sparkles size={14} className="text-gray-400" />
+                            <h3 className="text-sm font-semibold text-gray-700">
+                                Recommendations
+                            </h3>
+                        </div>
+                        <div className="border border-gray-200 bg-gray-50 rounded-lg p-4">
+                            <ul className="text-xs text-gray-700 leading-relaxed space-y-1.5 list-disc ml-4">
+                                {getRecommendation(data.fcr).map((rec, i) => (
+                                    <li key={i}>{rec}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    </section>
                 </div>
             </div>
         </div>

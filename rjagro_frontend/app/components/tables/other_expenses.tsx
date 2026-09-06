@@ -76,7 +76,7 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 text-black md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 text-gray-900 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                             <select

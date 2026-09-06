@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
+import { Inbox, 
     Edit,
     Filter,
     ChevronLeft,
@@ -108,7 +108,10 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
                                 </tr>
                             ) : batchClosures.length === 0 ? (
                                 <tr>
-                                    <td colSpan={10} className="px-4 py-8 text-center text-gray-500">No batch closure summaries found</td>
+                                    <td colSpan={10} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No batch closure summaries found</p>
+                                </td>
                                 </tr>
                             ) : (
                                 batchClosures.map((closure) => (
@@ -177,7 +180,7 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
                                                                 className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                                                 onClick={() => handleOpenGCModal(closure.batch_id)}
                                                             >
-                                                                <FileText size={16} className="mr-2 text-blue-600" />
+                                                                <FileText size={16} className="mr-2 text-green-600" />
                                                                 Download GC
                                                             </button>
                                                         </div>

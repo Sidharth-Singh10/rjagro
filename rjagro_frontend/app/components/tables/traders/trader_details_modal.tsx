@@ -112,7 +112,7 @@ export const TraderDetailsModal: React.FC<TraderDetailsModalProps> = ({ traderId
                                 <button
                                     onClick={() => setActiveTab('receivable')}
                                     className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'receivable'
-                                        ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                                        ? 'border-green-600 text-green-600 bg-green-50/50'
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
@@ -132,7 +132,7 @@ export const TraderDetailsModal: React.FC<TraderDetailsModalProps> = ({ traderId
                                 <button
                                     onClick={() => setActiveTab('ledger')}
                                     className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'ledger'
-                                        ? 'border-purple-600 text-purple-600 bg-purple-50/50'
+                                        ? 'border-green-600 text-green-600 bg-green-50/50'
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
@@ -144,7 +144,7 @@ export const TraderDetailsModal: React.FC<TraderDetailsModalProps> = ({ traderId
                             <div className="p-6">
                                 {loading ? (
                                     <div className="flex justify-center items-center h-48">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                                     </div>
                                 ) : (
                                     <>
@@ -212,7 +212,7 @@ const PaymentForm = ({ traderId, onSuccess, onCancel }: {
                             type="text"
                             inputMode="decimal"
                             required
-                            className="pl-7 block w-full text-black rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
+                            className="pl-7 block w-full text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
                             value={formData.amount}
                             onChange={handleAmountChange}
                             placeholder="0.00"
@@ -224,7 +224,7 @@ const PaymentForm = ({ traderId, onSuccess, onCancel }: {
                     <input
                         type="date"
                         required
-                        className="block w-full text-black rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
+                        className="block w-full text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
                         value={formData.payment_date}
                         onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
                     />
@@ -232,7 +232,7 @@ const PaymentForm = ({ traderId, onSuccess, onCancel }: {
                 <div className="col-span-2 md:col-span-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Payment Mode</label>
                     <select
-                        className="block w-full rounded-md text-black border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
+                        className="block w-full rounded-md text-gray-900 border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
                         value={formData.payment_mode}
                         onChange={(e) => setFormData({ ...formData, payment_mode: e.target.value })}
                     >
@@ -246,7 +246,7 @@ const PaymentForm = ({ traderId, onSuccess, onCancel }: {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Reference No / ID</label>
                     <input
                         type="text"
-                        className="block w-full rounded-md text-black border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
+                        className="block w-full rounded-md text-gray-900 border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
                         placeholder="e.g. TXN-12345"
                         value={formData.reference_number}
                         onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
@@ -256,7 +256,7 @@ const PaymentForm = ({ traderId, onSuccess, onCancel }: {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
                     <textarea
                         rows={3}
-                        className="block w-full rounded-md text-black border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
+                        className="block w-full rounded-md text-gray-900 border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
                         placeholder="Additional details..."
                         value={formData.notes}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -295,7 +295,7 @@ const ReceivablesTable = ({ data }: { data: TraderReceivable[] }) => (
                             <td className="px-4 py-3 text-gray-600">{new Date(row.sale_date).toLocaleDateString()}</td>
                             <td className="px-4 py-3 text-gray-600">{row.item_code}</td>
                             <td className="px-4 py-3 text-gray-900 text-right">{row.quantity}</td>
-                            <td className="px-4 py-3 text-blue-600 font-medium text-right">{row.total_cost}</td>
+                            <td className="px-4 py-3 text-gray-900 font-medium text-right text-right">{row.total_cost}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -363,14 +363,14 @@ const LedgerTable = ({ data }: { data: TraderLedgerEntry[] }) => (
                                 <td className="px-4 py-3">
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${isPayment
                                         ? 'bg-green-50 text-green-700 border-green-200'
-                                        : 'bg-blue-50 text-blue-700 border-blue-200'
+                                        : 'bg-green-50 text-green-700 border-green-200'
                                         }`}>
                                         {row.entry_type || ''}
                                     </span>
                                 </td>
 
                                 {/* Billed Column (Debits) */}
-                                <td className="px-4 py-3 font-medium text-right text-blue-600">
+                                <td className="px-4 py-3 font-medium text-right text-gray-900">
                                     {isReceivable ? row.amount : '-'}
                                 </td>
 

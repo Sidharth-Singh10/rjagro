@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, StickyNote, Plus, TrendingDown } from "lucide-react";
+import { Inbox,  ChevronLeft, ChevronRight, Calendar, StickyNote, Plus, TrendingDown } from "lucide-react";
 import { BirdCountHistory, BirdCountHistoryPayload } from '@/app/types/interfaces';
 import { useTableSorting, TableConfigs } from '@/app/hooks/sorting';
 import { handleAddBirdCountHistory } from '@/app/api/bird_count_history';
@@ -43,7 +43,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                 <h3 className="font-semibold text-gray-700">Daily Records</h3>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium shadow-sm"
                 >
                     <Plus size={16} />
                     Add Record
@@ -106,15 +106,16 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                             <tr>
                                 <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                                     <div className="flex justify-center items-center gap-2">
-                                        <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+                                        <div className="animate-spin h-4 w-4 border-2 border-green-600 rounded-full border-t-transparent"></div>
                                         Loading bird count history...
                                     </div>
                                 </td>
                             </tr>
                         ) : sortedData.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                                    No bird count history found for this batch.
+                                <td colSpan={6} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No bird count history found for this batch.</p>
                                 </td>
                             </tr>
                         ) : (
@@ -168,7 +169,7 @@ const BirdCountHistoryTable: React.FC<BirdCountHistoryTableProps> = ({
                         <ChevronLeft size={16} />
                         Previous
                     </button>
-                    <button className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">1</button>
+                    <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
                     <button
                         disabled={true}
                         className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"

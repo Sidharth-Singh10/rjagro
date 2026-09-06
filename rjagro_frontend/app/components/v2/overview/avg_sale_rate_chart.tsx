@@ -1,5 +1,6 @@
 'use client'
 import { memo } from 'react';
+import { chart } from "./chart_colors";
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer,
@@ -22,7 +23,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return (
         <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-100 text-xs">
             <p className="font-semibold text-gray-700 mb-1">{label}</p>
-            <p style={{ color: '#7c3aed' }}>
+            <p style={{ color: chart.brand }}>
                 Avg Rate: ₹{Number(payload[0].value).toFixed(2)}/kg
             </p>
         </div>
@@ -89,13 +90,13 @@ export const AvgSaleRateChart = memo(({ data, mode, onModeChange }: Props) => {
                     <Line
                         type="monotone"
                         dataKey="avgRate"
-                        stroke="#7c3aed"
+                        stroke={chart.brand}
                         strokeWidth={2.5}
                         dot={mode === 'monthly'
-                            ? { r: 4, fill: '#7c3aed', strokeWidth: 2, stroke: '#fff' }
-                            : { r: 2, fill: '#7c3aed' }
+                            ? { r: 4, fill: chart.brand, strokeWidth: 2, stroke: '#fff' }
+                            : { r: 2, fill: chart.brand }
                         }
-                        activeDot={{ r: 6, stroke: '#7c3aed', strokeWidth: 2 }}
+                        activeDot={{ r: 6, stroke: chart.brand, strokeWidth: 2 }}
                     />
                 </LineChart>
             </ResponsiveContainer>

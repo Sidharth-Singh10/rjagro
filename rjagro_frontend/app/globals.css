@@ -1,8 +1,44 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------ */
+/* Design tokens — single source of truth for the brand.              */
+/* ------------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafaf9;
+  --foreground: #1c1917;
+}
+
+@theme {
+  /* Brand green — agricultural, slightly desaturated. */
+  --color-brand-50: #f3f8f4;
+  --color-brand-100: #e2efe5;
+  --color-brand-200: #c6dfcd;
+  --color-brand-300: #9cc7a7;
+  --color-brand-400: #69a97c;
+  --color-brand-500: #468d5c;
+  --color-brand-600: #34714a;
+  --color-brand-700: #2b5b3d;
+  --color-brand-800: #254933;
+  --color-brand-900: #203c2b;
+
+  /* Override Tailwind's green scale with the brand values so the
+     existing `green-*` classes across the codebase render the
+     refined brand palette without mass rewrites. */
+  --color-green-50: #f3f8f4;
+  --color-green-100: #e2efe5;
+  --color-green-200: #c6dfcd;
+  --color-green-300: #9cc7a7;
+  --color-green-400: #69a97c;
+  --color-green-500: #468d5c;
+  --color-green-600: #34714a;
+  --color-green-700: #2b5b3d;
+  --color-green-800: #254933;
+  --color-green-900: #203c2b;
+
+  /* Semantic accents for data-viz and status. */
+  --color-danger: #b3492f;
+  --color-warning: #a6761a;
+  --color-info: #2f6b8f;
 }
 
 @theme inline {
@@ -12,17 +48,42 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headlines should not orphan words. */
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
+/* Numbers in tables, KPIs and financial figures align cleanly. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Skip rendering of off-screen table rows. No-op in browsers
+   that don't support content-visibility on table rows. */
+tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 56px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Visible keyboard focus everywhere, including elements that only
+   relied on default browser outlines. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
 }
 
 @keyframes dropReveal {
@@ -61,10 +122,10 @@ body {
 
 @keyframes ripple {
   0% {
-    box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.3);
+    box-shadow: 0 0 0 0 rgba(52, 113, 74, 0.3);
   }
   100% {
-    box-shadow: 0 0 0 12px rgba(251, 146, 60, 0);
+    box-shadow: 0 0 0 12px rgba(52, 113, 74, 0);
   }
 }
 

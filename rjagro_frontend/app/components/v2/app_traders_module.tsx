@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Banknote, BookOpen, CreditCard, Save, Users } from 'lucide-react';
+import { Inbox,  ArrowLeft, Banknote, BookOpen, CreditCard, Save, Users } from 'lucide-react';
 import {
     createAppTraderPayment,
     fetchAppTraderLedger,
@@ -31,11 +31,11 @@ const fmtDate = (iso: string): string => {
 
 const SummaryCard = ({ label, value, tone }: { label: string; value: string; tone: "debit" | "payment" | "balance" }) => (
     <div className={`bg-white rounded-xl border p-5 shadow-sm ${
-        tone === "debit" ? "border-blue-100" : tone === "payment" ? "border-green-100" : "border-gray-200"
+        tone === "debit" ? "border-gray-200" : tone === "payment" ? "border-green-100" : "border-gray-200"
     }`}>
         <p className="text-xs font-medium uppercase tracking-wider text-gray-500">{label}</p>
         <p className={`mt-2 text-2xl font-bold ${
-            tone === "debit" ? "text-blue-600" : tone === "payment" ? "text-green-600" : "text-gray-900"
+            tone === "debit" ? "text-gray-900" : tone === "payment" ? "text-green-600" : "text-gray-900"
         }`}>₹{value}</p>
     </div>
 );
@@ -138,7 +138,7 @@ const AppTradersModule: React.FC = () => {
                                 Mobile-app traders registered on the live-selling platform
                             </p>
                         </div>
-                        <Users className="text-blue-600" size={22} />
+                        <Users className="text-green-600" size={22} />
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -160,11 +160,14 @@ const AppTradersModule: React.FC = () => {
                                     </tr>
                                 ) : traders.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-5 py-10 text-center text-gray-500">No app traders found</td>
+                                        <td colSpan={7} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No app traders found</p>
+                                </td>
                                     </tr>
                                 ) : (
                                     traders.map((trader) => (
-                                        <tr key={trader.id} className="hover:bg-blue-50/40 transition-colors cursor-pointer" onClick={() => { setSelected(trader); setFiltered(false); setFrom(""); setTo(""); }}>
+                                        <tr key={trader.id} className="hover:bg-green-50/40 transition-colors cursor-pointer" onClick={() => { setSelected(trader); setFiltered(false); setFrom(""); setTo(""); }}>
                                             <td className="px-5 py-4">
                                                 <div className="font-medium text-gray-900">{trader.name}</div>
                                                 <div className="text-xs text-gray-400">ID #{trader.id}</div>
@@ -175,7 +178,7 @@ const AppTradersModule: React.FC = () => {
                                             <td className="px-5 py-4 text-right text-gray-600">{trader.credit_terms_days ?? "—"}</td>
                                             <td className="px-5 py-4 text-gray-600">
                                                 {trader.linked_trader_id ? (
-                                                    <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-2 py-0.5">
+                                                    <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-100 rounded-full px-2 py-0.5">
                                                         #{trader.linked_trader_id}
                                                     </span>
                                                 ) : (
@@ -185,7 +188,7 @@ const AppTradersModule: React.FC = () => {
                                             <td className="px-5 py-4 text-right">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setSelected(trader); setFiltered(false); setFrom(""); setTo(""); }}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors"
                                                 >
                                                     <BookOpen size={14} /> View
                                                 </button>
@@ -226,14 +229,14 @@ const AppTradersModule: React.FC = () => {
                                     type="date"
                                     value={from}
                                     onChange={(e) => setFrom(e.target.value)}
-                                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 outline-none"
+                                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500/30 outline-none"
                                 />
                                 <label className="text-sm font-medium text-gray-700">To</label>
                                 <input
                                     type="date"
                                     value={to}
                                     onChange={(e) => setTo(e.target.value)}
-                                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 outline-none"
+                                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500/30 outline-none"
                                 />
                                 <button
                                     onClick={applyFilter}
@@ -338,7 +341,7 @@ const AppTradersModule: React.FC = () => {
 
                         {ledgerLoading ? (
                             <div className="flex justify-center items-center h-40">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                             </div>
                         ) : ledger && ledger.entries.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-40 text-gray-400 bg-white">
@@ -379,12 +382,12 @@ const AppTradersModule: React.FC = () => {
                                                         <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${
                                                             isPayment
                                                                 ? "bg-green-50 text-green-700 border-green-200"
-                                                                : "bg-blue-50 text-blue-700 border-blue-200"
+                                                                : "bg-green-50 text-green-700 border-green-200"
                                                         }`}>
                                                             {isDebit ? "Debit" : isPayment ? "Payment" : entry.entry_type}
                                                         </span>
                                                     </td>
-                                                    <td className="px-5 py-4 text-right font-medium text-blue-600">
+                                                    <td className="px-5 py-4 text-right font-medium text-gray-900">
                                                         {isDebit ? `₹${fmtMoney(entry.amount)}` : "—"}
                                                     </td>
                                                     <td className="px-5 py-4 text-right font-medium text-green-600">

@@ -1,14 +1,9 @@
 import { BirdCountHistoryPayload } from "@/app/types/interfaces";
+import FieldLabel from '@/app/components/ui/field_label';
 import { Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const Label = ({ children, required }: { children: React.ReactNode, required?: boolean }) => (
-    <label className="block text-sm font-medium text-gray-800 mb-1.5">
-        {children} {required && <span className="text-blue-600">*</span>}
-    </label>
-);
-
-const inputBaseClasses = "w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all";
+const inputBaseClasses = "w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500/30 focus:border-green-600 outline-none transition-all";
 const readOnlyBaseClasses = "w-full px-3.5 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 font-medium cursor-not-allowed select-none";
 
 interface AddBirdCountModalProps {
@@ -85,14 +80,14 @@ const AddBirdCountModal: React.FC<AddBirdCountModalProps> = ({
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-100 transition-transform duration-300 transform scale-100">
                 
                 {/* Modal Header */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100 p-6 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
+                <div className="bg-gray-50 border-b border-gray-100 p-6 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
                     <div>
                         <h3 className="text-xl font-bold text-gray-900">Add Bird Count Record</h3>
                         <p className="text-sm text-gray-500 mt-0.5">Enter daily mortality or additions for batch #{batchId}</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-800 hover:bg-gray-100 p-2 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="text-gray-400 hover:text-gray-800 hover:bg-gray-100 p-2 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                         <X size={22} />
                     </button>
@@ -103,13 +98,13 @@ const AddBirdCountModal: React.FC<AddBirdCountModalProps> = ({
                     
                     {/* Batch ID (Read Only) */}
                     <div>
-                        <Label>Batch ID</Label>
+                        <FieldLabel>Batch ID</FieldLabel>
                         <input type="text" value={`#${formState.batch_id}`} readOnly className={readOnlyBaseClasses} />
                     </div>
 
                     {/* Record Date */}
                     <div>
-                        <Label required>Record Date</Label>
+                        <FieldLabel required>Record Date</FieldLabel>
                         <input
                             type="date"
                             value={formState.record_date}
@@ -123,7 +118,7 @@ const AddBirdCountModal: React.FC<AddBirdCountModalProps> = ({
 
                     {/* Deaths */}
                     <div>
-                        <Label required>Deaths</Label>
+                        <FieldLabel required>Deaths</FieldLabel>
                         <input
                             type="number"
                             value={formState.deaths}
@@ -137,7 +132,7 @@ const AddBirdCountModal: React.FC<AddBirdCountModalProps> = ({
 
                     {/* Additions */}
                     <div>
-                        <Label required>Additions</Label>
+                        <FieldLabel required>Additions</FieldLabel>
                         <input
                             type="number"
                             value={formState.additions}
@@ -151,7 +146,7 @@ const AddBirdCountModal: React.FC<AddBirdCountModalProps> = ({
 
                     {/* Notes */}
                     <div className="col-span-full">
-                        <Label>Notes</Label>
+                        <FieldLabel>Notes</FieldLabel>
                         <textarea
                             value={formState.notes}
                             onChange={(e) => setFormState({ ...formState, notes: e.target.value })}
@@ -165,14 +160,14 @@ const AddBirdCountModal: React.FC<AddBirdCountModalProps> = ({
                 <div className="px-6 py-5 border-t border-gray-100 bg-gray-50/80 flex justify-end gap-3 rounded-b-xl">
                     <button
                         onClick={onClose}
-                        className="px-5 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all duration-200 font-medium text-sm shadow-sm"
+                        className="px-5 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all duration-200 font-medium text-sm shadow-sm"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className={`flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/30 transition-all duration-200 font-medium text-sm shadow-md ${
+                        className={`flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-500/30 transition-all duration-200 font-medium text-sm shadow-md ${
                             isSubmitting ? "opacity-70 cursor-not-allowed" : ""
                         }`}
                     >

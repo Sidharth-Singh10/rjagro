@@ -1,13 +1,39 @@
 'use client'
 import React, { useEffect, useState, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import UserSidebar from '@/app/components/user/user_sidebar';
-import UserRequirementsModule from '@/app/components/user/user_requirements_module';
-import UserBirdCountModule from '@/app/components/user/user_bird_count_module';
-import UserBatchesModule from '@/app/components/user/user_batches_module';
 import DashboardSkeleton from '@/app/components/utils/skeletons/dashboard';
 import { useAuth } from '@/app/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Menu } from 'lucide-react';
+
+// Modules are code-split: only the active section's chunk loads.
+const ModuleLoading = () => (
+    <div className="space-y-4 animate-pulse" aria-busy="true">
+        <div className="h-10 bg-gray-200/70 rounded-lg w-1/3" />
+        <div className="h-64 bg-gray-200/50 rounded-xl" />
+        <div className="h-64 bg-gray-200/50 rounded-xl" />
+    </div>
+);
+
+const UserRequirementsModule = dynamic(() => import('@/app/components/user/user_requirements_module'), { loading: ModuleLoading, ssr: false });
+const UserBatchesModule = dynamic(() => import('@/app/components/user/user_batches_module'), { loading: ModuleLoading, ssr: false });
+const UserBirdCountModule = dynamic(() => import('@/app/components/user/user_bird_count_module'), { loading: ModuleLoading, ssr: false });
+
+const moduleImporters = [
+    () => import('@/app/components/user/user_requirements_module'),
+    () => import('@/app/components/user/user_batches_module'),
+    () => import('@/app/components/user/user_bird_count_module'),
+];
+
+function preloadModulesOnIdle() {
+    const schedule = typeof window !== 'undefined' && 'requestIdleCallback' in window
+        ? (cb: () => void) => (window as Window & { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(cb)
+        : (cb: () => void) => setTimeout(cb, 1500);
+    schedule(() => {
+        moduleImporters.forEach((load) => { load().catch(() => {}); });
+    });
+}
 
 const UserDashboardContent: React.FC = () => {
     const { user, loading } = useAuth();
@@ -20,6 +46,13 @@ const UserDashboardContent: React.FC = () => {
             router.push('/dashboard/v2');
         }
     }, [user, loading, router]);
+
+    // Warm the lazy module chunks once the shell is usable.
+    useEffect(() => {
+        if (!loading && user && user.role !== 'Admin') {
+            preloadModulesOnIdle();
+        }
+    }, [loading, user]);
 
     if (loading) {
         return <DashboardSkeleton />;
@@ -45,7 +78,7 @@ const UserDashboardContent: React.FC = () => {
     const { title, subtitle } = getSectionTitle();
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-gray-50 overflow-hidden">
+        <div className="flex flex-col md:flex-row h-dvh bg-gray-50 overflow-hidden">
             {/* Mobile top header */}
             <div className="md:hidden flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 flex-shrink-0">
                 <button
@@ -56,7 +89,7 @@ const UserDashboardContent: React.FC = () => {
                     <Menu size={22} />
                 </button>
                 <span className="font-bold text-lg text-green-700">RJ AGRO</span>
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-sm font-bold">
                     {user?.name?.charAt(0).toUpperCase() || 'U'}
                 </div>
             </div>

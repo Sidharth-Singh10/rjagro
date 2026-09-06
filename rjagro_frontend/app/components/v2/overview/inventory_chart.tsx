@@ -1,5 +1,6 @@
 'use client'
 import { memo } from 'react';
+import { chart } from "./chart_colors";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ChartCard } from './chart_card';
 
@@ -16,9 +17,9 @@ interface Props {
 
 const categoryColors: Record<string, string> = {
     Feed: '#f59e0b',
-    Chicks: '#38bdf8',
+    Chicks: chart.blue,
     Medicine: '#fb7185',
-    FinishedBirds: '#a78bfa',
+    FinishedBirds: chart.violet,
 };
 
 const CustomTooltip = ({ active, payload }: any) => {

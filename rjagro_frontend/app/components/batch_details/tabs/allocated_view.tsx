@@ -56,7 +56,7 @@ const AllocatedRequirementTable: React.FC<AllocatedRequirementTableProps> = ({
                             <tr>
                                 <td colSpan={isAdmin ? 8 : 7} className="px-4 py-8 text-center text-gray-500">
                                     <div className="flex justify-center items-center gap-2">
-                                        <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+                                        <div className="animate-spin h-4 w-4 border-2 border-green-600 rounded-full border-t-transparent"></div>
                                         Loading allocations...
                                     </div>
                                 </td>
@@ -90,7 +90,7 @@ const AllocatedRequirementTable: React.FC<AllocatedRequirementTableProps> = ({
                                     <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                                         #{row.allocation_id}
                                     </td>
-                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {formatINR(row.allocated_qty)}
                                     </td>
                                     {isAdmin && (
@@ -124,7 +124,7 @@ const AllocatedRequirementTable: React.FC<AllocatedRequirementTableProps> = ({
                         <ChevronLeft size={16} />
                         Previous
                     </button>
-                    <button className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">1</button>
+                    <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
                     <button
                         disabled={true}
                         className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"

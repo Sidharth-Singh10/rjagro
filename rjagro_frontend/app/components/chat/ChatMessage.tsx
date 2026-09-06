@@ -1,7 +1,6 @@
 'use client'
 import React from 'react';
-import ReactMarkdown, { type Components } from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import Markdown, { type Components } from '@/app/components/ui/markdown';
 
 interface ChatMessageProps {
     role: 'user' | 'assistant';
@@ -67,9 +66,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => {
                 {isUser ? (
                     content
                 ) : (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                    <Markdown components={markdownComponents}>
                         {content}
-                    </ReactMarkdown>
+                    </Markdown>
                 )}
             </div>
         </div>

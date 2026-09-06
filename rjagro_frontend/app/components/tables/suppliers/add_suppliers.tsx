@@ -30,14 +30,14 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 text-black md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 text-gray-900 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Supplier Type */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Type *</label>
                     <select
                         value={newSupplier.supplier_type}
                         onChange={(e) => handleChange('supplier_type', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
                         <option value="">Select Supplier Type</option>
                         {Object.values(SupplierType).map((type) => (
@@ -69,7 +69,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
                     <textarea
                         value={newSupplier.address}
                         onChange={(e) => handleChange('address', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="Full address"
                         rows={1}
                     />
@@ -101,7 +101,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
                 <div className="flex items-end">
                     <button
                         onClick={onSave}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
                         <Save size={18} />
                         Save Supplier
@@ -119,7 +119,7 @@ const InputField = ({ label, value, onChange, placeholder }: { label: string, va
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             placeholder={placeholder}
         />
     </div>

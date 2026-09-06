@@ -1,7 +1,7 @@
 'use client';
 import { fetchFarmerCommissionHistoryById } from '@/app/api/batches';
 import { Farmer, FarmerCommissionHistory, NewFarmer } from '@/app/types/interfaces';
-import { Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, IndianRupee, Calendar } from 'lucide-react';
+import { Inbox,  Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, IndianRupee, Calendar } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { handleAddFarmerCommission } from '@/app/api/batches';
@@ -143,7 +143,7 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 text-black md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 text-gray-900 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
                             <input
@@ -250,7 +250,10 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
                             </tr>
                         ) : farmers.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">No farmers found</td>
+                                <td colSpan={8} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No farmers found</p>
+                                </td>
                             </tr>
                         ) : (
                             farmers.map(f => (
@@ -263,7 +266,7 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
                                     <td className="px-4 py-4 text-sm text-gray-900">{f.area_size}</td>
                                     <td className="px-4 py-4 text-sm text-gray-900">{new Date(f.created_at).toLocaleDateString()}</td>
                                     <td className="px-4 py-4 text-sm text-gray-500">
-                                        <button className="text-blue-600 hover:text-blue-800">
+                                        <button className="text-green-600 hover:text-green-700">
                                             <Edit size={16} />
                                         </button>
                                     </td>
@@ -278,11 +281,11 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
             <div className="flex items-center justify-between px-4 py-3 border-t">
                 <div className="text-sm text-gray-500">Showing {farmers.length} of {farmers.length} results</div>
                 <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border rounded-lg hover:bg-gray-50">
+                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
                         <ChevronLeft size={16} /> Previous
                     </button>
-                    <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
-                    <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border rounded-lg hover:bg-gray-50">
+                    <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
+                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
                         Next <ChevronRight size={16} />
                     </button>
                 </div>
@@ -293,7 +296,7 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden transform transition-all animate-in slide-in-from-bottom-4 duration-300">
                         {/* Modal Header */}
-                        <div className="bg-gradient-to-r from-green-50 to-blue-50 border-b border-gray-200">
+                        <div className="bg-gray-50 border-b border-gray-200">
                             <div className="flex items-center justify-between p-6">
                                 <div className="space-y-1">
                                     <h3 className="text-xl font-bold text-gray-900">Commission History</h3>
@@ -340,7 +343,7 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
 
                             {/* Add Commission Form Inline */}
                             {showAddCommissionForm && (
-                                <div className="bg-white border text-black border-gray-200 rounded-xl p-5 mb-6 animate-in slide-in-from-top-2 duration-200">
+                                <div className="bg-white border text-gray-900 border-gray-200 rounded-xl p-5 mb-6 animate-in slide-in-from-top-2 duration-200">
                                     <div className="flex items-center justify-between mb-4">
                                         <h4 className="text-md font-semibold text-gray-800">New Commission Entry</h4>
                                         <button

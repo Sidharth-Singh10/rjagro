@@ -8,10 +8,33 @@ import { fetchStockReturnsByBatch } from "@/app/api/stock_returns";
 import { BatchHeader } from "@/app/components/batch_details/header";
 import { BatchDetailsSkeleton } from "@/app/components/batch_details/helpers/loading";
 import { KPICard, ExpenseKPICard, ExpenseBreakdown } from "@/app/components/batch_details/kpi_grid";
-import AllocatedRequirementTable from "@/app/components/batch_details/tabs/allocated_view";
-import BirdCountHistoryTable from "@/app/components/batch_details/tabs/bird_count_history/bird_count_history";
-import StockReturnsTable from "@/app/components/batch_details/tabs/returns/returns";
-import BatchSalesTable from "@/app/components/batch_details/tabs/sales_view/sales_view";
+import dynamic from "next/dynamic";
+
+// Tab tables are code-split: only the active tab's chunk loads.
+const TabLoading = () => (
+    <div className="animate-pulse p-4 space-y-3" aria-busy="true">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-9 bg-gray-100 rounded-md" />
+        ))}
+    </div>
+);
+
+const AllocatedRequirementTable = dynamic(
+    () => import("@/app/components/batch_details/tabs/allocated_view"),
+    { loading: TabLoading, ssr: false }
+);
+const BirdCountHistoryTable = dynamic(
+    () => import("@/app/components/batch_details/tabs/bird_count_history/bird_count_history"),
+    { loading: TabLoading, ssr: false }
+);
+const StockReturnsTable = dynamic(
+    () => import("@/app/components/batch_details/tabs/returns/returns"),
+    { loading: TabLoading, ssr: false }
+);
+const BatchSalesTable = dynamic(
+    () => import("@/app/components/batch_details/tabs/sales_view/sales_view"),
+    { loading: TabLoading, ssr: false }
+);
 import { useItems, useTraders } from "@/app/hooks/use_common_data";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -109,10 +132,10 @@ export default function BatchDetailsPage() {
     if (isLoading) return <BatchDetailsSkeleton />;
 
     if (!batch) return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-dvh bg-gray-50 flex items-center justify-center">
             <div className="text-center">
                 <h2 className="text-2xl font-semibold text-gray-800">Batch Not Found</h2>
-                <button onClick={goToDashboardBatches} className="mt-4 text-blue-600 hover:underline">
+                <button onClick={goToDashboardBatches} className="mt-4 text-green-600 hover:underline">
                     Go Back
                 </button>
             </div>
@@ -122,7 +145,7 @@ export default function BatchDetailsPage() {
     const mortalityRate = ((batch.initial_bird_count - batch.current_bird_count) / batch.initial_bird_count * 100).toFixed(2);
 
     return (
-        <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
+        <div className="min-h-dvh bg-gray-50 p-3 sm:p-6">
             <BatchHeader batch={batch} onBack={goToDashboardBatches} />
 
             <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-3 sm:gap-4 mb-6 sm:mb-8`}>
@@ -131,14 +154,14 @@ export default function BatchDetailsPage() {
                     value={batch.current_bird_count}
                     subtext={`Initial: ${batch.initial_bird_count}`}
                     icon={Package}
-                    colorClass="bg-blue-500"
+                    color="#3d7ea6"
                 />
                 <KPICard
                     title="Mortality Rate"
                     value={`${mortalityRate}%`}
                     subtext="Target: < 3%"
                     icon={AlertTriangle}
-                    colorClass={Number(mortalityRate) > 5 ? "bg-red-500" : "bg-green-500"}
+                    color={Number(mortalityRate) > 5 ? "#dc2626" : "#34714a"}
                 />
                 {isAdmin && (
                     <ExpenseKPICard
@@ -146,7 +169,7 @@ export default function BatchDetailsPage() {
                         value={`₹ ${totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         subtext="Hover for breakdown"
                         icon={TrendingUp}
-                        colorClass="bg-orange-500"
+                        color="#b3702e"
                         breakdown={expenseBreakdown}
                     />
                 )}
@@ -156,7 +179,7 @@ export default function BatchDetailsPage() {
                         value={`₹ ${totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         subtext={`Gross Profit: ₹ ${grossProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         icon={Activity}
-                        colorClass={grossProfit >= 0 ? "bg-green-500" : "bg-red-500"}
+                        color={grossProfit >= 0 ? "#34714a" : "#dc2626"}
                     />
                 )}
             </div>
@@ -184,7 +207,7 @@ export default function BatchDetailsPage() {
                 <div className="">
 
                     {activeTab === 'allocations' && (
-                        <div className="text-center text-gray-500 ">
+                        <div>
                             <AllocatedRequirementTable
                                 allocations={allocations}
                                 loading={isAllocationsLoading}
@@ -194,7 +217,7 @@ export default function BatchDetailsPage() {
                     )}
 
                     {activeTab === 'sales' && (
-                        <div className="text-center text-gray-500 ">
+                        <div>
                             <BatchSalesTable
                                 batchSales={batchSales}
                                 loading={isSalesLoading}
@@ -207,7 +230,7 @@ export default function BatchDetailsPage() {
                     )}
 
                     {activeTab === 'bird count' && (
-                        <div className="text-center text-gray-500">
+                        <div>
                             <BirdCountHistoryTable
                                 historyData={birdCountHistory}
                                 loading={isBirdCountLoading}
@@ -217,7 +240,7 @@ export default function BatchDetailsPage() {
                     )}
 
                     {activeTab === 'returns' && (
-                        <div className="text-center text-gray-500">
+                        <div>
                             <StockReturnsTable
                                 stockReturns={stockReturns}
                                 items={items}

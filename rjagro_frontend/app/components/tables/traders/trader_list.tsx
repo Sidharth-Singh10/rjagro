@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit } from 'lucide-react';
+import { Inbox,  Edit } from 'lucide-react';
 import { Trader } from '@/app/types/interfaces';
 
 interface TradersListProps {
@@ -29,7 +29,10 @@ const TradersList: React.FC<TradersListProps> = ({ traders, loading, onRowClick 
                         </tr>
                     ) : traders.length === 0 ? (
                         <tr>
-                            <td colSpan={10} className="px-4 py-8 text-center text-gray-500">No traders found</td>
+                            <td colSpan={10} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No traders found</p>
+                                </td>
                         </tr>
                     ) : (
                         traders.map((trader) => (
@@ -46,7 +49,7 @@ const TradersList: React.FC<TradersListProps> = ({ traders, loading, onRowClick 
                                 <td className="px-4 py-4 text-sm text-gray-900">{trader.ifsc_code}</td>
                                 <td className="px-4 py-4 text-sm text-gray-900">{trader.created_at}</td>
                                 <td className="px-4 py-4 text-sm text-gray-500">
-                                    <button className="text-blue-600 hover:text-blue-800">
+                                    <button className="text-green-600 hover:text-green-700">
                                         <Edit size={16} />
                                     </button>
                                 </td>

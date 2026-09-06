@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, X, Save, MapPin, Video } from 'lucide-react';
+import { Inbox,  Plus, X, Save, MapPin, Video } from 'lucide-react';
 import { fetchFarms, handleAddFarm } from '@/app/api/farms';
 import { fetchFarmers } from '@/app/api/farmers';
 import { handleAddLiveBatch } from '@/app/api/batches';
@@ -65,7 +65,7 @@ const FarmsModule = () => {
 
             {showAddFarm && (
                 <div className="p-4 border-b bg-gray-50">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-black">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-gray-900">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Farmer *</label>
                             <select
@@ -153,7 +153,10 @@ const FarmsModule = () => {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {farms.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No farms found</td>
+                                <td colSpan={6} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No farms found</p>
+                                </td>
                             </tr>
                         ) : (
                             farms.map(farm => {

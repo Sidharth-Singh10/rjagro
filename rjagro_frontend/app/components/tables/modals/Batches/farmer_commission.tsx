@@ -95,7 +95,7 @@ export const FarmerCommissionTab: React.FC<FarmerCommissionTabProps> = ({
                                     ...prev,
                                     commission_amount: e.target.value === '' ? '' : Number(e.target.value)
                                 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                                 placeholder="Enter amount"
                             />
                         </div>
@@ -110,7 +110,7 @@ export const FarmerCommissionTab: React.FC<FarmerCommissionTabProps> = ({
                                     ...prev,
                                     description: e.target.value
                                 }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                                 placeholder="Payment description"
                             />
                         </div>

@@ -2,7 +2,7 @@ import React from 'react';
 
 export function BatchDetailsSkeleton() {
     return (
-        <div className="min-h-screen bg-gray-50 p-6 ">
+        <div className="min-h-dvh bg-gray-50 p-6 ">
             <div className="flex justify-between items-center mb-6">
                 <div className="h-8 w-1/3 bg-gray-200 rounded-md"></div>
                 <div className="h-10 w-24 bg-gray-200 rounded-md"></div>

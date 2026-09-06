@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
+import { Inbox,  Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
 import { Item, Purchase, PurchaseOrderPayload, Supplier } from '@/app/types/interfaces';
 import { useQueryClient } from '@tanstack/react-query';
 import { handleAddPurchaseOrder, handleUpdatePurchaseOrder } from '@/app/api/purchases';
@@ -235,7 +235,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                     </div>
 
                     {/* Header fields */}
-                    <div className="grid grid-cols-1 text-black md:grid-cols-3 gap-4 mb-6">
+                    <div className="grid grid-cols-1 text-gray-900 md:grid-cols-3 gap-4 mb-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Supplier *
@@ -288,7 +288,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                             <h4 className="text-sm font-semibold text-gray-700">Items</h4>
                             <button
                                 onClick={addItemRow}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors"
                             >
                                 <Plus size={14} /> Add Item
                             </button>
@@ -404,14 +404,13 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={12} className="px-4 py-8 text-center text-gray-500">
-                                    Loading...
-                                </td>
+                                <td colSpan={12} className="px-4 py-8 text-center text-gray-500">Loading...</td>
                             </tr>
                         ) : sortedData.length === 0 ? (
                             <tr>
-                                <td colSpan={12} className="px-4 py-8 text-center text-gray-500">
-                                    No purchases found
+                                <td colSpan={12} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No purchases found</p>
                                 </td>
                             </tr>
                         ) : (
@@ -480,12 +479,12 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                     Showing {purchases.length} of {purchases.length} results
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
                         <ChevronLeft size={16} />
                         Previous
                     </button>
-                    <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
-                    <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
+                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
                         Next
                         <ChevronRight size={16} />
                     </button>

@@ -1,8 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import { Loan, LoanPayment, NewLoanPayment } from '@/app/types/interfaces';
-import { handleDeleteLoanPayment } from '@/app/api/loans';
 import { useQueryClient } from '@tanstack/react-query';
+import { handleDeleteLoanPayment } from '@/app/api/loans';
 import { Plus, X, Save, Trash2 } from 'lucide-react';
 import TableActionsDropdown from '../../utils/table_actions';
 
@@ -76,7 +76,7 @@ const LoanPaymentsTable: React.FC<LoanPaymentsTableProps> = ({
                             <X size={20} />
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 text-black md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 text-gray-900 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Loan *</label>
                             <select

@@ -1,5 +1,5 @@
 import { AppTrader, BatchSale, Trader } from "@/app/types/interfaces";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Inbox,  ChevronLeft, ChevronRight } from "lucide-react";
 
 interface BatchSalesListProps {
     batchSales: BatchSale[];
@@ -43,7 +43,10 @@ const BatchSalesList: React.FC<BatchSalesListProps> = ({
                             </tr>
                         ) : batchSales.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">No batch sales found</td>
+                                <td colSpan={8} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No batch sales found</p>
+                                </td>
                             </tr>
                         ) : (
                             batchSales.map((sale) => (

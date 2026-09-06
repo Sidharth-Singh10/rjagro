@@ -163,7 +163,7 @@ const CloseBatchModal = ({ batch, onClose }: { batch: Batch; onClose: () => void
                                 required
                                 value={formData.end_date}
                                 onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                                className="w-full text-black px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all pl-10"
+                                className="w-full text-gray-900 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all pl-10"
                             />
                             <Calendar size={18} className="absolute left-3 top-2.5 text-gray-400 pointer-events-none" />
                         </div>
@@ -176,7 +176,7 @@ const CloseBatchModal = ({ batch, onClose }: { batch: Batch; onClose: () => void
                                 type="number"
                                 value={formData.revenue}
                                 onChange={(e) => { setRevenueEdited(true); setFormData({ ...formData, revenue: Number(e.target.value) }); }}
-                                className="w-full text-black px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                className="w-full text-gray-900 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
                             />
                             {salesTotal > 0 && (
                                 <p className="text-xs text-gray-500">Auto-filled from {batchSales.length} recorded sale(s) (₹{salesTotal.toLocaleString('en-IN')}). You can adjust if needed — the server recomputes it from sales on close.</p>
@@ -188,7 +188,7 @@ const CloseBatchModal = ({ batch, onClose }: { batch: Batch; onClose: () => void
                                 type="number"
                                 value={formData.gross_profit}
                                 onChange={(e) => setFormData({ ...formData, gross_profit: Number(e.target.value) })}
-                                className="w-full text-black px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                className="w-full text-gray-900 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
                             />
                         </div>
                     </div>

@@ -106,7 +106,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({
                             <label className="block text-xs font-medium text-gray-700 mb-1">Available Birds</label>
                             <input
                                 type="number"
-                                className="w-full p-2 border rounded text-black"
+                                className="w-full p-2 border rounded text-gray-900"
                                 value={batchClosureData.available_chicken_count}
                                 onChange={e => setBatchClosureData({ ...batchClosureData, available_chicken_count: Number(e.target.value) })}
                             />
@@ -115,7 +115,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({
                             <label className="block text-xs font-medium text-gray-700 mb-1">Total Revenue (₹)</label>
                             <input
                                 type="number"
-                                className="w-full p-2 border rounded text-black"
+                                className="w-full p-2 border rounded text-gray-900"
                                 value={batchClosureData.revenue}
                                 onChange={e => setBatchClosureData({ ...batchClosureData, revenue: Number(e.target.value) })}
                             />

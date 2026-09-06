@@ -235,7 +235,7 @@ export const LiftingHeatmap = memo(({ batches }: Props) => {
                             onClick={() => setPlanMode(prev => !prev)}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                                 planMode
-                                    ? 'bg-violet-100 text-violet-700 ring-1 ring-violet-300'
+                                    ? 'bg-green-100 text-green-700 ring-1 ring-green-300'
                                     : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                             }`}
                         >
@@ -253,35 +253,35 @@ export const LiftingHeatmap = memo(({ batches }: Props) => {
 
                 {/* Plan Mode Panel */}
                 {planMode && (
-                    <div className="mb-5 p-4 rounded-xl bg-violet-50 border border-violet-200">
-                        <p className="text-xs font-semibold text-violet-700 mb-3">
+                    <div className="mb-5 p-4 rounded-xl bg-green-50 border border-green-200">
+                        <p className="text-xs font-semibold text-green-700 mb-3">
                             What-if: Add hypothetical batches to preview lifting pressure
                         </p>
                         <div className="flex flex-wrap items-end gap-3 mb-3">
                             <div>
-                                <label className="block text-[10px] font-medium text-violet-500 mb-1">Batch Start Date</label>
+                                <label className="block text-[10px] font-medium text-green-600 mb-1">Batch Start Date</label>
                                 <input
                                     type="date"
                                     value={draftDate}
                                     onChange={e => setDraftDate(e.target.value)}
-                                    className="px-3 py-1.5 text-xs text-gray-900 rounded-lg border border-violet-200 bg-white focus:outline-none focus:ring-2 focus:ring-violet-300"
+                                    className="px-3 py-1.5 text-xs text-gray-900 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500/30"
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-medium text-violet-500 mb-1">Chick Count</label>
+                                <label className="block text-[10px] font-medium text-green-600 mb-1">Chick Count</label>
                                 <input
                                     type="number"
                                     min={1}
                                     value={draftCount}
                                     onChange={e => setDraftCount(e.target.value)}
                                     placeholder="e.g. 5000"
-                                    className="px-3 py-1.5 text-xs text-gray-900 rounded-lg border border-violet-200 bg-white w-28 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                                    className="px-3 py-1.5 text-xs text-gray-900 rounded-lg border border-gray-200 bg-white w-28 focus:outline-none focus:ring-2 focus:ring-green-500/30"
                                 />
                             </div>
                             <button
                                 onClick={addPlannedBatch}
                                 disabled={!draftDate || !draftCount || parseInt(draftCount) <= 0}
-                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             >
                                 <Plus size={14} />
                                 Add
@@ -295,11 +295,11 @@ export const LiftingHeatmap = memo(({ batches }: Props) => {
                                     return (
                                         <div
                                             key={pb.id}
-                                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white border border-violet-200 text-xs"
+                                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs"
                                         >
                                             <div>
-                                                <span className="font-semibold text-violet-700">{pb.chickCount.toLocaleString('en-IN')}</span>
-                                                <span className="text-violet-400 ml-1">chicks</span>
+                                                <span className="font-semibold text-green-700">{pb.chickCount.toLocaleString('en-IN')}</span>
+                                                <span className="text-green-400 ml-1">chicks</span>
                                                 <span className="text-gray-400 mx-1.5">|</span>
                                                 <span className="text-gray-500">
                                                     Lift: {liftStart.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
@@ -309,7 +309,7 @@ export const LiftingHeatmap = memo(({ batches }: Props) => {
                                             </div>
                                             <button
                                                 onClick={() => removePlannedBatch(pb.id)}
-                                                className="p-0.5 rounded hover:bg-violet-100 text-violet-400 hover:text-violet-600 transition-colors"
+                                                className="p-0.5 rounded hover:bg-green-100 text-green-400 hover:text-green-600 transition-colors"
                                             >
                                                 <X size={12} />
                                             </button>
@@ -357,8 +357,8 @@ export const LiftingHeatmap = memo(({ batches }: Props) => {
                                                     aspect-square rounded-md flex items-center justify-center
                                                     text-[11px] font-medium cursor-default transition-all duration-150
                                                     ${totalChicks > 0 ? 'hover:scale-110 hover:shadow-md cursor-pointer' : ''}
-                                                    ${isToday ? 'ring-2 ring-blue-400 ring-offset-1' : ''}
-                                                    ${hasPlanned ? 'ring-2 ring-violet-400 ring-inset' : ''}
+                                                    ${isToday ? 'ring-2 ring-green-400 ring-offset-1' : ''}
+                                                    ${hasPlanned ? 'ring-2 ring-green-300 ring-inset' : ''}
                                                 `}
                                                 style={{ backgroundColor: color.bg, color: color.text }}
                                                 onMouseEnter={e => handleMouseEnter(e, dayData)}
@@ -409,13 +409,13 @@ export const LiftingHeatmap = memo(({ batches }: Props) => {
                         <div className="space-y-1 max-h-[160px] overflow-y-auto">
                             {tooltip.day.batches.map(b => (
                                 <div key={b.batch_id} className={`flex items-center justify-between text-xs gap-3 ${b.planned ? 'opacity-80' : ''}`}>
-                                    <span className={`truncate ${b.planned ? 'text-violet-600' : 'text-gray-600'}`}>
+                                    <span className={`truncate ${b.planned ? 'text-green-600' : 'text-gray-600'}`}>
                                         {b.planned ? `${b.batch_id}` : `Batch #${b.batch_id}`}
-                                        <span className={`ml-1 ${b.planned ? 'text-violet-400' : 'text-gray-400'}`}>
+                                        <span className={`ml-1 ${b.planned ? 'text-green-400' : 'text-gray-400'}`}>
                                             ({b.farmer_name})
                                         </span>
                                     </span>
-                                    <span className={`font-semibold whitespace-nowrap ${b.planned ? 'text-violet-700' : 'text-gray-800'}`}>
+                                    <span className={`font-semibold whitespace-nowrap ${b.planned ? 'text-green-700' : 'text-gray-800'}`}>
                                         {b.chick_count.toLocaleString('en-IN')}
                                     </span>
                                 </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import { Inbox,  Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
 import { LedgerAccount, NewLedgerAccount } from '@/app/types/interfaces';
 import { useLedgerAccountsSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from './sortable_headers/header';
@@ -83,7 +83,7 @@ const LedgerAccountsTable: React.FC<LedgerAccountsTableProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 text-black md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 text-gray-900 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Account Name *
@@ -199,15 +199,14 @@ const LedgerAccountsTable: React.FC<LedgerAccountsTableProps> = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                  Loading...
-                </td>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">Loading...</td>
               </tr>
             ) : sortedData.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                  No ledger accounts found
-                </td>
+                <td colSpan={6} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No ledger accounts found</p>
+                                </td>
               </tr>
             ) : (
               sortedData.map((account) => (
@@ -250,12 +249,12 @@ const LedgerAccountsTable: React.FC<LedgerAccountsTableProps> = ({
           Showing {sortedData.length} of {sortedData.length} results
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
             <ChevronLeft size={16} />
             Previous
           </button>
-          <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
-          <button className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
+          <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
             Next
             <ChevronRight size={16} />
           </button>

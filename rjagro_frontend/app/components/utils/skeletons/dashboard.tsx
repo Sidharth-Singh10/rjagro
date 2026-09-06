@@ -1,8 +1,7 @@
 import React from 'react';
 
-const DashboardSkeleton = () => {
-    // Helper to create repeating table rows
-    const TableRowSkeleton = () => (
+// Hoisted to module scope so it isn't recreated on every render.
+const TableRowSkeleton = () => (
         <div className="flex items-center justify-between py-4 border-b border-gray-100">
             {/* We use varying widths to simulate different data types (IDs, names, dates, badges) */}
             <div className="h-5 w-10 bg-gray-200 rounded"></div> {/* Batch ID */}
@@ -18,9 +17,10 @@ const DashboardSkeleton = () => {
         </div>
     );
 
+const DashboardSkeleton = () => {
     return (
         // animate-pulse creates the shimmering effect
-        <div className="flex h-screen bg-gray-50 overflow-hidden animate-pulse">
+        <div className="flex h-dvh bg-gray-50 overflow-hidden animate-pulse">
 
             {/* --- Sidebar Skeleton --- */}
             <aside className="w-72 bg-white border-r border-gray-200 flex flex-col h-full p-6 justify-between">

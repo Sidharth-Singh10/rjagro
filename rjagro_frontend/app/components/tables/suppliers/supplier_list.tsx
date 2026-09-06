@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Inbox } from 'lucide-react';
 import { Supplier } from '@/app/types/interfaces';
 
 interface SupplierListProps {
@@ -31,9 +32,10 @@ export const SupplierList: React.FC<SupplierListProps> = ({ suppliers, loading, 
                         </tr>
                     ) : suppliers.length === 0 ? (
                         <tr>
-                            <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-                                No suppliers found.
-                            </td>
+                            <td colSpan={9} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No suppliers found.</p>
+                                </td>
                         </tr>
                     ) : (
                         suppliers.map((s) => (

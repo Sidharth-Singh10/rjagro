@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Play, Ban, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Inbox,  Plus, Play, Ban, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { fetchFarms } from '@/app/api/farms';
 import {
     fetchBatches,
@@ -77,7 +77,7 @@ const LiveSellingModule = () => {
                     <select
                         value={createFarmId}
                         onChange={(e) => setCreateFarmId(e.target.value ? Number(e.target.value) : '')}
-                        className="w-64 px-3 py-2 border border-gray-300 rounded-lg text-black"
+                        className="w-64 px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                     >
                         <option value="">Select Farm</option>
                         {farms.map(f => (
@@ -88,7 +88,7 @@ const LiveSellingModule = () => {
                         type="date"
                         value={createStartDate}
                         onChange={(e) => setCreateStartDate(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                     />
                     <button
                         onClick={onCreateBatch}
@@ -114,8 +114,9 @@ const LiveSellingModule = () => {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {liveBatches.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                                    No live batches found. Create one from a farm above.
+                                <td colSpan={5} className="px-4 py-12 text-center">
+                                    <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
+                                    <p className="text-sm text-gray-500">No live batches found. Create one from a farm above.</p>
                                 </td>
                             </tr>
                         ) : (
@@ -152,7 +153,7 @@ const LiveSellingModule = () => {
                                                     <>
                                                         <button
                                                             onClick={() => toggleAction(batch.batch_id, 'timeslot')}
-                                                            className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700"
+                                                            className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700"
                                                         >
                                                             <Clock size={14} /> Timeslot
                                                         </button>
@@ -189,7 +190,7 @@ const LiveSellingModule = () => {
                                                             min="0"
                                                             value={weightInput}
                                                             onChange={(e) => setWeightInput(e.target.value)}
-                                                            className="w-40 px-3 py-2 border border-gray-300 rounded-lg text-black"
+                                                            className="w-40 px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                                                         />
                                                         <button
                                                             onClick={() => {
@@ -208,21 +209,21 @@ const LiveSellingModule = () => {
                                                             type="time"
                                                             value={slotStart}
                                                             onChange={(e) => setSlotStart(e.target.value)}
-                                                            className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+                                                            className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                                                         />
                                                         <label className="text-sm font-medium text-gray-700">Slot End</label>
                                                         <input
                                                             type="time"
                                                             value={slotEnd}
                                                             onChange={(e) => setSlotEnd(e.target.value)}
-                                                            className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+                                                            className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                                                         />
                                                         <button
                                                             onClick={() => {
                                                                 addBatchTimeslot(batch.batch_id, slotStart, slotEnd, queryClient, setLoading, () => setActionFor(null));
                                                             }}
                                                             disabled={loading}
-                                                            className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                                            className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50"
                                                         >
                                                             <Clock size={16} /> Add Timeslot
                                                         </button>
