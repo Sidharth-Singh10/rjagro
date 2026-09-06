@@ -5,6 +5,7 @@ import {
     OtherExpenseCategory,
     OTHER_EXPENSE_CATEGORY_LABELS,
 } from '@/app/types/interfaces';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Plus, X, Save, IndianRupee, Calendar, Filter } from 'lucide-react';
 import { useState } from 'react';
 
@@ -177,10 +178,12 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {paginatedExpenses.length === 0 ? (
+                        {loading ? (
+                            <TableSkeletonRows cols={6} />
+                        ) : paginatedExpenses.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                                    {loading ? 'Loading...' : 'No other expenses found'}
+                                    No other expenses found
                                 </td>
                             </tr>
                         ) : (

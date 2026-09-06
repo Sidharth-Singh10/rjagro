@@ -18,7 +18,7 @@ const PurchasesModule = () => {
     const [showAddForm, setShowAddForm] = useState(false);
 
     // --- Data Fetching ---
-    const { data: purchases = [] } = useQuery({
+    const { data: purchases = [], isLoading: isPurchasesLoading } = useQuery({
         queryKey: ['purchases'],
         queryFn: fetchPurchases,
         staleTime: 5 * 60 * 1000,
@@ -61,7 +61,7 @@ const PurchasesModule = () => {
                         purchases={purchases}
                         items={items}
                         suppliers={suppliers}
-                        loading={loading}
+                        loading={loading || isPurchasesLoading}
                         showAddForm={showAddForm}
                         setShowAddForm={setShowAddForm}
                         createdBy={user ? user.user_id : 9999}

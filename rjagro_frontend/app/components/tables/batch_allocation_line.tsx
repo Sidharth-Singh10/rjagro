@@ -1,4 +1,5 @@
 import React from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox,  Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, Trash2 } from 'lucide-react';
 import { BatchAllocation, BatchAllocationLine, NewBatchAllocationLine, StockReceipt } from '@/app/types/interfaces';
 
@@ -211,9 +212,7 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-              </tr>
+              <TableSkeletonRows cols={9} />
             ) : allocationLines.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-4 py-12 text-center">

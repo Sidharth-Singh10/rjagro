@@ -24,25 +24,25 @@ const InventoryModule = () => {
     const [showAddForm, setShowAddForm] = useState(false);
 
     // --- Data Fetching ---
-    const { data: items = [] } = useQuery({
+    const { data: items = [], isLoading: isItemsLoading } = useQuery({
         queryKey: ['items'],
         queryFn: fetchItems,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: inventory = [] } = useQuery({
+    const { data: inventory = [], isLoading: isInventoryLoading } = useQuery({
         queryKey: ['inventory'],
         queryFn: fetchInventory,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: inventoryMovements = [] } = useQuery({
+    const { data: inventoryMovements = [], isLoading: isMovementsLoading } = useQuery({
         queryKey: ["inventory_movements"],
         queryFn: fetchInventoryMovements,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: stockReceipts = [] } = useQuery({
+    const { data: stockReceipts = [], isLoading: isReceiptsLoading } = useQuery({
         queryKey: ['stock_receipts'],
         queryFn: () => fetchStockReceipts(),
         staleTime: 5 * 60 * 1000,
@@ -248,7 +248,7 @@ const InventoryModule = () => {
                     <InventoryTable
                         inventory={inventory}
                         items={items}
-                        loading={loading}
+                        loading={loading || isInventoryLoading}
                         showAddForm={showAddForm}
                         newInventory={newInventory}
                         setShowAddForm={setShowAddForm}
@@ -262,7 +262,7 @@ const InventoryModule = () => {
                 {subTab === 'Items' && (
                     <ItemsTable
                         items={items}
-                        loading={loading}
+                        loading={loading || isItemsLoading}
                         showAddForm={showAddForm}
                         newItem={newItem}
                         setShowAddForm={setShowAddForm}
@@ -275,7 +275,7 @@ const InventoryModule = () => {
                     <InventoryMovementsTable
                         inventoryMovements={inventoryMovements}
                         items={items}
-                        loading={loading}
+                        loading={loading || isMovementsLoading}
                         showAddForm={showAddForm}
                         newMovement={newMovement}
                         setShowAddForm={setShowAddForm}
@@ -290,7 +290,7 @@ const InventoryModule = () => {
                         stockReceipts={stockReceipts}
                         items={items}
                         purchases={purchases}
-                        loading={loading}
+                        loading={loading || isReceiptsLoading}
                         showAddForm={showAddForm}
                         newStockReceipt={newStockReceipt}
                         setShowAddForm={setShowAddForm}

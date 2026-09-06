@@ -1,5 +1,6 @@
 'use client'
 import React, { useState } from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox,  Filter, ChevronLeft, ChevronRight, Plus, X, Save, DollarSign } from 'lucide-react';
 import { LedgerAccount, LedgerEntry, LedgerEntryPayload, NewLedgerEntry } from '@/app/types/interfaces';
 import { capitalizeWords } from '@/app/utils/helper';
@@ -389,11 +390,7 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr>
-                                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
-                                    Loading ledger entries...
-                                </td>
-                            </tr>
+                            <TableSkeletonRows cols={10} />
                         ) : ledgerEntries.length === 0 ? (
                             <tr>
                                 <td colSpan={10} className="px-4 py-12 text-center">

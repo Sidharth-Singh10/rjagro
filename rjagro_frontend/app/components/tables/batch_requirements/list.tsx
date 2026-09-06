@@ -1,4 +1,5 @@
 import React from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { BatchRequirement } from '@/app/types/interfaces';
 import SortableHeader from '../sortable_headers/header';
 import { ActionButtons } from '../../utils/batch_requirements/action_button';
@@ -42,7 +43,7 @@ export const BatchRequirementsList: React.FC<BatchRequirementsListProps> = ({
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
-                        <tr><td colSpan={isAdmin ? 10 : 9} className="px-4 py-8 text-center text-gray-500">Loading...</td></tr>
+                        <TableSkeletonRows cols={isAdmin ? 10 : 9} />
                     ) : data.length === 0 ? (
                         <tr><td colSpan={isAdmin ? 10 : 9} className="px-4 py-8 text-center text-gray-500">No requirements found</td></tr>
                     ) : (

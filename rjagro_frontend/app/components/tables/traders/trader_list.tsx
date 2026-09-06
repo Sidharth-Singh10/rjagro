@@ -1,4 +1,5 @@
 import React from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox,  Edit } from 'lucide-react';
 import { Trader } from '@/app/types/interfaces';
 
@@ -24,9 +25,7 @@ const TradersList: React.FC<TradersListProps> = ({ traders, loading, onRowClick 
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
-                        <tr>
-                            <td colSpan={10} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-                        </tr>
+                        <TableSkeletonRows cols={10} />
                     ) : traders.length === 0 ? (
                         <tr>
                             <td colSpan={10} className="px-4 py-12 text-center">

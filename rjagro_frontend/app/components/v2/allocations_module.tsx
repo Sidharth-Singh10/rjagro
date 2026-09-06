@@ -22,19 +22,19 @@ const AllocationsModule = () => {
     const [loading, setLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
 
-    const { data: requirements = [] } = useQuery({
+    const { data: requirements = [], isLoading: isRequirementsLoading } = useQuery({
         queryKey: ["batch_requirements"],
         queryFn: fetchBatchRequirements,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: allocations = [] } = useQuery({
+    const { data: allocations = [], isLoading: isAllocationsLoading } = useQuery({
         queryKey: ["batch_allocations"],
         queryFn: fetchBatchAllocations,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: allocationLines = [] } = useQuery({
+    const { data: allocationLines = [], isLoading: isAllocationLinesLoading } = useQuery({
         queryKey: ["batch_allocation_lines"],
         queryFn: fetchBatchAllocationLines,
         staleTime: 5 * 60 * 1000,
@@ -128,7 +128,7 @@ const AllocationsModule = () => {
                         requirements={requirements}
                         batches={batches}
                         items={items}
-                        loading={loading}
+                        loading={loading || isRequirementsLoading}
                         showAddForm={showAddForm}
                         newRequirement={newRequirement}
                         setShowAddForm={setShowAddForm}
@@ -140,7 +140,7 @@ const AllocationsModule = () => {
                 {subTab === 'Allocations' && (
                     <BatchAllocationsTable
                         batchAllocations={allocations}
-                        loading={loading}
+                        loading={loading || isAllocationsLoading}
                         showAddForm={showAddForm}
                         setShowAddForm={setShowAddForm}
                     />
@@ -151,7 +151,7 @@ const AllocationsModule = () => {
                         allocationLines={allocationLines}
                         batchAllocations={allocations}
                         stockReceipts={stockReceipts}
-                        loading={loading}
+                        loading={loading || isAllocationLinesLoading}
                         showAddForm={showAddForm}
                         newAllocationLine={newAllocationLine}
                         setShowAddForm={setShowAddForm}

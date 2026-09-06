@@ -1,5 +1,6 @@
 'use client'
 import React from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox,  ChevronRight } from 'lucide-react';
 import { Batch } from '@/app/types/interfaces';
 import { useBatchesSorting } from '@/app/hooks/custom_sorting';
@@ -79,9 +80,7 @@ const BatchesTable: React.FC<BatchesTableProps> = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr>
-                                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-                            </tr>
+                            <TableSkeletonRows cols={9} />
                         ) : batches.length === 0 ? (
                             <tr>
                                 <td colSpan={9} className="px-4 py-12 text-center">

@@ -1,4 +1,5 @@
 import React from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox,  Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
 import { LedgerAccount, NewLedgerAccount } from '@/app/types/interfaces';
 import { useLedgerAccountsSorting } from '@/app/hooks/custom_sorting';
@@ -198,9 +199,7 @@ const LedgerAccountsTable: React.FC<LedgerAccountsTableProps> = ({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-              </tr>
+              <TableSkeletonRows cols={6} />
             ) : sortedData.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center">

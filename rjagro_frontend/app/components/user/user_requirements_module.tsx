@@ -12,7 +12,7 @@ const UserRequirementsModule = () => {
     const [loading, setLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
 
-    const { data: requirements = [] } = useQuery({
+    const { data: requirements = [], isLoading: isRequirementsLoading } = useQuery({
         queryKey: ["batch_requirements"],
         queryFn: fetchBatchRequirements,
         staleTime: 5 * 60 * 1000,
@@ -53,7 +53,7 @@ const UserRequirementsModule = () => {
                     requirements={requirements}
                     batches={batches}
                     items={items}
-                    loading={loading}
+                    loading={loading || isRequirementsLoading}
                     showAddForm={showAddForm}
                     newRequirement={newRequirement}
                     setShowAddForm={setShowAddForm}

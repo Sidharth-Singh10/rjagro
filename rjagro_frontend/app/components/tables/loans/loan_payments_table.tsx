@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Loan, LoanPayment, NewLoanPayment } from '@/app/types/interfaces';
 import { useQueryClient } from '@tanstack/react-query';
 import { handleDeleteLoanPayment } from '@/app/api/loans';
@@ -190,7 +191,7 @@ const LoanPaymentsTable: React.FC<LoanPaymentsTableProps> = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-500">Loading...</td></tr>
+                            <TableSkeletonRows cols={9} />
                         ) : loanPayments.length === 0 ? (
                             <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-500">No loan payments recorded yet.</td></tr>
                         ) : (

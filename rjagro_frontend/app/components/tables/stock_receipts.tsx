@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox,  Edit, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
 import { Item, NewStockReceipt, Purchase, StockReceipt } from '@/app/types/interfaces';
 import { useStockReceiptsSorting } from '@/app/hooks/custom_sorting';
@@ -245,9 +246,7 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
-                        <tr>
-                            <td colSpan={10} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-                        </tr>
+                        <TableSkeletonRows cols={10} />
                     ) : sortedData.length === 0 ? (
                         <tr>
                             <td colSpan={10} className="px-4 py-12 text-center">

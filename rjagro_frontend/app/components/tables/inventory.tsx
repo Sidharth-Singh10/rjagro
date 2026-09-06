@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox,  Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, Package } from 'lucide-react';
 import { Inventory, InventoryWithItemDetails, Item, NewInventory } from '@/app/types/interfaces';
 
@@ -188,9 +189,7 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-                            </tr>
+                            <TableSkeletonRows cols={7} />
                         ) : inventory.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="px-4 py-12 text-center">

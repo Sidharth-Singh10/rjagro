@@ -1,4 +1,5 @@
 import { AppTrader, BatchSale, Trader } from "@/app/types/interfaces";
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox,  ChevronLeft, ChevronRight } from "lucide-react";
 
 interface BatchSalesListProps {
@@ -38,9 +39,7 @@ const BatchSalesList: React.FC<BatchSalesListProps> = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-                            </tr>
+                            <TableSkeletonRows cols={8} />
                         ) : batchSales.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="px-4 py-12 text-center">

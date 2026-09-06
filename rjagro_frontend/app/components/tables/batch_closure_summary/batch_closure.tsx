@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox, 
     Edit,
     Filter,
@@ -103,9 +104,7 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {loading ? (
-                                <tr>
-                                    <td colSpan={10} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-                                </tr>
+                                <TableSkeletonRows cols={10} />
                             ) : batchClosures.length === 0 ? (
                                 <tr>
                                     <td colSpan={10} className="px-4 py-12 text-center">

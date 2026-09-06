@@ -1,5 +1,6 @@
 'use client';
 import { fetchFarmerCommissionHistoryById } from '@/app/api/batches';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Farmer, FarmerCommissionHistory, NewFarmer } from '@/app/types/interfaces';
 import { Inbox,  Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, IndianRupee, Calendar } from 'lucide-react';
 import { useState } from 'react';
@@ -245,9 +246,7 @@ const FarmersTable: React.FC<FarmersTableProps> = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-                            </tr>
+                            <TableSkeletonRows cols={8} />
                         ) : farmers.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="px-4 py-12 text-center">

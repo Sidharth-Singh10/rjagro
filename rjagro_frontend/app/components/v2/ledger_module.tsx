@@ -22,13 +22,13 @@ export const LedgerModule = () => {
     const [showAddForm, setShowAddForm] = useState(false);
 
     // --- Data Fetching ---
-    const { data: ledgerEntries = [] } = useQuery({
+    const { data: ledgerEntries = [], isLoading: isEntriesLoading } = useQuery({
         queryKey: ["ledger_entries"],
         queryFn: fetchLedgerEntries,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: ledgerAccounts = [] } = useQuery({
+    const { data: ledgerAccounts = [], isLoading: isAccountsLoading } = useQuery({
         queryKey: ['ledger_accounts'],
         queryFn: fetchLedgerAccounts,
         staleTime: 5 * 60 * 1000,
@@ -118,7 +118,7 @@ export const LedgerModule = () => {
                 {subTab === 'Accounts' && (
                     <LedgerAccountsTable
                         ledgerAccounts={ledgerAccounts}
-                        loading={loading}
+                        loading={loading || isAccountsLoading}
                         showAddForm={showAddForm}
                         newLedgerAccount={newLedgerAccount}
                         setShowAddForm={setShowAddForm}
@@ -131,7 +131,7 @@ export const LedgerModule = () => {
                     <LedgerEntriesTable
                         ledgerEntries={ledgerEntries}
                         ledgerAccounts={ledgerAccounts}
-                        loading={loading}
+                        loading={loading || isEntriesLoading}
                         showAddForm={showAddForm}
                         newLedgerEntry={newLedgerEntry}
                         setShowAddForm={setShowAddForm}

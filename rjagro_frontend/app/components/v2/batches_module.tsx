@@ -15,13 +15,13 @@ const BatchesModule = () => {
     const [showAddForm, setShowAddForm] = useState(false);
 
     // --- Data Fetching ---
-    const { data: batches = [] } = useQuery({
+    const { data: batches = [], isLoading: isBatchesLoading } = useQuery({
         queryKey: ["batches"],
         queryFn: fetchBatches,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: batchClosures = [] } = useQuery({
+    const { data: batchClosures = [], isLoading: isClosuresLoading } = useQuery({
         queryKey: ["batch_closures"],
         queryFn: fetchBatchClosures,
         staleTime: 5 * 60 * 1000,
@@ -62,7 +62,7 @@ const BatchesModule = () => {
                 {subTab === 'Active' && (
                     <BatchesTable
                         batches={batches}
-                        loading={loading}
+                        loading={loading || isBatchesLoading}
                     />
                 )}
 
@@ -74,7 +74,7 @@ const BatchesModule = () => {
                     <BatchClosureSummaryTable
                         batchClosures={batchClosures}
                         batches={batches}
-                        loading={loading}
+                        loading={loading || isClosuresLoading}
                         showAddForm={showAddForm}
                         setShowAddForm={setShowAddForm}
                     />

@@ -20,19 +20,19 @@ const EntitiesModule = () => {
     const [showAddForm, setShowAddForm] = useState(false);
 
     // --- Data Fetching ---
-    const { data: farmers = [] } = useQuery({
+    const { data: farmers = [], isLoading: isFarmersLoading } = useQuery({
         queryKey: ["farmers"],
         queryFn: fetchFarmers,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: traders = [] } = useQuery({
+    const { data: traders = [], isLoading: isTradersLoading } = useQuery({
         queryKey: ['traders'],
         queryFn: fetchTraders,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: suppliers = [] } = useQuery({
+    const { data: suppliers = [], isLoading: isSuppliersLoading } = useQuery({
         queryKey: ['suppliers'],
         queryFn: fetchSuppliers,
         staleTime: 5 * 60 * 1000,
@@ -123,7 +123,7 @@ const EntitiesModule = () => {
                 {subTab === 'Farmers' && (
                     <FarmersTable
                         farmers={farmers}
-                        loading={loading}
+                        loading={loading || isFarmersLoading}
                         showAddForm={showAddForm}
                         newFarmer={newFarmer}
                         setShowAddForm={setShowAddForm}
@@ -135,7 +135,7 @@ const EntitiesModule = () => {
                 {subTab === 'Traders' && (
                     <TradersTable
                         traders={traders}
-                        loading={loading}
+                        loading={loading || isTradersLoading}
                         showAddForm={showAddForm}
                         newTrader={newTrader}
                         setShowAddForm={setShowAddForm}
@@ -147,7 +147,7 @@ const EntitiesModule = () => {
                 {subTab === 'Suppliers' && (
                     <SuppliersTable
                         suppliers={suppliers}
-                        loading={loading}
+                        loading={loading || isSuppliersLoading}
                         showAddForm={showAddForm}
                         newSupplier={newSupplier}
                         setShowAddForm={setShowAddForm}

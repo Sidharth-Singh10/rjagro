@@ -1,4 +1,5 @@
 import React from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox,  Edit, Filter, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { BatchAllocation } from '@/app/types/interfaces';
 import { useBatchAllocationSorting } from '@/app/hooks/custom_sorting';
@@ -79,9 +80,7 @@ const BatchAllocationsTable: React.FC<BatchAllocationsTableProps> = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-                            </tr>
+                            <TableSkeletonRows cols={6} />
                         ) : batchAllocations.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="px-4 py-12 text-center">

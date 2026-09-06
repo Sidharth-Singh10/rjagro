@@ -1,4 +1,5 @@
 import { ItemCategory } from '@/app/types/enums';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Item } from '@/app/types/interfaces';
 import { Inbox,  Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
 interface ItemsTableProps {
@@ -155,9 +156,7 @@ const ItemsTable: React.FC<ItemsTableProps> = ({
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
-                        <tr>
-                            <td colSpan={4} className="px-4 py-8 text-center text-gray-500">Loading...</td>
-                        </tr>
+                        <TableSkeletonRows cols={4} />
                     ) : items.length === 0 ? (
                         <tr>
                             <td colSpan={4} className="px-4 py-12 text-center">

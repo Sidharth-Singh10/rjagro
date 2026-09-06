@@ -1,5 +1,6 @@
 'use client'
 import React, { useState } from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Inbox,  Plus, X, Save, MapPin, Video } from 'lucide-react';
 import { fetchFarms, handleAddFarm } from '@/app/api/farms';
@@ -24,13 +25,13 @@ const FarmsModule = () => {
     const [newFarm, setNewFarm] = useState<FarmPayload>(emptyFarm);
     const [batchFarm, setBatchFarm] = useState<number | null>(null);
 
-    const { data: farms = [] } = useQuery({
+    const { data: farms = [], isLoading: isFarmsLoading } = useQuery({
         queryKey: ['farms'],
         queryFn: fetchFarms,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: farmers = [] } = useQuery({
+    const { data: farmers = [], isLoading: isFarmersLoading } = useQuery({
         queryKey: ['farmers'],
         queryFn: fetchFarmers,
         staleTime: 5 * 60 * 1000,
@@ -151,7 +152,9 @@ const FarmsModule = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {farms.length === 0 ? (
+                        {(isFarmsLoading || isFarmersLoading) ? (
+                            <TableSkeletonRows cols={6} />
+                        ) : farms.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="px-4 py-12 text-center">
                                     <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />

@@ -1,5 +1,6 @@
 'use client'
 import React, { useState } from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Inbox,  Plus, Play, Ban, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { fetchFarms } from '@/app/api/farms';
@@ -31,7 +32,7 @@ const LiveSellingModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: batches = [] } = useQuery({
+    const { data: batches = [], isLoading: isBatchesLoading } = useQuery({
         queryKey: ['batches'],
         queryFn: fetchBatches,
         staleTime: 5 * 60 * 1000,
@@ -112,7 +113,9 @@ const LiveSellingModule = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {liveBatches.length === 0 ? (
+                        {isBatchesLoading ? (
+                            <TableSkeletonRows cols={5} />
+                        ) : liveBatches.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="px-4 py-12 text-center">
                                     <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />

@@ -1,5 +1,6 @@
 'use client'
 import React, { useState } from 'react';
+import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Inbox,  ArrowLeft, Banknote, BookOpen, CreditCard, Save, Users } from 'lucide-react';
 import {
@@ -155,9 +156,7 @@ const AppTradersModule: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {tradersLoading ? (
-                                    <tr>
-                                        <td colSpan={7} className="px-5 py-10 text-center text-gray-500">Loading app traders...</td>
-                                    </tr>
+                                    <TableSkeletonRows cols={7} />
                                 ) : traders.length === 0 ? (
                                     <tr>
                                         <td colSpan={7} className="px-4 py-12 text-center">
