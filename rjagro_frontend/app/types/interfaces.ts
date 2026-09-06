@@ -784,6 +784,7 @@ export enum OtherExpenseCategory {
   EmployeeExpenses = 'EmployeeExpenses',
   Misc = 'Misc',
   FeedDelivery = 'FeedDelivery',
+  Medicine = 'Medicine',
 }
 
 export const OTHER_EXPENSE_CATEGORY_LABELS: Record<OtherExpenseCategory, string> = {
@@ -793,6 +794,7 @@ export const OTHER_EXPENSE_CATEGORY_LABELS: Record<OtherExpenseCategory, string>
   [OtherExpenseCategory.EmployeeExpenses]: 'Employee Expenses',
   [OtherExpenseCategory.Misc]: 'Misc',
   [OtherExpenseCategory.FeedDelivery]: 'Feed Delivery',
+  [OtherExpenseCategory.Medicine]: 'Medicine',
 };
 
 export interface OtherExpense {
