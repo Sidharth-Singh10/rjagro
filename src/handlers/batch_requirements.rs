@@ -324,15 +324,17 @@ async fn approve_and_allocate(
             .await
             .map_err(|e| format!("Failed to insert bird_count_history: {}", e))?;
 
-        // Update batches.current_bird_count
+        // Update batches.current_bird_count and initial_bird_count
         if let Some(batch) = batches::Entity::find_by_id(requirement.batch_id)
             .one(txn)
             .await
             .map_err(|e| format!("Failed to fetch batch {}: {}", requirement.batch_id, e))?
         {
             let current = batch.current_bird_count;
+            let initial = batch.initial_bird_count;
             let mut batch_active: batches::ActiveModel = batch.into();
             batch_active.current_bird_count = Set(current + additions_i32);
+            batch_active.initial_bird_count = Set(initial + additions_i32);
             batch_active
                 .update(txn)
                 .await
