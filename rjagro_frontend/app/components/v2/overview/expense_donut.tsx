@@ -3,7 +3,7 @@ import { memo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartCard } from './chart_card';
 
-interface ExpenseSlice {
+export interface ExpenseSlice {
     name: string;
     value: number;
     color: string;
@@ -12,6 +12,8 @@ interface ExpenseSlice {
 interface Props {
     data: ExpenseSlice[];
     total: number;
+    title?: string;
+    emptyText?: string;
 }
 
 const fmt = (v: number) => `₹${v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -27,19 +29,19 @@ const CustomTooltip = ({ active, payload }: any) => {
     );
 };
 
-export const ExpenseDonut = memo(({ data, total }: Props) => {
+export const ExpenseDonut = memo(({ data, total, title = 'Expense Breakdown', emptyText = 'No expense data yet' }: Props) => {
     if (data.length === 0) {
         return (
-            <ChartCard title="Expense Breakdown">
+            <ChartCard title={title}>
                 <div className="h-[300px] flex items-center justify-center text-sm text-gray-400">
-                    No purchase data yet
+                    {emptyText}
                 </div>
             </ChartCard>
         );
     }
 
     return (
-        <ChartCard title="Expense Breakdown">
+        <ChartCard title={title}>
             <div className="relative">
                 <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
@@ -66,7 +68,7 @@ export const ExpenseDonut = memo(({ data, total }: Props) => {
                     </div>
                 </div>
             </div>
-            <div className="flex justify-center gap-6 mt-2">
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-2">
                 {data.map((entry) => (
                     <div key={entry.name} className="flex items-center gap-1.5 text-xs">
                         <div

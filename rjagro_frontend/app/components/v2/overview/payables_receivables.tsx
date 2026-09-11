@@ -5,6 +5,7 @@ import { ChartCard } from './chart_card';
 interface EntityDue {
     name: string;
     amount: number;
+    ageDays?: number;
 }
 
 interface Props {
@@ -49,7 +50,12 @@ export const PayablesReceivables = memo(({ payables, receivables, totalPayable, 
                         )}
                         {payables.slice(0, 5).map((s) => (
                             <div key={s.name} className="flex justify-between text-xs">
-                                <span className="text-gray-600 truncate mr-2">{s.name}</span>
+                                <span className="text-gray-600 truncate mr-2">
+                                    {s.name}
+                                    {typeof s.ageDays === 'number' && (
+                                        <span className="text-gray-400"> · {s.ageDays}d</span>
+                                    )}
+                                </span>
                                 <span className="font-medium text-orange-600 whitespace-nowrap">
                                     {fmt(s.amount)}
                                 </span>
@@ -68,7 +74,12 @@ export const PayablesReceivables = memo(({ payables, receivables, totalPayable, 
                         )}
                         {receivables.slice(0, 5).map((t) => (
                             <div key={t.name} className="flex justify-between text-xs">
-                                <span className="text-gray-600 truncate mr-2">{t.name}</span>
+                                <span className="text-gray-600 truncate mr-2">
+                                    {t.name}
+                                    {typeof t.ageDays === 'number' && (
+                                        <span className="text-gray-400"> · {t.ageDays}d</span>
+                                    )}
+                                </span>
                                 <span className="font-medium text-green-600 whitespace-nowrap">
                                     {fmt(t.amount)}
                                 </span>

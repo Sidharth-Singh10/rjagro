@@ -10,9 +10,8 @@ import LiveSellingModule from './live_selling_module';
 const BatchesModule = () => {
     const [subTab, setSubTab] = useState<'Active' | 'LiveSelling' | 'Closures'>('Active');
 
-    // Shared Loading/Form State
+    // Shared Loading State
     const loading = false;
-    const [showAddForm, setShowAddForm] = useState(false);
 
     // --- Data Fetching ---
     const { data: batches = [], isLoading: isBatchesLoading } = useQuery({
@@ -75,8 +74,6 @@ const BatchesModule = () => {
                         batchClosures={batchClosures}
                         batches={batches}
                         loading={loading || isClosuresLoading}
-                        showAddForm={showAddForm}
-                        setShowAddForm={setShowAddForm}
                     />
                 )}
             </div>

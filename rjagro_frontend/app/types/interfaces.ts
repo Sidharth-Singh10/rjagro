@@ -524,6 +524,8 @@ export interface BatchSale {
   quantity: number;
   value: number;
   created_at: string;
+  payment_type?: string;
+  sale_date?: string;
 }
 
 export interface BatchSalePayload {
