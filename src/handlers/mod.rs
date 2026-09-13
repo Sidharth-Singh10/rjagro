@@ -8,6 +8,7 @@ pub mod fetch_all;
 pub mod fetch_by_id;
 pub mod inserts;
 pub mod loans;
+pub mod metrics;
 pub mod other_expenses;
 pub mod purchase_orders;
 pub mod purchases;

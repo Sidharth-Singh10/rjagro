@@ -652,3 +652,32 @@ pub struct AppTraderView {
     pub credit_terms_days: Option<i32>,
     pub linked_trader_id: Option<i32>,
 }
+
+// ─── Stored metrics history ──────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct MetricSnapshotQuery {
+    /// 'day' | 'month' (defaults to all when omitted)
+    pub period_type: Option<String>,
+    /// Inclusive lower bound period key ('YYYY-MM' or 'YYYY-MM-DD')
+    pub from: Option<String>,
+    /// Inclusive upper bound period key ('YYYY-MM' or 'YYYY-MM-DD')
+    pub to: Option<String>,
+    /// Comma-separated metric keys to include
+    pub metrics: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RefreshMetricsBody {
+    /// 'day' | 'month' | omitted for both
+    pub period_type: Option<String>,
+    /// First period key to recompute; defaults to the earliest recorded activity
+    pub from: Option<String>,
+    /// Last period key to recompute; defaults to the current period
+    pub to: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RefreshMetricsResponse {
+    pub refreshed: usize,
+}

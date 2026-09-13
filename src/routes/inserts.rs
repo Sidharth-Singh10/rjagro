@@ -13,6 +13,7 @@ use crate::handlers::inserts::{
     create_batch_closure_summary, create_farmer_commission, create_ledger_entry,
 };
 use crate::handlers::loans::{create_loan, create_loan_payment};
+use crate::handlers::metrics::refresh_metrics_handler;
 use crate::handlers::other_expenses::create_other_expense;
 use crate::handlers::suppliers::create_supplier_payment;
 use crate::handlers::timeslots::create_timeslot_handler;
@@ -36,6 +37,7 @@ pub fn insert_routes() -> Router<DatabaseConnection> {
         .route("/batch_closure_summary", post(create_batch_closure_summary))
         .route("/batch_sales", post(create_batch_sale))
         .route("/ledger_entry", post(create_ledger_entry))
+        .route("/metrics/refresh", post(refresh_metrics_handler))
         .layer(from_fn_with_state(
             RequireRoles::new(&[UserRole::Admin]),
             require_roles_middleware,

@@ -12,6 +12,7 @@ pub use super::farmers::Entity as Farmers;
 pub use super::farms::Entity as Farms;
 pub use super::loan_payments::Entity as LoanPayments;
 pub use super::loans::Entity as Loans;
+pub use super::metric_snapshots::Entity as MetricSnapshots;
 pub use super::orders::Entity as Orders;
 pub use super::other_expenses::Entity as OtherExpenses;
 pub use super::post::Entity as Post;

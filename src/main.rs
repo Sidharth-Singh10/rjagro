@@ -99,6 +99,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ])
         .allow_credentials(true);
 
+    // Backfill stored metric history once, then refresh the open periods hourly.
+    let metrics_db = db.clone();
+    tokio::spawn(async move {
+        if let Err(e) = crate::handlers::metrics::backfill_metrics(&metrics_db).await {
+            error!("Metrics backfill failed: {:?}", e);
+        }
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(60 * 60));
+        interval.tick().await; // consume the immediate first tick
+        loop {
+            interval.tick().await;
+            if let Err(e) = crate::handlers::metrics::refresh_current_metrics(&metrics_db).await {
+                error!("Metrics refresh failed: {:?}", e);
+            }
+        }
+    });
+
     let router = Router::new()
         .nest("/admin", admin())
         .nest("/getall", fetch_all())
