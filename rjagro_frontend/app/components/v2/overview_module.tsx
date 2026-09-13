@@ -21,6 +21,7 @@ import { fetchBatchAllocations } from '@/app/api/batch_allocations';
 import { fetchStockReceipts } from '@/app/api/stock_receipts';
 import { fetchLedgerEntries } from '@/app/api/ledger_entries';
 import { fetchOtherExpenses } from '@/app/api/other_expenses';
+import { fetchMetricSnapshots } from '@/app/api/metrics';
 import { Item, OTHER_EXPENSE_CATEGORY_LABELS } from '@/app/types/interfaces';
 
 import { RevenueExpenseChart } from './overview/revenue_expense_chart';
@@ -38,6 +39,16 @@ import { CostPerBirdChart, CostPerBirdData } from './overview/cost_per_bird_char
 import { BreakevenChart, BreakevenData } from './overview/breakeven_chart';
 import { AvgWeightChart, AvgWeightData } from './overview/avg_weight_chart';
 import { LiftingHeatmap } from './overview/lifting_heatmap';
+import { RangeFilter, sliceSeries, SeriesPoint } from './overview/range_filter';
+import {
+    PnlTrendChart,
+    MarginTrendChart,
+    RevenuePerKgChart,
+    CashFlowChart,
+    WorkingCapitalChart,
+    OpsVolumeChart,
+    EfficiencyChart,
+} from './overview/financial_charts';
 
 const STALE = 5 * 60 * 1000;
 
@@ -135,6 +146,9 @@ const OverviewModule = () => {
     const { data: otherExpenses = [] } = useQuery({
         queryKey: ['other_expenses'], queryFn: fetchOtherExpenses, staleTime: STALE,
     });
+    const { data: metricSnapshots = [] } = useQuery({
+        queryKey: ['metric_snapshots'], queryFn: () => fetchMetricSnapshots(), staleTime: STALE,
+    });
     const { data: supplierPaymentsBySupplier = {} } = useQuery({
         queryKey: ['overview_supplier_payments', suppliers.map(s => s.supplier_id)],
         queryFn: async () => {
@@ -195,6 +209,173 @@ const OverviewModule = () => {
         batchAllocations.forEach(a => { map[n(a.allocation_id)] = a.allocation_date; });
         return map;
     }, [batchAllocations]);
+
+    const farmerNameByBatch = useMemo(() => {
+        const map: Record<number, string> = {};
+        batches.forEach(b => { map[n(b.batch_id)] = b.farmer_name; });
+        return map;
+    }, [batches]);
+
+    // ── Stored metrics history (monthly & daily snapshots) ────────────
+    const metricPeriods = useMemo(() => {
+        const grouped: Record<'day' | 'month', Record<string, Record<string, number>>> = {
+            day: {},
+            month: {},
+        };
+        metricSnapshots.forEach(snapshot => {
+            const bucket = grouped[snapshot.period_type]?.[snapshot.period_key] ?? {};
+            bucket[snapshot.metric_key] = n(snapshot.value);
+            grouped[snapshot.period_type][snapshot.period_key] = bucket;
+        });
+
+        const monthRows: SeriesPoint[] = Object.entries(grouped.month)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, metrics]) => ({ key, label: getMonthLabel(key), ...metrics }));
+
+        const dayRows: SeriesPoint[] = Object.entries(grouped.day)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, metrics]) => {
+                const [year, month, day] = key.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+                return {
+                    key,
+                    label: date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+                    ...metrics,
+                };
+            });
+
+        return { monthRows, dayRows };
+    }, [metricSnapshots]);
+
+    // ── Financial chart range filters (monthly) ───────────────────────
+    const [monthlyMode, setMonthlyMode] = useState('12m');
+    const [monthlyFrom, setMonthlyFrom] = useState('');
+    const [monthlyTo, setMonthlyTo] = useState('');
+
+    const monthlyOptions = useMemo(() => [
+        { key: '12m', label: 'Last 12M' },
+        { key: 'all', label: 'All' },
+        { key: 'custom', label: 'Custom' },
+    ], []);
+
+    const handleMonthlyMode = (mode: string) => {
+        if (mode === 'custom' && metricPeriods.monthRows.length > 0) {
+            if (!monthlyFrom) setMonthlyFrom(metricPeriods.monthRows[0].key);
+            if (!monthlyTo) setMonthlyTo(metricPeriods.monthRows[metricPeriods.monthRows.length - 1].key);
+        }
+        setMonthlyMode(mode);
+    };
+
+    const monthlySeries = useMemo(
+        () => sliceSeries(
+            metricPeriods.monthRows,
+            monthlyMode,
+            monthlyFrom,
+            monthlyTo,
+            monthlyMode === '12m' ? 12 : undefined,
+        ),
+        [metricPeriods.monthRows, monthlyMode, monthlyFrom, monthlyTo],
+    );
+
+    const monthlyRangeControls = (
+        <RangeFilter
+            options={monthlyOptions}
+            mode={monthlyMode}
+            onModeChange={handleMonthlyMode}
+            customFrom={monthlyFrom}
+            onCustomFromChange={setMonthlyFrom}
+            customTo={monthlyTo}
+            onCustomToChange={setMonthlyTo}
+            inputType="month"
+        />
+    );
+
+    // ── Revenue per kg per closed batch ───────────────────────────────
+    const revenuePerKgRows: SeriesPoint[] = useMemo(() => {
+        const totalsByBatch: Record<number, { value: number; kg: number }> = {};
+        batchSales.forEach(s => {
+            const batchId = n(s.batch_id);
+            if (!totalsByBatch[batchId]) totalsByBatch[batchId] = { value: 0, kg: 0 };
+            totalsByBatch[batchId].value += n(s.value);
+            totalsByBatch[batchId].kg += n(s.avg_weight);
+        });
+
+        const rows: SeriesPoint[] = [];
+        batchClosures.forEach(c => {
+            const totals = totalsByBatch[n(c.batch_id)] ?? { value: 0, kg: 0 };
+            if (totals.kg <= 0 || totals.value <= 0) return;
+            const closeDate = new Date(c.end_date + 'T00:00:00');
+            const dateLabel = closeDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+            const farmerName = farmerNameByBatch[n(c.batch_id)];
+            rows.push({
+                key: c.end_date.slice(0, 7),
+                monthKey: c.end_date.slice(0, 7),
+                closeDate: c.end_date,
+                label: `${dateLabel} · B${c.batch_id}`,
+                label2: farmerName ?? '',
+                tooltipTitle: `${dateLabel} · B${c.batch_id}${farmerName ? ` · ${farmerName}` : ''}`,
+                revenue_per_kg: parseFloat((totals.value / totals.kg).toFixed(2)),
+                batchId: c.batch_id,
+                kg: parseFloat(totals.kg.toFixed(2)),
+            });
+        });
+
+        return rows.sort((a, b) => String(a.closeDate).localeCompare(String(b.closeDate)));
+    }, [batchSales, batchClosures, farmerNameByBatch]);
+
+    const revenuePerKgSeries = useMemo(() => {
+        if (monthlyMode === 'custom') {
+            return revenuePerKgRows.filter(row =>
+                (!monthlyFrom || String(row.monthKey) >= monthlyFrom) &&
+                (!monthlyTo || String(row.monthKey) <= monthlyTo),
+            );
+        }
+        if (monthlyMode === '12m') {
+            const cutoff = new Date();
+            cutoff.setMonth(cutoff.getMonth() - 11);
+            const pad = (value: number) => String(value).padStart(2, '0');
+            const cutoffKey = `${cutoff.getFullYear()}-${pad(cutoff.getMonth() + 1)}`;
+            return revenuePerKgRows.filter(row => String(row.monthKey) >= cutoffKey);
+        }
+        return revenuePerKgRows;
+    }, [revenuePerKgRows, monthlyMode, monthlyFrom, monthlyTo]);
+
+    // ── Live batch rate (aggregate only, never plotted) ───────────────
+    const liveBatchRate = useMemo(() => {
+        const closedBatchIds = new Set(batchClosures.map(c => n(c.batch_id)));
+        let value = 0, kg = 0, birds = 0;
+        batchSales.forEach(s => {
+            if (closedBatchIds.has(n(s.batch_id))) return;
+            value += n(s.value);
+            kg += n(s.avg_weight);
+            birds += n(s.quantity);
+        });
+        return {
+            perKg: kg > 0 ? value / kg : null,
+            kg,
+            birds,
+        };
+    }, [batchSales, batchClosures]);
+
+    const liveBatchBadge = liveBatchRate.perKg === null ? (
+        <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] text-gray-400">
+            No live batch sales
+        </span>
+    ) : (
+        <span className="inline-flex flex-wrap items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px]">
+            <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+            <span className="font-medium text-emerald-700">Live batches</span>
+            <span className="font-semibold text-emerald-800">
+                ₹{liveBatchRate.perKg.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/kg
+            </span>
+            <span className="text-emerald-600">
+                {liveBatchRate.kg.toLocaleString('en-IN', { maximumFractionDigits: 0 })} kg · {liveBatchRate.birds.toLocaleString('en-IN')} birds
+            </span>
+        </span>
+    );
 
     const now = new Date();
     const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -705,22 +886,34 @@ const OverviewModule = () => {
             .filter(d => d.kg > 0);
     }, [batchClosures, batchSales]);
 
-    // ── Avg sale weight per bird (kg) ─────────────────────────────────
+    // ── Avg sold weight per bird (kg) per closed batch ────────────────
     const avgWeightData: AvgWeightData[] = useMemo(() => {
-        return batchSales
+        const totalsByBatch: Record<number, { birds: number; kg: number }> = {};
+        batchSales.forEach(s => {
+            const batchId = n(s.batch_id);
+            if (!totalsByBatch[batchId]) totalsByBatch[batchId] = { birds: 0, kg: 0 };
+            totalsByBatch[batchId].birds += n(s.quantity);
+            totalsByBatch[batchId].kg += n(s.avg_weight);
+        });
+
+        return batchClosures
             .slice()
-            .sort((a, b) => a.created_at.localeCompare(b.created_at))
-            .map(s => {
-                const qty = n(s.quantity);
-                const d = new Date(s.created_at);
+            .sort((a, b) => a.end_date.localeCompare(b.end_date))
+            .map(c => {
+                const totals = totalsByBatch[n(c.batch_id)] ?? { birds: 0, kg: 0 };
+                const closeDate = new Date(c.end_date + 'T00:00:00');
                 return {
-                    label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
-                    avgWeight: qty > 0 ? parseFloat((n(s.avg_weight) / qty).toFixed(3)) : 0,
-                    batchId: s.batch_id,
-                    birds: qty,
+                    label: `${closeDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · B${c.batch_id}`,
+                    avgWeight: totals.birds > 0 ? parseFloat((totals.kg / totals.birds).toFixed(3)) : 0,
+                    batchId: c.batch_id,
+                    farmerName: farmerNameByBatch[n(c.batch_id)],
+                    birds: totals.birds,
+                    totalKg: parseFloat(totals.kg.toFixed(2)),
+                    closeDate: c.end_date,
                 };
-            });
-    }, [batchSales]);
+            })
+            .filter(row => row.birds > 0);
+    }, [batchSales, batchClosures, farmerNameByBatch]);
 
     // ── Mortality rate per active batch ───────────────────────────────
     const mortalityData = useMemo(() => {
@@ -1063,39 +1256,60 @@ const OverviewModule = () => {
                 />
             </div>
 
+            {/* Financial Performance — stored metrics history */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                    <PnlTrendChart data={monthlySeries} headerControls={monthlyRangeControls} />
+                </div>
+                <MarginTrendChart data={monthlySeries} headerControls={monthlyRangeControls} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <RevenuePerKgChart
+                    data={revenuePerKgSeries}
+                    headerControls={monthlyRangeControls}
+                    badge={liveBatchBadge}
+                />
+                <CashFlowChart data={monthlySeries} headerControls={monthlyRangeControls} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <WorkingCapitalChart data={monthlySeries} headerControls={monthlyRangeControls} />
+                <OpsVolumeChart data={monthlySeries} headerControls={monthlyRangeControls} />
+                <EfficiencyChart data={monthlySeries} headerControls={monthlyRangeControls} />
+            </div>
+
             {/* Chick Lifting Heatmap */}
             <LiftingHeatmap batches={batches} />
 
-            {/* Revenue vs Expenses & Expense Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                    <RevenueExpenseChart
-                        data={revenueExpenseData}
-                        filterMode={revExpFilterMode}
-                        onFilterModeChange={setRevExpFilterMode}
-                        selectedMonth={revExpSelectedMonth}
-                        onSelectedMonthChange={setRevExpSelectedMonth}
-                        availableMonths={availableMonths}
-                        customFrom={revExpCustomFrom}
-                        onCustomFromChange={setRevExpCustomFrom}
-                        customTo={revExpCustomTo}
-                        onCustomToChange={setRevExpCustomTo}
-                    />
-                </div>
-                <div className="space-y-6">
-                    <ExpenseDonut
-                        data={cogsMix.data}
-                        total={cogsMix.total}
-                        title="COGS Mix (Month)"
-                        emptyText="No allocations this month"
-                    />
-                    <ExpenseDonut
-                        data={otherExpenseMix.data}
-                        total={otherExpenseMix.total}
-                        title="Other Expenses (Month)"
-                        emptyText="No other expenses this month"
-                    />
-                </div>
+            {/* Revenue vs Expenses (full width) */}
+            <RevenueExpenseChart
+                data={revenueExpenseData}
+                filterMode={revExpFilterMode}
+                onFilterModeChange={setRevExpFilterMode}
+                selectedMonth={revExpSelectedMonth}
+                onSelectedMonthChange={setRevExpSelectedMonth}
+                availableMonths={availableMonths}
+                customFrom={revExpCustomFrom}
+                onCustomFromChange={setRevExpCustomFrom}
+                customTo={revExpCustomTo}
+                onCustomToChange={setRevExpCustomTo}
+            />
+
+            {/* Expense Breakdown */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ExpenseDonut
+                    data={cogsMix.data}
+                    total={cogsMix.total}
+                    title="COGS Mix (Month)"
+                    emptyText="No allocations this month"
+                />
+                <ExpenseDonut
+                    data={otherExpenseMix.data}
+                    total={otherExpenseMix.total}
+                    title="Other Expenses (Month)"
+                    emptyText="No other expenses this month"
+                />
             </div>
 
             {/* Batch Profitability & FCR */}
@@ -1104,7 +1318,7 @@ const OverviewModule = () => {
                 <FCRChart data={fcrData} onBarClick={setSelectedFCR} />
             </div>
 
-            {/* Cost per Bird, Realized vs Breakeven, Avg Sale Weight */}
+            {/* Cost per Bird, Realized vs Breakeven, Avg Sold Weight */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <CostPerBirdChart data={costPerBirdData} />
                 <BreakevenChart data={breakevenData} />

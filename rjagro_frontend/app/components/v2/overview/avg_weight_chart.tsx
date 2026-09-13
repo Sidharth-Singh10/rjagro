@@ -8,23 +8,37 @@ export interface AvgWeightData {
     label: string;
     avgWeight: number;
     batchId: number;
+    farmerName?: string;
     birds: number;
+    totalKg: number;
+    closeDate: string;
 }
 
 interface Props {
     data: AvgWeightData[];
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const formatCloseDate = (value: string) => {
+    const date = new Date(value + 'T00:00:00');
+    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+};
+
+const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
     const row: AvgWeightData = payload[0].payload;
     return (
         <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-100 text-xs">
-            <p className="font-semibold text-gray-700 mb-1">{label}</p>
+            <p className="font-semibold text-gray-700 mb-1">
+                Batch {row.batchId}
+                {row.farmerName ? ` · ${row.farmerName}` : ''}
+            </p>
             <p style={{ color: chart.violet }}>
                 Avg Weight: {row.avgWeight.toFixed(3)} kg/bird
             </p>
-            <p className="text-gray-500">Batch {row.batchId} · {row.birds.toLocaleString('en-IN')} birds</p>
+            <p className="text-gray-500">
+                {row.birds.toLocaleString('en-IN')} birds · {row.totalKg.toLocaleString('en-IN', { maximumFractionDigits: 2 })} kg
+            </p>
+            <p className="text-gray-400">Closed {formatCloseDate(row.closeDate)}</p>
         </div>
     );
 };
@@ -32,16 +46,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export const AvgWeightChart = memo(({ data }: Props) => {
     if (data.length === 0) {
         return (
-            <ChartCard title="Avg Sale Weight (kg/bird)">
+            <ChartCard title="Avg Sold Weight per Batch (kg/bird)">
                 <div className="h-[300px] flex items-center justify-center text-sm text-gray-400">
-                    No sales data yet
+                    No closed batch sales yet
                 </div>
             </ChartCard>
         );
     }
 
     return (
-        <ChartCard title="Avg Sale Weight (kg/bird)">
+        <ChartCard title="Avg Sold Weight per Batch (kg/bird)">
             <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />

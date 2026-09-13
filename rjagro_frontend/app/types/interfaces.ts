@@ -823,3 +823,23 @@ export interface NewOtherExpense {
   description: string;
   expense_date: string;
 }
+
+// ─── Stored metrics history ──────────────────────────────────────────────────
+
+export type MetricPeriodType = 'day' | 'month';
+
+export interface MetricSnapshot {
+  id: number;
+  period_type: MetricPeriodType;
+  period_key: string;
+  metric_key: string;
+  value: number;
+  computed_at: string;
+}
+
+export interface MetricSnapshotQuery {
+  period_type?: MetricPeriodType;
+  from?: string;
+  to?: string;
+  metrics?: string[];
+}
