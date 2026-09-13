@@ -82,7 +82,7 @@ For Tauri builds (native app), `tauri.localhost` origin is already in backend CO
 
 ## 5. Deployment order (recommended)
 
-1. **Database**: apply `backup.sql` → `rjagro_schema_backup.sql` → `trader_schema_additions.sql`.
+1. **Database**: apply `backup.sql` → `rjagro_schema_backup.sql` → `trader_schema_additions.sql` → `metrics_schema_additions.sql`.
 2. **Backend**: build Docker image or `cargo build --release`; set `DATABASE_URL` + `JWT_SECRET`.
 3. **Frontends**: build each with `VITE_API_BASE_URL` pointing to the backend; serve static `dist/` or build Tauri native apps.
 4. **Verify**: login as trader (`/trader/login`) and supervisor (`/login`); exercise the full order lifecycle.
