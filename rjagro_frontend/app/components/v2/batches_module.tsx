@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Bird, Archive, Store } from 'lucide-react';
 import { fetchBatchClosures, fetchBatches } from '@/app/api/batches';
+import { fetchBatchSales } from '@/app/api/batch_sales';
 import BatchesTable from '../tables/batches';
 import BatchClosureSummaryTable from '../tables/batch_closure_summary/batch_closure';
 import LiveSellingModule from './live_selling_module';
@@ -23,6 +24,12 @@ const BatchesModule = () => {
     const { data: batchClosures = [], isLoading: isClosuresLoading } = useQuery({
         queryKey: ["batch_closures"],
         queryFn: fetchBatchClosures,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: batchSales = [], isLoading: isSalesLoading } = useQuery({
+        queryKey: ["batch_sales"],
+        queryFn: fetchBatchSales,
         staleTime: 5 * 60 * 1000,
     });
 
@@ -73,7 +80,8 @@ const BatchesModule = () => {
                     <BatchClosureSummaryTable
                         batchClosures={batchClosures}
                         batches={batches}
-                        loading={loading || isClosuresLoading}
+                        batchSales={batchSales}
+                        loading={loading || isClosuresLoading || isSalesLoading}
                     />
                 )}
             </div>

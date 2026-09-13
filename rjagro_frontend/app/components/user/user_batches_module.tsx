@@ -1,12 +1,14 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { useQuery } from '@tanstack/react-query';
 import { Inbox,  Bird, Archive, ChevronRight } from 'lucide-react';
 import { fetchBatchClosures, fetchBatches } from '@/app/api/batches';
+import { fetchBatchSales } from '@/app/api/batch_sales';
 import { useBatchesSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from '../tables/sortable_headers/header';
 import Link from 'next/link';
+import { BatchSale } from '@/app/types/interfaces';
 
 const UserBatchesModule = () => {
     const [subTab, setSubTab] = useState<'Active' | 'Closures'>('Active');
@@ -18,9 +20,15 @@ const UserBatchesModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    const { isLoading: closuresLoading } = useQuery({
+    const { data: batchClosures = [], isLoading: closuresLoading } = useQuery({
         queryKey: ["batch_closures"],
         queryFn: fetchBatchClosures,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: batchSales = [], isLoading: salesLoading } = useQuery({
+        queryKey: ["batch_sales"],
+        queryFn: fetchBatchSales,
         staleTime: 5 * 60 * 1000,
     });
 
@@ -37,7 +45,7 @@ const UserBatchesModule = () => {
         return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     };
 
-    const loading = batchesLoading || closuresLoading;
+    const loading = batchesLoading || closuresLoading || salesLoading;
 
     return (
         <div className="space-y-6">
@@ -195,6 +203,15 @@ const UserBatchesModule = () => {
                         </div>
                     </div>
                 )}
+
+                {subTab === 'Closures' && (
+                    <UserBatchClosuresTable
+                        batchClosures={batchClosures}
+                        batches={batches}
+                        batchSales={batchSales}
+                        loading={loading}
+                    />
+                )}
             </div>
         </div>
     );
@@ -214,18 +231,30 @@ interface UserBatchClosuresTableProps {
         batch_id: number;
         farmer_name: string;
     }>;
+    batchSales: BatchSale[];
     loading: boolean;
 }
 
 const UserBatchClosuresTable: React.FC<UserBatchClosuresTableProps> = ({
     batchClosures,
     batches,
+    batchSales,
     loading,
 }) => {
     const calculateMortality = (initial: number, available: number): number => {
         if (initial === 0) return 0;
         return ((initial - available) / initial) * 100;
     };
+
+    // Birds sold per batch (sum of recorded sales); fall back to the
+    // closure's available count when a batch has no sales recorded.
+    const soldByBatch = useMemo(() => {
+        const map = new Map<number, number>();
+        batchSales.forEach(s => {
+            map.set(s.batch_id, (map.get(s.batch_id) ?? 0) + (Number(s.quantity) || 0));
+        });
+        return map;
+    }, [batchSales]);
 
     return (
         <div className="bg-white rounded-lg shadow">
@@ -244,7 +273,7 @@ const UserBatchClosuresTable: React.FC<UserBatchClosuresTableProps> = ({
                             <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Farmer</th>
                             <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
                             <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Initial Count</th>
-                            <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available Count</th>
+                            <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Birds Sold</th>
                             <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mortality %</th>
                         </tr>
                     </thead>
@@ -276,7 +305,9 @@ const UserBatchClosuresTable: React.FC<UserBatchClosuresTableProps> = ({
                                         </div>
                                     </td>
                                     <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">{closure.initial_chicken_count.toLocaleString()}</td>
-                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">{closure.available_chicken_count.toLocaleString()}</td>
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {(soldByBatch.get(closure.batch_id) ?? closure.available_chicken_count).toLocaleString()}
+                                    </td>
                                     <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm">
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${calculateMortality(closure.initial_chicken_count, closure.available_chicken_count) > 10
                                             ? 'bg-red-100 text-red-800'

@@ -38,7 +38,7 @@ const BatchSalesTable = dynamic(
 import { useItems, useTraders } from "@/app/hooks/use_common_data";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, AlertTriangle, Package, TrendingUp } from "lucide-react";
+import { Activity, AlertTriangle, Bird, Package, TrendingUp } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
 
@@ -110,6 +110,10 @@ export default function BatchDetailsPage() {
         return batchSales.reduce((sum, s) => sum + (Number(s.value) || 0), 0);
     }, [batchSales]);
 
+    const birdsSold = useMemo(() => {
+        return batchSales.reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
+    }, [batchSales]);
+
     const grossProfit = useMemo(() => totalRevenue - totalExpenses, [totalRevenue, totalExpenses]);
 
     const expenseBreakdown: ExpenseBreakdown = useMemo(() => {
@@ -148,13 +152,24 @@ export default function BatchDetailsPage() {
         <div className="min-h-dvh bg-gray-50 p-3 sm:p-6">
             <BatchHeader batch={batch} onBack={goToDashboardBatches} />
 
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-3 sm:gap-4 mb-6 sm:mb-8`}>
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'lg:grid-cols-3 xl:grid-cols-5' : 'lg:grid-cols-3'} gap-3 sm:gap-4 mb-6 sm:mb-8`}>
                 <KPICard
                     title="Current Stock"
                     value={batch.current_bird_count}
                     subtext={`Initial: ${batch.initial_bird_count}`}
                     icon={Package}
                     color="#3d7ea6"
+                />
+                <KPICard
+                    title="Total Birds Sold"
+                    value={birdsSold.toLocaleString('en-IN')}
+                    subtext={`${
+                        batch.initial_bird_count > 0
+                            ? ((birdsSold / batch.initial_bird_count) * 100).toFixed(1)
+                            : '0.0'
+                    }% of ${batch.initial_bird_count.toLocaleString('en-IN')} placed`}
+                    icon={Bird}
+                    color="#34714a"
                 />
                 <KPICard
                     title="Mortality Rate"

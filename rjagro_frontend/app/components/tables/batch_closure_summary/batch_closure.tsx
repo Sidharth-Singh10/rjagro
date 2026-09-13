@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import { Inbox, 
     Edit,
@@ -8,7 +8,7 @@ import { Inbox,
     MoreVertical,
     FileText
 } from 'lucide-react';
-import { Batch, BatchClosure } from '@/app/types/interfaces';
+import { Batch, BatchClosure, BatchSale } from '@/app/types/interfaces';
 import DownloadGCModal from './download_gc';
 
 
@@ -21,12 +21,14 @@ interface BatchClosureWithJoins extends BatchClosure {
 interface BatchClosureSummaryTableProps {
     batchClosures: BatchClosureWithJoins[];
     batches: Batch[];
+    batchSales: BatchSale[];
     loading: boolean;
 }
 
 const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
     batchClosures,
     batches,
+    batchSales,
     loading,
 }) => {
     // Dropdown menu state
@@ -36,6 +38,16 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
+
+    // Birds sold per batch (sum of recorded sales); fall back to the
+    // closure's available count when a batch has no sales recorded.
+    const soldByBatch = useMemo(() => {
+        const map = new Map<number, number>();
+        batchSales.forEach(s => {
+            map.set(s.batch_id, (map.get(s.batch_id) ?? 0) + (Number(s.quantity) || 0));
+        });
+        return map;
+    }, [batchSales]);
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -84,7 +96,7 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Farmer</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Initial</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Birds Sold</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gross Profit</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Margin %</th>
@@ -119,7 +131,9 @@ const BatchClosureSummaryTable: React.FC<BatchClosureSummaryTableProps> = ({
                                             </div>
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.initial_chicken_count.toLocaleString()}</td>
-                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{closure.available_chicken_count.toLocaleString()}</td>
+                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {(soldByBatch.get(closure.batch_id) ?? closure.available_chicken_count).toLocaleString()}
+                                        </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">₹{Number(closure.revenue).toLocaleString()}</td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                                             <span className={Number(closure.gross_profit) >= 0 ? 'text-green-600' : 'text-red-600'}>
