@@ -3,6 +3,10 @@ name = "distracted-swartz"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "db-knowledge"
+path = "src/bin/db_knowledge/main.rs"
+
 [workspace]
 members = [".", "entity"]
 

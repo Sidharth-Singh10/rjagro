@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Thin wrapper around the db-knowledge Rust binary.
+# Usage: ./db-knowledge <command> [args] [flags]
+set -euo pipefail
+cd "$(dirname "$0")"
+exec cargo run --quiet --bin db-knowledge -- "$@"
