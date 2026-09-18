@@ -13,7 +13,7 @@ import SuppliersTable from '../tables/suppliers/suppliers';
 
 const EntitiesModule = () => {
     const queryClient = useQueryClient();
-    const [subTab, setSubTab] = useState<'Farmers' | 'Traders' | 'Suppliers'>('Farmers');
+    const [subTab, setSubTab] = useState<'Farmers' | 'Traders' | 'Suppliers'>('Traders');
 
     // Shared Loading/Form State
     const [loading, setLoading] = useState(false);
@@ -87,16 +87,6 @@ const EntitiesModule = () => {
             {/* Inner Module Navigation */}
             <div className="flex flex-wrap items-center gap-4 border-b border-gray-200 pb-2">
                 <button
-                    onClick={() => { setSubTab('Farmers'); setShowAddForm(false); }}
-                    className={`flex items-center space-x-2 pb-2 px-1 text-sm font-medium transition-colors ${subTab === 'Farmers'
-                            ? 'border-b-2 border-green-600 text-green-600'
-                            : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                >
-                    <Tractor className="w-4 h-4" />
-                    <span>Farmers</span>
-                </button>
-                <button
                     onClick={() => { setSubTab('Traders'); setShowAddForm(false); }}
                     className={`flex items-center space-x-2 pb-2 px-1 text-sm font-medium transition-colors ${subTab === 'Traders'
                             ? 'border-b-2 border-green-600 text-green-600'
@@ -105,6 +95,16 @@ const EntitiesModule = () => {
                 >
                     <Briefcase className="w-4 h-4" />
                     <span>Traders</span>
+                </button>
+                <button
+                    onClick={() => { setSubTab('Farmers'); setShowAddForm(false); }}
+                    className={`flex items-center space-x-2 pb-2 px-1 text-sm font-medium transition-colors ${subTab === 'Farmers'
+                            ? 'border-b-2 border-green-600 text-green-600'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <Tractor className="w-4 h-4" />
+                    <span>Farmers</span>
                 </button>
                 <button
                     onClick={() => { setSubTab('Suppliers'); setShowAddForm(false); }}
