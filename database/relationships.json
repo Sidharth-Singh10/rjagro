@@ -1,0 +1,302 @@
+{
+  "app_supervisors": {
+    "belongs_to": [],
+    "referenced_by": []
+  },
+  "app_traders": {
+    "belongs_to": [
+      "traders"
+    ],
+    "referenced_by": [
+      "batch_sales",
+      "orders",
+      "trader_ledger_entries"
+    ]
+  },
+  "audit_log": {
+    "belongs_to": [
+      "orders"
+    ],
+    "referenced_by": []
+  },
+  "batch_allocation_lines": {
+    "belongs_to": [
+      "batch_allocations",
+      "batches",
+      "stock_receipts"
+    ],
+    "referenced_by": [
+      "stock_returns"
+    ]
+  },
+  "batch_allocations": {
+    "belongs_to": [
+      "batch_requirements",
+      "users"
+    ],
+    "referenced_by": [
+      "batch_allocation_lines"
+    ]
+  },
+  "batch_closure_summary": {
+    "belongs_to": [
+      "batches"
+    ],
+    "referenced_by": []
+  },
+  "batch_requirements": {
+    "belongs_to": [
+      "batches",
+      "items",
+      "production_lines",
+      "users"
+    ],
+    "referenced_by": [
+      "batch_allocations"
+    ]
+  },
+  "batch_sales": {
+    "belongs_to": [
+      "app_traders",
+      "batches",
+      "items",
+      "traders"
+    ],
+    "referenced_by": []
+  },
+  "batches": {
+    "belongs_to": [
+      "farmers",
+      "farms",
+      "production_lines",
+      "users"
+    ],
+    "referenced_by": [
+      "batch_allocation_lines",
+      "batch_closure_summary",
+      "batch_requirements",
+      "batch_sales",
+      "bird_count_history",
+      "bird_sell_history",
+      "orders",
+      "stock_returns",
+      "timeslots"
+    ]
+  },
+  "bird_count_history": {
+    "belongs_to": [
+      "batches"
+    ],
+    "referenced_by": []
+  },
+  "bird_sell_history": {
+    "belongs_to": [
+      "batches",
+      "traders"
+    ],
+    "referenced_by": []
+  },
+  "farmer_commission_history": {
+    "belongs_to": [
+      "farmers"
+    ],
+    "referenced_by": []
+  },
+  "farmers": {
+    "belongs_to": [],
+    "referenced_by": [
+      "batches",
+      "farmer_commission_history",
+      "farms"
+    ]
+  },
+  "farms": {
+    "belongs_to": [
+      "farmers"
+    ],
+    "referenced_by": [
+      "batches"
+    ]
+  },
+  "inventory": {
+    "belongs_to": [
+      "items"
+    ],
+    "referenced_by": []
+  },
+  "inventory_movements": {
+    "belongs_to": [
+      "items"
+    ],
+    "referenced_by": []
+  },
+  "items": {
+    "belongs_to": [],
+    "referenced_by": [
+      "batch_requirements",
+      "batch_sales",
+      "inventory",
+      "inventory_movements",
+      "purchases",
+      "stock_receipts"
+    ]
+  },
+  "ledger_accounts": {
+    "belongs_to": [],
+    "referenced_by": [
+      "ledger_entries"
+    ]
+  },
+  "ledger_entries": {
+    "belongs_to": [
+      "ledger_accounts",
+      "users"
+    ],
+    "referenced_by": []
+  },
+  "loan_payments": {
+    "belongs_to": [
+      "loans",
+      "users"
+    ],
+    "referenced_by": []
+  },
+  "loans": {
+    "belongs_to": [
+      "users"
+    ],
+    "referenced_by": [
+      "loan_payments"
+    ]
+  },
+  "metric_snapshots": {
+    "belongs_to": [],
+    "referenced_by": []
+  },
+  "orders": {
+    "belongs_to": [
+      "app_traders",
+      "batches",
+      "timeslots"
+    ],
+    "referenced_by": [
+      "audit_log",
+      "trader_ledger_entries"
+    ]
+  },
+  "other_expenses": {
+    "belongs_to": [
+      "users"
+    ],
+    "referenced_by": []
+  },
+  "post": {
+    "belongs_to": [],
+    "referenced_by": []
+  },
+  "production_lines": {
+    "belongs_to": [
+      "users"
+    ],
+    "referenced_by": [
+      "batch_requirements",
+      "batches"
+    ]
+  },
+  "purchase_orders": {
+    "belongs_to": [],
+    "referenced_by": [
+      "purchases"
+    ]
+  },
+  "purchases": {
+    "belongs_to": [
+      "items",
+      "purchase_orders",
+      "suppliers",
+      "users"
+    ],
+    "referenced_by": [
+      "stock_receipts"
+    ]
+  },
+  "seaql_migrations": {
+    "belongs_to": [],
+    "referenced_by": []
+  },
+  "stock_receipts": {
+    "belongs_to": [
+      "items",
+      "purchases"
+    ],
+    "referenced_by": [
+      "batch_allocation_lines"
+    ]
+  },
+  "stock_returns": {
+    "belongs_to": [
+      "batch_allocation_lines",
+      "batches"
+    ],
+    "referenced_by": []
+  },
+  "supplier_payments": {
+    "belongs_to": [
+      "suppliers"
+    ],
+    "referenced_by": []
+  },
+  "suppliers": {
+    "belongs_to": [],
+    "referenced_by": [
+      "purchases",
+      "supplier_payments"
+    ]
+  },
+  "timeslots": {
+    "belongs_to": [
+      "batches"
+    ],
+    "referenced_by": [
+      "orders"
+    ]
+  },
+  "trader_ledger_entries": {
+    "belongs_to": [
+      "app_traders",
+      "orders"
+    ],
+    "referenced_by": []
+  },
+  "trader_payments": {
+    "belongs_to": [
+      "traders",
+      "users"
+    ],
+    "referenced_by": []
+  },
+  "traders": {
+    "belongs_to": [],
+    "referenced_by": [
+      "app_traders",
+      "batch_sales",
+      "bird_sell_history",
+      "trader_payments"
+    ]
+  },
+  "users": {
+    "belongs_to": [],
+    "referenced_by": [
+      "batch_allocations",
+      "batch_requirements",
+      "batches",
+      "ledger_entries",
+      "loan_payments",
+      "loans",
+      "other_expenses",
+      "production_lines",
+      "purchases",
+      "trader_payments"
+    ]
+  }
+}

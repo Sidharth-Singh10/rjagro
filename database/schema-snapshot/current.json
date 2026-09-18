@@ -1,0 +1,3593 @@
+{
+  "format_version": 1,
+  "database": {
+    "name": "rjagro",
+    "server_version": "16.11"
+  },
+  "schemas": {
+    "public": {
+      "tables": {
+        "app_supervisors": {
+          "columns": {
+            "created_at": {
+              "ordinal": 6,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "email": {
+              "ordinal": 3,
+              "data_type": "character varying(255)",
+              "nullable": false,
+              "default": null
+            },
+            "google_sub": {
+              "ordinal": 2,
+              "data_type": "character varying(255)",
+              "nullable": false,
+              "default": null
+            },
+            "id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('app_supervisors_id_seq'::regclass)"
+            },
+            "name": {
+              "ordinal": 4,
+              "data_type": "character varying(150)",
+              "nullable": false,
+              "default": null
+            },
+            "phone": {
+              "ordinal": 5,
+              "data_type": "character varying(15)",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "id"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {
+            "app_supervisors_email_key": [
+              "email"
+            ],
+            "app_supervisors_google_sub_key": [
+              "google_sub"
+            ]
+          },
+          "check_constraints": {},
+          "indexes": {
+            "app_supervisors_email_key": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "email"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX app_supervisors_email_key ON public.app_supervisors USING btree (email)"
+            },
+            "app_supervisors_google_sub_key": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "google_sub"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX app_supervisors_google_sub_key ON public.app_supervisors USING btree (google_sub)"
+            },
+            "app_supervisors_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX app_supervisors_pkey ON public.app_supervisors USING btree (id)"
+            }
+          }
+        },
+        "app_traders": {
+          "columns": {
+            "created_at": {
+              "ordinal": 8,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "credit_limit": {
+              "ordinal": 6,
+              "data_type": "numeric(18,2)",
+              "nullable": true,
+              "default": null
+            },
+            "credit_terms_days": {
+              "ordinal": 7,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "email": {
+              "ordinal": 3,
+              "data_type": "character varying(255)",
+              "nullable": false,
+              "default": null
+            },
+            "id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('app_traders_id_seq'::regclass)"
+            },
+            "linked_trader_id": {
+              "ordinal": 10,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "name": {
+              "ordinal": 4,
+              "data_type": "character varying(150)",
+              "nullable": false,
+              "default": null
+            },
+            "password_hash": {
+              "ordinal": 9,
+              "data_type": "character varying(255)",
+              "nullable": false,
+              "default": null
+            },
+            "phone": {
+              "ordinal": 5,
+              "data_type": "character varying(15)",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "id"
+          ],
+          "foreign_keys": {
+            "fk_app_traders_linked_trader_id": {
+              "columns": [
+                "linked_trader_id"
+              ],
+              "references_schema": "public",
+              "references_table": "traders",
+              "references_columns": [
+                "trader_id"
+              ],
+              "on_update": "CASCADE",
+              "on_delete": "SET NULL"
+            }
+          },
+          "unique_constraints": {
+            "app_traders_email_key": [
+              "email"
+            ],
+            "app_traders_phone_key": [
+              "phone"
+            ]
+          },
+          "check_constraints": {},
+          "indexes": {
+            "app_traders_email_key": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "email"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX app_traders_email_key ON public.app_traders USING btree (email)"
+            },
+            "app_traders_phone_key": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "phone"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX app_traders_phone_key ON public.app_traders USING btree (phone)"
+            },
+            "app_traders_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX app_traders_pkey ON public.app_traders USING btree (id)"
+            }
+          }
+        },
+        "audit_log": {
+          "columns": {
+            "action": {
+              "ordinal": 5,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "actor_id": {
+              "ordinal": 4,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "actor_type": {
+              "ordinal": 3,
+              "data_type": "character varying(20)",
+              "nullable": false,
+              "default": null
+            },
+            "audit_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('audit_log_audit_id_seq'::regclass)"
+            },
+            "created_at": {
+              "ordinal": 9,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "field_changed": {
+              "ordinal": 6,
+              "data_type": "character varying(100)",
+              "nullable": true,
+              "default": null
+            },
+            "new_value": {
+              "ordinal": 8,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "old_value": {
+              "ordinal": 7,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "order_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "audit_id"
+          ],
+          "foreign_keys": {
+            "audit_log_order_id_fkey": {
+              "columns": [
+                "order_id"
+              ],
+              "references_schema": "public",
+              "references_table": "orders",
+              "references_columns": [
+                "order_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "audit_log_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "audit_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX audit_log_pkey ON public.audit_log USING btree (audit_id)"
+            }
+          }
+        },
+        "batch_allocation_lines": {
+          "columns": {
+            "allocation_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "allocation_line_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('batch_allocation_lines_allocation_line_id_seq'::regclass)"
+            },
+            "batch_id": {
+              "ordinal": 7,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "line_value": {
+              "ordinal": 6,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "lot_id": {
+              "ordinal": 3,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "qty": {
+              "ordinal": 4,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "unit_cost": {
+              "ordinal": 5,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "allocation_line_id"
+          ],
+          "foreign_keys": {
+            "fk_allocation_lines_allocation": {
+              "columns": [
+                "allocation_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batch_allocations",
+              "references_columns": [
+                "allocation_id"
+              ],
+              "on_update": "CASCADE",
+              "on_delete": "CASCADE"
+            },
+            "fk_allocation_lines_lot": {
+              "columns": [
+                "lot_id"
+              ],
+              "references_schema": "public",
+              "references_table": "stock_receipts",
+              "references_columns": [
+                "lot_id"
+              ],
+              "on_update": "CASCADE",
+              "on_delete": "RESTRICT"
+            },
+            "fk_batch_allocation_lines_batch": {
+              "columns": [
+                "batch_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batches",
+              "references_columns": [
+                "batch_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "batch_allocation_lines_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "allocation_line_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX batch_allocation_lines_pkey ON public.batch_allocation_lines USING btree (allocation_line_id)"
+            },
+            "idx_batch_allocation_lines_batch_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "batch_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_batch_allocation_lines_batch_id ON public.batch_allocation_lines USING btree (batch_id)"
+            }
+          }
+        },
+        "batch_allocations": {
+          "columns": {
+            "allocated_by": {
+              "ordinal": 6,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "allocated_qty": {
+              "ordinal": 3,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "allocated_value": {
+              "ordinal": 4,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": null
+            },
+            "allocation_date": {
+              "ordinal": 5,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "allocation_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('batch_allocations_allocation_id_seq'::regclass)"
+            },
+            "requirement_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "allocation_id"
+          ],
+          "foreign_keys": {
+            "fk_batch_allocations_requirement": {
+              "columns": [
+                "requirement_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batch_requirements",
+              "references_columns": [
+                "requirement_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "fk_batch_allocations_user": {
+              "columns": [
+                "allocated_by"
+              ],
+              "references_schema": "public",
+              "references_table": "users",
+              "references_columns": [
+                "user_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "batch_allocations_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "allocation_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX batch_allocations_pkey ON public.batch_allocations USING btree (allocation_id)"
+            }
+          }
+        },
+        "batch_closure_summary": {
+          "columns": {
+            "available_chicken_count": {
+              "ordinal": 6,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "batch_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "end_date": {
+              "ordinal": 4,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "gross_profit": {
+              "ordinal": 8,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": "0"
+            },
+            "id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('batch_closure_summary_id_seq'::regclass)"
+            },
+            "initial_chicken_count": {
+              "ordinal": 5,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "revenue": {
+              "ordinal": 7,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": "0"
+            },
+            "start_date": {
+              "ordinal": 3,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "id"
+          ],
+          "foreign_keys": {
+            "batch_closure_summary_batch_id_fkey": {
+              "columns": [
+                "batch_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batches",
+              "references_columns": [
+                "batch_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "batch_closure_summary_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX batch_closure_summary_pkey ON public.batch_closure_summary USING btree (id)"
+            }
+          }
+        },
+        "batch_requirements": {
+          "columns": {
+            "batch_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "item_code": {
+              "ordinal": 5,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "line_id": {
+              "ordinal": 3,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "quantity": {
+              "ordinal": 6,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "request_date": {
+              "ordinal": 8,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "requirement_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('batch_requirements_requirement_id_seq'::regclass)"
+            },
+            "status": {
+              "ordinal": 7,
+              "data_type": "requirement_status",
+              "nullable": false,
+              "default": "'pending'::requirement_status"
+            },
+            "supervisor_id": {
+              "ordinal": 4,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "requirement_id"
+          ],
+          "foreign_keys": {
+            "fk_batch_requirements_batch": {
+              "columns": [
+                "batch_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batches",
+              "references_columns": [
+                "batch_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "fk_batch_requirements_item": {
+              "columns": [
+                "item_code"
+              ],
+              "references_schema": "public",
+              "references_table": "items",
+              "references_columns": [
+                "item_code"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "fk_batch_requirements_line": {
+              "columns": [
+                "line_id"
+              ],
+              "references_schema": "public",
+              "references_table": "production_lines",
+              "references_columns": [
+                "line_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "fk_batch_requirements_supervisor": {
+              "columns": [
+                "supervisor_id"
+              ],
+              "references_schema": "public",
+              "references_table": "users",
+              "references_columns": [
+                "user_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "batch_requirements_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "requirement_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX batch_requirements_pkey ON public.batch_requirements USING btree (requirement_id)"
+            }
+          }
+        },
+        "batch_sales": {
+          "columns": {
+            "app_trader_id": {
+              "ordinal": 12,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "avg_weight": {
+              "ordinal": 5,
+              "data_type": "numeric",
+              "nullable": false,
+              "default": null
+            },
+            "batch_id": {
+              "ordinal": 3,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 9,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            },
+            "id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('batch_sales_id_seq'::regclass)"
+            },
+            "item_code": {
+              "ordinal": 2,
+              "data_type": "character varying",
+              "nullable": false,
+              "default": null
+            },
+            "payment_type": {
+              "ordinal": 10,
+              "data_type": "payment_type",
+              "nullable": false,
+              "default": "'CASH'::payment_type"
+            },
+            "quantity": {
+              "ordinal": 7,
+              "data_type": "numeric",
+              "nullable": false,
+              "default": null
+            },
+            "rate": {
+              "ordinal": 6,
+              "data_type": "numeric",
+              "nullable": false,
+              "default": null
+            },
+            "sale_date": {
+              "ordinal": 11,
+              "data_type": "date",
+              "nullable": false,
+              "default": "'2026-01-01'::date"
+            },
+            "trader_id": {
+              "ordinal": 4,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "value": {
+              "ordinal": 8,
+              "data_type": "numeric",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "id"
+          ],
+          "foreign_keys": {
+            "fk-batch_sales-batch_id": {
+              "columns": [
+                "batch_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batches",
+              "references_columns": [
+                "batch_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            },
+            "fk-batch_sales-item_code": {
+              "columns": [
+                "item_code"
+              ],
+              "references_schema": "public",
+              "references_table": "items",
+              "references_columns": [
+                "item_code"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            },
+            "fk-batch_sales-trader_id": {
+              "columns": [
+                "trader_id"
+              ],
+              "references_schema": "public",
+              "references_table": "traders",
+              "references_columns": [
+                "trader_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            },
+            "fk_batch_sales_app_trader_id": {
+              "columns": [
+                "app_trader_id"
+              ],
+              "references_schema": "public",
+              "references_table": "app_traders",
+              "references_columns": [
+                "id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "SET NULL"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "batch_sales_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX batch_sales_pkey ON public.batch_sales USING btree (id)"
+            }
+          }
+        },
+        "batches": {
+          "columns": {
+            "activated_at": {
+              "ordinal": 12,
+              "data_type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            },
+            "avg_body_weight": {
+              "ordinal": 11,
+              "data_type": "numeric(10,2)",
+              "nullable": true,
+              "default": null
+            },
+            "batch_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('batches_batch_id_seq'::regclass)"
+            },
+            "closed_at": {
+              "ordinal": 13,
+              "data_type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 10,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "current_bird_count": {
+              "ordinal": 8,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "end_date": {
+              "ordinal": 6,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "farm_id": {
+              "ordinal": 14,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "farmer_id": {
+              "ordinal": 4,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "initial_bird_count": {
+              "ordinal": 7,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "line_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "start_date": {
+              "ordinal": 5,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "status": {
+              "ordinal": 9,
+              "data_type": "batch_status",
+              "nullable": true,
+              "default": "'open'::batch_status"
+            },
+            "supervisor_id": {
+              "ordinal": 3,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "batch_id"
+          ],
+          "foreign_keys": {
+            "batches_farm_id_fkey": {
+              "columns": [
+                "farm_id"
+              ],
+              "references_schema": "public",
+              "references_table": "farms",
+              "references_columns": [
+                "farm_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "fk_batches_farmer": {
+              "columns": [
+                "farmer_id"
+              ],
+              "references_schema": "public",
+              "references_table": "farmers",
+              "references_columns": [
+                "farmer_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "fk_batches_line": {
+              "columns": [
+                "line_id"
+              ],
+              "references_schema": "public",
+              "references_table": "production_lines",
+              "references_columns": [
+                "line_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "fk_batches_supervisor": {
+              "columns": [
+                "supervisor_id"
+              ],
+              "references_schema": "public",
+              "references_table": "users",
+              "references_columns": [
+                "user_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "batches_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "batch_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX batches_pkey ON public.batches USING btree (batch_id)"
+            }
+          }
+        },
+        "bird_count_history": {
+          "columns": {
+            "additions": {
+              "ordinal": 7,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "0"
+            },
+            "batch_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 6,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "deaths": {
+              "ordinal": 4,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "0"
+            },
+            "notes": {
+              "ordinal": 5,
+              "data_type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "record_date": {
+              "ordinal": 3,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "record_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('bird_count_history_record_id_seq'::regclass)"
+            }
+          },
+          "primary_key": [
+            "record_id"
+          ],
+          "foreign_keys": {
+            "fk_bird_count_history_batch": {
+              "columns": [
+                "batch_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batches",
+              "references_columns": [
+                "batch_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "bird_count_history_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "record_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX bird_count_history_pkey ON public.bird_count_history USING btree (record_id)"
+            }
+          }
+        },
+        "bird_sell_history": {
+          "columns": {
+            "batch_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 9,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "notes": {
+              "ordinal": 8,
+              "data_type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "price_per_bird": {
+              "ordinal": 6,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "quantity_sold": {
+              "ordinal": 5,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "sale_date": {
+              "ordinal": 4,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "sale_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('bird_sell_history_sale_id_seq'::regclass)"
+            },
+            "total_amount": {
+              "ordinal": 7,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "trader_id": {
+              "ordinal": 3,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "sale_id"
+          ],
+          "foreign_keys": {
+            "fk_bird_sell_history_batch": {
+              "columns": [
+                "batch_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batches",
+              "references_columns": [
+                "batch_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            },
+            "fk_bird_sell_history_trader": {
+              "columns": [
+                "trader_id"
+              ],
+              "references_schema": "public",
+              "references_table": "traders",
+              "references_columns": [
+                "trader_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "bird_sell_history_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "sale_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX bird_sell_history_pkey ON public.bird_sell_history USING btree (sale_id)"
+            }
+          }
+        },
+        "farmer_commission_history": {
+          "columns": {
+            "commission_amount": {
+              "ordinal": 3,
+              "data_type": "numeric(10,2)",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 5,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": null
+            },
+            "description": {
+              "ordinal": 4,
+              "data_type": "character varying",
+              "nullable": true,
+              "default": null
+            },
+            "farmer_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('farmer_commission_history_id_seq'::regclass)"
+            }
+          },
+          "primary_key": [
+            "id"
+          ],
+          "foreign_keys": {
+            "farmer_commission_history_farmer_id_fkey": {
+              "columns": [
+                "farmer_id"
+              ],
+              "references_schema": "public",
+              "references_table": "farmers",
+              "references_columns": [
+                "farmer_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "farmer_commission_history_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX farmer_commission_history_pkey ON public.farmer_commission_history USING btree (id)"
+            }
+          }
+        },
+        "farmers": {
+          "columns": {
+            "address": {
+              "ordinal": 4,
+              "data_type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "area_size": {
+              "ordinal": 8,
+              "data_type": "numeric(10,2)",
+              "nullable": false,
+              "default": null
+            },
+            "bank_account_no": {
+              "ordinal": 5,
+              "data_type": "character varying(30)",
+              "nullable": false,
+              "default": null
+            },
+            "bank_name": {
+              "ordinal": 6,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 9,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "farmer_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('farmers_farmer_id_seq'::regclass)"
+            },
+            "ifsc_code": {
+              "ordinal": 7,
+              "data_type": "character varying(15)",
+              "nullable": false,
+              "default": null
+            },
+            "name": {
+              "ordinal": 2,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "phone_number": {
+              "ordinal": 3,
+              "data_type": "character varying(15)",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "farmer_id"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {
+            "farmers_phone_number_key": [
+              "phone_number"
+            ]
+          },
+          "check_constraints": {},
+          "indexes": {
+            "farmers_phone_number_key": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "phone_number"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX farmers_phone_number_key ON public.farmers USING btree (phone_number)"
+            },
+            "farmers_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "farmer_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX farmers_pkey ON public.farmers USING btree (farmer_id)"
+            }
+          }
+        },
+        "farms": {
+          "columns": {
+            "code": {
+              "ordinal": 3,
+              "data_type": "character varying(50)",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 9,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "farm_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('farms_farm_id_seq'::regclass)"
+            },
+            "farmer_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "gmaps_url": {
+              "ordinal": 8,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "location": {
+              "ordinal": 10,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "name": {
+              "ordinal": 4,
+              "data_type": "character varying(150)",
+              "nullable": false,
+              "default": null
+            },
+            "video_url": {
+              "ordinal": 7,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "farm_id"
+          ],
+          "foreign_keys": {
+            "farms_farmer_id_fkey": {
+              "columns": [
+                "farmer_id"
+              ],
+              "references_schema": "public",
+              "references_table": "farmers",
+              "references_columns": [
+                "farmer_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {
+            "farms_code_key": [
+              "code"
+            ]
+          },
+          "check_constraints": {},
+          "indexes": {
+            "farms_code_key": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "code"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX farms_code_key ON public.farms USING btree (code)"
+            },
+            "farms_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "farm_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX farms_pkey ON public.farms USING btree (farm_id)"
+            }
+          }
+        },
+        "inventory": {
+          "columns": {
+            "current_qty": {
+              "ordinal": 3,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": "0"
+            },
+            "inventory_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('inventory_inventory_id_seq'::regclass)"
+            },
+            "item_code": {
+              "ordinal": 2,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "last_updated": {
+              "ordinal": 4,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            }
+          },
+          "primary_key": [
+            "inventory_id"
+          ],
+          "foreign_keys": {
+            "fk_inventory_item": {
+              "columns": [
+                "item_code"
+              ],
+              "references_schema": "public",
+              "references_table": "items",
+              "references_columns": [
+                "item_code"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "inventory_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "inventory_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX inventory_pkey ON public.inventory USING btree (inventory_id)"
+            }
+          }
+        },
+        "inventory_movements": {
+          "columns": {
+            "item_code": {
+              "ordinal": 2,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "movement_date": {
+              "ordinal": 6,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "movement_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('inventory_movements_movement_id_seq'::regclass)"
+            },
+            "movement_type": {
+              "ordinal": 4,
+              "data_type": "movement_type",
+              "nullable": false,
+              "default": null
+            },
+            "qty_change": {
+              "ordinal": 3,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "reference_id": {
+              "ordinal": 5,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "movement_id"
+          ],
+          "foreign_keys": {
+            "fk_inventory_movements_item": {
+              "columns": [
+                "item_code"
+              ],
+              "references_schema": "public",
+              "references_table": "items",
+              "references_columns": [
+                "item_code"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "inventory_movements_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "movement_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX inventory_movements_pkey ON public.inventory_movements USING btree (movement_id)"
+            }
+          }
+        },
+        "items": {
+          "columns": {
+            "item_category": {
+              "ordinal": 3,
+              "data_type": "item_category",
+              "nullable": false,
+              "default": null
+            },
+            "item_code": {
+              "ordinal": 1,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "item_name": {
+              "ordinal": 2,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "unit": {
+              "ordinal": 4,
+              "data_type": "character varying(50)",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "item_code"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "items_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "item_code"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX items_pkey ON public.items USING btree (item_code)"
+            }
+          }
+        },
+        "ledger_accounts": {
+          "columns": {
+            "account_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('ledger_accounts_account_id_seq'::regclass)"
+            },
+            "account_type": {
+              "ordinal": 3,
+              "data_type": "ledger_account_type",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 5,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "current_balance": {
+              "ordinal": 4,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": "0.00"
+            },
+            "name": {
+              "ordinal": 2,
+              "data_type": "character varying(150)",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "account_id"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "idx_unique_ledger_accounts_name": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "name"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX idx_unique_ledger_accounts_name ON public.ledger_accounts USING btree (name)"
+            },
+            "ledger_accounts_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "account_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX ledger_accounts_pkey ON public.ledger_accounts USING btree (account_id)"
+            }
+          }
+        },
+        "ledger_entries": {
+          "columns": {
+            "account_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 10,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "created_by": {
+              "ordinal": 11,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "credit": {
+              "ordinal": 4,
+              "data_type": "numeric(18,2)",
+              "nullable": true,
+              "default": null
+            },
+            "debit": {
+              "ordinal": 3,
+              "data_type": "numeric(18,2)",
+              "nullable": true,
+              "default": null
+            },
+            "entry_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('ledger_entries_entry_id_seq'::regclass)"
+            },
+            "narration": {
+              "ordinal": 8,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "reference_id": {
+              "ordinal": 7,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "reference_table": {
+              "ordinal": 6,
+              "data_type": "character varying(100)",
+              "nullable": true,
+              "default": null
+            },
+            "txn_date": {
+              "ordinal": 5,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "txn_group_id": {
+              "ordinal": 9,
+              "data_type": "uuid",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "entry_id"
+          ],
+          "foreign_keys": {
+            "fk_ledger_entries_account": {
+              "columns": [
+                "account_id"
+              ],
+              "references_schema": "public",
+              "references_table": "ledger_accounts",
+              "references_columns": [
+                "account_id"
+              ],
+              "on_update": "CASCADE",
+              "on_delete": "CASCADE"
+            },
+            "fk_ledger_entries_created_by": {
+              "columns": [
+                "created_by"
+              ],
+              "references_schema": "public",
+              "references_table": "users",
+              "references_columns": [
+                "user_id"
+              ],
+              "on_update": "CASCADE",
+              "on_delete": "SET NULL"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "idx_ledger_entries_account_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "account_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_ledger_entries_account_id ON public.ledger_entries USING btree (account_id)"
+            },
+            "idx_ledger_entries_txn_group_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "txn_group_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_ledger_entries_txn_group_id ON public.ledger_entries USING btree (txn_group_id)"
+            },
+            "ledger_entries_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "entry_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX ledger_entries_pkey ON public.ledger_entries USING btree (entry_id)"
+            }
+          }
+        },
+        "loan_payments": {
+          "columns": {
+            "created_at": {
+              "ordinal": 11,
+              "data_type": "timestamp with time zone",
+              "nullable": true,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "created_by": {
+              "ordinal": 12,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "interest_amount": {
+              "ordinal": 4,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": "0"
+            },
+            "loan_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "notes": {
+              "ordinal": 10,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "payment_date": {
+              "ordinal": 6,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "payment_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('loan_payments_payment_id_seq'::regclass)"
+            },
+            "payment_mode": {
+              "ordinal": 7,
+              "data_type": "character varying(50)",
+              "nullable": true,
+              "default": null
+            },
+            "principal_amount": {
+              "ordinal": 3,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": "0"
+            },
+            "reference_number": {
+              "ordinal": 8,
+              "data_type": "character varying(100)",
+              "nullable": true,
+              "default": null
+            },
+            "total_amount": {
+              "ordinal": 5,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": null
+            },
+            "txn_group_id": {
+              "ordinal": 9,
+              "data_type": "uuid",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "payment_id"
+          ],
+          "foreign_keys": {
+            "loan_payments_created_by_fkey": {
+              "columns": [
+                "created_by"
+              ],
+              "references_schema": "public",
+              "references_table": "users",
+              "references_columns": [
+                "user_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "SET NULL"
+            },
+            "loan_payments_loan_id_fkey": {
+              "columns": [
+                "loan_id"
+              ],
+              "references_schema": "public",
+              "references_table": "loans",
+              "references_columns": [
+                "loan_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "idx_loan_payments_loan_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "loan_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_loan_payments_loan_id ON public.loan_payments USING btree (loan_id)"
+            },
+            "loan_payments_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "payment_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX loan_payments_pkey ON public.loan_payments USING btree (payment_id)"
+            }
+          }
+        },
+        "loans": {
+          "columns": {
+            "created_at": {
+              "ordinal": 11,
+              "data_type": "timestamp with time zone",
+              "nullable": true,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "created_by": {
+              "ordinal": 12,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "due_date": {
+              "ordinal": 6,
+              "data_type": "date",
+              "nullable": true,
+              "default": null
+            },
+            "interest_rate": {
+              "ordinal": 4,
+              "data_type": "numeric(5,2)",
+              "nullable": true,
+              "default": null
+            },
+            "lender_name": {
+              "ordinal": 2,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "loan_date": {
+              "ordinal": 5,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "loan_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('loans_loan_id_seq'::regclass)"
+            },
+            "notes": {
+              "ordinal": 10,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "outstanding_balance": {
+              "ordinal": 7,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": "0"
+            },
+            "principal_amount": {
+              "ordinal": 3,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": null
+            },
+            "status": {
+              "ordinal": 8,
+              "data_type": "loan_status",
+              "nullable": false,
+              "default": "'active'::loan_status"
+            },
+            "txn_group_id": {
+              "ordinal": 9,
+              "data_type": "uuid",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "loan_id"
+          ],
+          "foreign_keys": {
+            "loans_created_by_fkey": {
+              "columns": [
+                "created_by"
+              ],
+              "references_schema": "public",
+              "references_table": "users",
+              "references_columns": [
+                "user_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "SET NULL"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "idx_loans_status": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "status"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_loans_status ON public.loans USING btree (status)"
+            },
+            "loans_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "loan_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX loans_pkey ON public.loans USING btree (loan_id)"
+            }
+          }
+        },
+        "metric_snapshots": {
+          "columns": {
+            "computed_at": {
+              "ordinal": 6,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            },
+            "id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('metric_snapshots_id_seq'::regclass)"
+            },
+            "metric_key": {
+              "ordinal": 4,
+              "data_type": "character varying(64)",
+              "nullable": false,
+              "default": null
+            },
+            "period_key": {
+              "ordinal": 3,
+              "data_type": "character varying(10)",
+              "nullable": false,
+              "default": null
+            },
+            "period_type": {
+              "ordinal": 2,
+              "data_type": "character varying(8)",
+              "nullable": false,
+              "default": null
+            },
+            "value": {
+              "ordinal": 5,
+              "data_type": "numeric(18,4)",
+              "nullable": false,
+              "default": "0"
+            }
+          },
+          "primary_key": [
+            "id"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {
+            "uq_metric_snapshots": [
+              "period_type",
+              "period_key",
+              "metric_key"
+            ]
+          },
+          "check_constraints": {},
+          "indexes": {
+            "idx_metric_snapshots_lookup": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "period_type",
+                "metric_key",
+                "period_key"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_metric_snapshots_lookup ON public.metric_snapshots USING btree (period_type, metric_key, period_key)"
+            },
+            "metric_snapshots_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX metric_snapshots_pkey ON public.metric_snapshots USING btree (id)"
+            },
+            "uq_metric_snapshots": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "period_type",
+                "period_key",
+                "metric_key"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX uq_metric_snapshots ON public.metric_snapshots USING btree (period_type, period_key, metric_key)"
+            }
+          }
+        },
+        "orders": {
+          "columns": {
+            "actual_birds": {
+              "ordinal": 9,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "actual_weight": {
+              "ordinal": 8,
+              "data_type": "numeric(12,2)",
+              "nullable": true,
+              "default": null
+            },
+            "batch_id": {
+              "ordinal": 4,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "cancelled_at": {
+              "ordinal": 16,
+              "data_type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            },
+            "confirmed_at": {
+              "ordinal": 15,
+              "data_type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 13,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "entry_rate": {
+              "ordinal": 10,
+              "data_type": "numeric(12,2)",
+              "nullable": true,
+              "default": null
+            },
+            "expired_at": {
+              "ordinal": 18,
+              "data_type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            },
+            "inquiry_number": {
+              "ordinal": 2,
+              "data_type": "character varying(30)",
+              "nullable": false,
+              "default": null
+            },
+            "order_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('orders_order_id_seq'::regclass)"
+            },
+            "rejected_at": {
+              "ordinal": 17,
+              "data_type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            },
+            "rejection_reason": {
+              "ordinal": 12,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "requested_weight": {
+              "ordinal": 6,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "status": {
+              "ordinal": 7,
+              "data_type": "order_status",
+              "nullable": false,
+              "default": "'PENDING'::order_status"
+            },
+            "timeslot_id": {
+              "ordinal": 5,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "total_amount": {
+              "ordinal": 11,
+              "data_type": "numeric(18,2)",
+              "nullable": true,
+              "default": null
+            },
+            "trader_id": {
+              "ordinal": 3,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "weight_entered_at": {
+              "ordinal": 14,
+              "data_type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "order_id"
+          ],
+          "foreign_keys": {
+            "orders_batch_id_fkey": {
+              "columns": [
+                "batch_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batches",
+              "references_columns": [
+                "batch_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "orders_timeslot_id_fkey": {
+              "columns": [
+                "timeslot_id"
+              ],
+              "references_schema": "public",
+              "references_table": "timeslots",
+              "references_columns": [
+                "timeslot_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "orders_trader_id_fkey": {
+              "columns": [
+                "trader_id"
+              ],
+              "references_schema": "public",
+              "references_table": "app_traders",
+              "references_columns": [
+                "id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {
+            "orders_inquiry_number_key": [
+              "inquiry_number"
+            ]
+          },
+          "check_constraints": {},
+          "indexes": {
+            "orders_inquiry_number_key": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "inquiry_number"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX orders_inquiry_number_key ON public.orders USING btree (inquiry_number)"
+            },
+            "orders_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "order_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX orders_pkey ON public.orders USING btree (order_id)"
+            }
+          }
+        },
+        "other_expenses": {
+          "columns": {
+            "amount": {
+              "ordinal": 3,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": null
+            },
+            "category": {
+              "ordinal": 2,
+              "data_type": "other_expense_category",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 7,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "created_by": {
+              "ordinal": 6,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "description": {
+              "ordinal": 4,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "expense_date": {
+              "ordinal": 5,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('other_expenses_id_seq'::regclass)"
+            }
+          },
+          "primary_key": [
+            "id"
+          ],
+          "foreign_keys": {
+            "other_expenses_created_by_fkey": {
+              "columns": [
+                "created_by"
+              ],
+              "references_schema": "public",
+              "references_table": "users",
+              "references_columns": [
+                "user_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "SET NULL"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "other_expenses_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX other_expenses_pkey ON public.other_expenses USING btree (id)"
+            }
+          }
+        },
+        "post": {
+          "columns": {
+            "id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('post_id_seq'::regclass)"
+            },
+            "text": {
+              "ordinal": 3,
+              "data_type": "character varying",
+              "nullable": false,
+              "default": null
+            },
+            "title": {
+              "ordinal": 2,
+              "data_type": "character varying",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "id"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "post_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX post_pkey ON public.post USING btree (id)"
+            }
+          }
+        },
+        "production_lines": {
+          "columns": {
+            "created_at": {
+              "ordinal": 4,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "line_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('production_lines_line_id_seq'::regclass)"
+            },
+            "line_name": {
+              "ordinal": 2,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "supervisor_id": {
+              "ordinal": 3,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "line_id"
+          ],
+          "foreign_keys": {
+            "fk_production_lines_supervisor": {
+              "columns": [
+                "supervisor_id"
+              ],
+              "references_schema": "public",
+              "references_table": "users",
+              "references_columns": [
+                "user_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "production_lines_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "line_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX production_lines_pkey ON public.production_lines USING btree (line_id)"
+            }
+          }
+        },
+        "purchase_orders": {
+          "columns": {
+            "created_by": {
+              "ordinal": 5,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "payment_type": {
+              "ordinal": 4,
+              "data_type": "payment_type",
+              "nullable": true,
+              "default": null
+            },
+            "purchase_date": {
+              "ordinal": 3,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "purchase_order_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('purchase_orders_purchase_order_id_seq'::regclass)"
+            },
+            "supplier_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "total_cost": {
+              "ordinal": 6,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": "0"
+            }
+          },
+          "primary_key": [
+            "purchase_order_id"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "idx_purchase_orders_supplier_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "supplier_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_purchase_orders_supplier_id ON public.purchase_orders USING btree (supplier_id)"
+            },
+            "purchase_orders_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "purchase_order_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX purchase_orders_pkey ON public.purchase_orders USING btree (purchase_order_id)"
+            }
+          }
+        },
+        "purchases": {
+          "columns": {
+            "cost_per_unit": {
+              "ordinal": 3,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "created_by": {
+              "ordinal": 7,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "item_code": {
+              "ordinal": 2,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "payment_type": {
+              "ordinal": 8,
+              "data_type": "payment_type",
+              "nullable": true,
+              "default": null
+            },
+            "purchase_date": {
+              "ordinal": 6,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "purchase_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('purchases_purchase_id_seq'::regclass)"
+            },
+            "purchase_order_id": {
+              "ordinal": 10,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "quantity": {
+              "ordinal": 5,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": "0"
+            },
+            "supplier_id": {
+              "ordinal": 9,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "total_cost": {
+              "ordinal": 4,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "purchase_id"
+          ],
+          "foreign_keys": {
+            "fk_purchases_created_by": {
+              "columns": [
+                "created_by"
+              ],
+              "references_schema": "public",
+              "references_table": "users",
+              "references_columns": [
+                "user_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "fk_purchases_item_code": {
+              "columns": [
+                "item_code"
+              ],
+              "references_schema": "public",
+              "references_table": "items",
+              "references_columns": [
+                "item_code"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "fk_purchases_purchase_order": {
+              "columns": [
+                "purchase_order_id"
+              ],
+              "references_schema": "public",
+              "references_table": "purchase_orders",
+              "references_columns": [
+                "purchase_order_id"
+              ],
+              "on_update": "CASCADE",
+              "on_delete": "RESTRICT"
+            },
+            "fk_purchases_supplier_id": {
+              "columns": [
+                "supplier_id"
+              ],
+              "references_schema": "public",
+              "references_table": "suppliers",
+              "references_columns": [
+                "supplier_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "idx_purchases_purchase_order_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "purchase_order_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_purchases_purchase_order_id ON public.purchases USING btree (purchase_order_id)"
+            },
+            "idx_purchases_supplier_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "supplier_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_purchases_supplier_id ON public.purchases USING btree (supplier_id)"
+            },
+            "purchases_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "purchase_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX purchases_pkey ON public.purchases USING btree (purchase_id)"
+            }
+          }
+        },
+        "seaql_migrations": {
+          "columns": {
+            "applied_at": {
+              "ordinal": 2,
+              "data_type": "bigint",
+              "nullable": false,
+              "default": null
+            },
+            "version": {
+              "ordinal": 1,
+              "data_type": "character varying",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "version"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "seaql_migrations_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "version"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX seaql_migrations_pkey ON public.seaql_migrations USING btree (version)"
+            }
+          }
+        },
+        "stock_receipts": {
+          "columns": {
+            "item_code": {
+              "ordinal": 3,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "lot_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('stock_receipts_lot_id_seq'::regclass)"
+            },
+            "purchase_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "received_date": {
+              "ordinal": 7,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "received_qty": {
+              "ordinal": 4,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "remaining_qty": {
+              "ordinal": 5,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "supplier": {
+              "ordinal": 8,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "unit_cost": {
+              "ordinal": 6,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "lot_id"
+          ],
+          "foreign_keys": {
+            "fk_stock_receipts_item": {
+              "columns": [
+                "item_code"
+              ],
+              "references_schema": "public",
+              "references_table": "items",
+              "references_columns": [
+                "item_code"
+              ],
+              "on_update": "CASCADE",
+              "on_delete": "RESTRICT"
+            },
+            "fk_stock_receipts_purchase": {
+              "columns": [
+                "purchase_id"
+              ],
+              "references_schema": "public",
+              "references_table": "purchases",
+              "references_columns": [
+                "purchase_id"
+              ],
+              "on_update": "CASCADE",
+              "on_delete": "SET NULL"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "stock_receipts_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "lot_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX stock_receipts_pkey ON public.stock_receipts USING btree (lot_id)"
+            }
+          }
+        },
+        "stock_returns": {
+          "columns": {
+            "allocation_line_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "batch_id": {
+              "ordinal": 3,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 8,
+              "data_type": "timestamp with time zone",
+              "nullable": true,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "return_date": {
+              "ordinal": 7,
+              "data_type": "date",
+              "nullable": false,
+              "default": "CURRENT_DATE"
+            },
+            "return_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('stock_returns_return_id_seq'::regclass)"
+            },
+            "return_qty": {
+              "ordinal": 4,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "return_value": {
+              "ordinal": 6,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            },
+            "unit_cost": {
+              "ordinal": 5,
+              "data_type": "numeric(12,2)",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "return_id"
+          ],
+          "foreign_keys": {
+            "fk_returns_allocation_line": {
+              "columns": [
+                "allocation_line_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batch_allocation_lines",
+              "references_columns": [
+                "allocation_line_id"
+              ],
+              "on_update": "CASCADE",
+              "on_delete": "RESTRICT"
+            },
+            "fk_returns_batch": {
+              "columns": [
+                "batch_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batches",
+              "references_columns": [
+                "batch_id"
+              ],
+              "on_update": "CASCADE",
+              "on_delete": "RESTRICT"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "idx_stock_returns_batch_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "batch_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_stock_returns_batch_id ON public.stock_returns USING btree (batch_id)"
+            },
+            "stock_returns_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "return_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX stock_returns_pkey ON public.stock_returns USING btree (return_id)"
+            }
+          }
+        },
+        "supplier_payments": {
+          "columns": {
+            "amount": {
+              "ordinal": 3,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 8,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            },
+            "notes": {
+              "ordinal": 7,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "payment_date": {
+              "ordinal": 4,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "payment_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('supplier_payments_payment_id_seq'::regclass)"
+            },
+            "payment_mode": {
+              "ordinal": 5,
+              "data_type": "character varying(50)",
+              "nullable": true,
+              "default": null
+            },
+            "reference_number": {
+              "ordinal": 6,
+              "data_type": "character varying(100)",
+              "nullable": true,
+              "default": null
+            },
+            "supplier_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "txn_group_id": {
+              "ordinal": 9,
+              "data_type": "uuid",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "payment_id"
+          ],
+          "foreign_keys": {
+            "supplier_payments_supplier_id_fkey": {
+              "columns": [
+                "supplier_id"
+              ],
+              "references_schema": "public",
+              "references_table": "suppliers",
+              "references_columns": [
+                "supplier_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "idx_supplier_payments_trader_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "supplier_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_supplier_payments_trader_id ON public.supplier_payments USING btree (supplier_id)"
+            },
+            "supplier_payments_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "payment_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX supplier_payments_pkey ON public.supplier_payments USING btree (payment_id)"
+            }
+          }
+        },
+        "suppliers": {
+          "columns": {
+            "address": {
+              "ordinal": 5,
+              "data_type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "bank_account_no": {
+              "ordinal": 6,
+              "data_type": "character varying(30)",
+              "nullable": false,
+              "default": null
+            },
+            "bank_name": {
+              "ordinal": 7,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 9,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "ifsc_code": {
+              "ordinal": 8,
+              "data_type": "character varying(15)",
+              "nullable": false,
+              "default": null
+            },
+            "name": {
+              "ordinal": 3,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "phone_number": {
+              "ordinal": 4,
+              "data_type": "character varying(15)",
+              "nullable": false,
+              "default": null
+            },
+            "supplier_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('suppliers_supplier_id_seq'::regclass)"
+            },
+            "supplier_type": {
+              "ordinal": 2,
+              "data_type": "supplier_type",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "supplier_id"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {
+            "suppliers_phone_number_key": [
+              "phone_number"
+            ],
+            "uq_suppliers_name": [
+              "name"
+            ]
+          },
+          "check_constraints": {},
+          "indexes": {
+            "suppliers_phone_number_key": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "phone_number"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX suppliers_phone_number_key ON public.suppliers USING btree (phone_number)"
+            },
+            "suppliers_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "supplier_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX suppliers_pkey ON public.suppliers USING btree (supplier_id)"
+            },
+            "uq_suppliers_name": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "name"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX uq_suppliers_name ON public.suppliers USING btree (name)"
+            }
+          }
+        },
+        "timeslots": {
+          "columns": {
+            "batch_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 5,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "slot_end": {
+              "ordinal": 4,
+              "data_type": "time without time zone",
+              "nullable": false,
+              "default": null
+            },
+            "slot_start": {
+              "ordinal": 3,
+              "data_type": "time without time zone",
+              "nullable": false,
+              "default": null
+            },
+            "timeslot_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('timeslots_timeslot_id_seq'::regclass)"
+            }
+          },
+          "primary_key": [
+            "timeslot_id"
+          ],
+          "foreign_keys": {
+            "timeslots_batch_id_fkey": {
+              "columns": [
+                "batch_id"
+              ],
+              "references_schema": "public",
+              "references_table": "batches",
+              "references_columns": [
+                "batch_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "timeslots_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "timeslot_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX timeslots_pkey ON public.timeslots USING btree (timeslot_id)"
+            }
+          }
+        },
+        "trader_ledger_entries": {
+          "columns": {
+            "amount": {
+              "ordinal": 5,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 8,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('trader_ledger_entries_id_seq'::regclass)"
+            },
+            "order_id": {
+              "ordinal": 3,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "payment_mode": {
+              "ordinal": 6,
+              "data_type": "payment_mode",
+              "nullable": true,
+              "default": null
+            },
+            "screenshot_url": {
+              "ordinal": 7,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "trader_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "type": {
+              "ordinal": 4,
+              "data_type": "ledger_entry_type",
+              "nullable": false,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "id"
+          ],
+          "foreign_keys": {
+            "trader_ledger_entries_order_id_fkey": {
+              "columns": [
+                "order_id"
+              ],
+              "references_schema": "public",
+              "references_table": "orders",
+              "references_columns": [
+                "order_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "trader_ledger_entries_trader_id_fkey": {
+              "columns": [
+                "trader_id"
+              ],
+              "references_schema": "public",
+              "references_table": "app_traders",
+              "references_columns": [
+                "id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "idx_trader_ledger_entries_trader_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "trader_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_trader_ledger_entries_trader_id ON public.trader_ledger_entries USING btree (trader_id)"
+            },
+            "trader_ledger_entries_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX trader_ledger_entries_pkey ON public.trader_ledger_entries USING btree (id)"
+            }
+          }
+        },
+        "trader_payments": {
+          "columns": {
+            "amount": {
+              "ordinal": 3,
+              "data_type": "numeric(18,2)",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 8,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            },
+            "created_by": {
+              "ordinal": 9,
+              "data_type": "integer",
+              "nullable": true,
+              "default": null
+            },
+            "notes": {
+              "ordinal": 7,
+              "data_type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "payment_date": {
+              "ordinal": 4,
+              "data_type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "payment_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('trader_payments_payment_id_seq'::regclass)"
+            },
+            "payment_mode": {
+              "ordinal": 5,
+              "data_type": "character varying(50)",
+              "nullable": true,
+              "default": null
+            },
+            "reference_number": {
+              "ordinal": 6,
+              "data_type": "character varying(100)",
+              "nullable": true,
+              "default": null
+            },
+            "trader_id": {
+              "ordinal": 2,
+              "data_type": "integer",
+              "nullable": false,
+              "default": null
+            },
+            "txn_group_id": {
+              "ordinal": 10,
+              "data_type": "uuid",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "primary_key": [
+            "payment_id"
+          ],
+          "foreign_keys": {
+            "trader_payments_created_by_fkey": {
+              "columns": [
+                "created_by"
+              ],
+              "references_schema": "public",
+              "references_table": "users",
+              "references_columns": [
+                "user_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            },
+            "trader_payments_trader_id_fkey": {
+              "columns": [
+                "trader_id"
+              ],
+              "references_schema": "public",
+              "references_table": "traders",
+              "references_columns": [
+                "trader_id"
+              ],
+              "on_update": "NO ACTION",
+              "on_delete": "NO ACTION"
+            }
+          },
+          "unique_constraints": {},
+          "check_constraints": {},
+          "indexes": {
+            "idx_trader_payments_trader_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "trader_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_trader_payments_trader_id ON public.trader_payments USING btree (trader_id)"
+            },
+            "trader_payments_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "payment_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX trader_payments_pkey ON public.trader_payments USING btree (payment_id)"
+            }
+          }
+        },
+        "traders": {
+          "columns": {
+            "address": {
+              "ordinal": 4,
+              "data_type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "bank_account_no": {
+              "ordinal": 5,
+              "data_type": "character varying(30)",
+              "nullable": false,
+              "default": null
+            },
+            "bank_name": {
+              "ordinal": 6,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "created_at": {
+              "ordinal": 8,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "ifsc_code": {
+              "ordinal": 7,
+              "data_type": "character varying(15)",
+              "nullable": false,
+              "default": null
+            },
+            "name": {
+              "ordinal": 2,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "phone_number": {
+              "ordinal": 3,
+              "data_type": "character varying(15)",
+              "nullable": false,
+              "default": null
+            },
+            "trader_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('traders_trader_id_seq'::regclass)"
+            }
+          },
+          "primary_key": [
+            "trader_id"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {
+            "traders_phone_number_key": [
+              "phone_number"
+            ]
+          },
+          "check_constraints": {},
+          "indexes": {
+            "traders_phone_number_key": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "phone_number"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX traders_phone_number_key ON public.traders USING btree (phone_number)"
+            },
+            "traders_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "trader_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX traders_pkey ON public.traders USING btree (trader_id)"
+            }
+          }
+        },
+        "users": {
+          "columns": {
+            "created_at": {
+              "ordinal": 6,
+              "data_type": "timestamp with time zone",
+              "nullable": false,
+              "default": "CURRENT_TIMESTAMP"
+            },
+            "email": {
+              "ordinal": 3,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "name": {
+              "ordinal": 2,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "password": {
+              "ordinal": 4,
+              "data_type": "character varying(100)",
+              "nullable": false,
+              "default": null
+            },
+            "phone": {
+              "ordinal": 7,
+              "data_type": "character varying(15)",
+              "nullable": true,
+              "default": null
+            },
+            "role": {
+              "ordinal": 5,
+              "data_type": "user_role",
+              "nullable": false,
+              "default": null
+            },
+            "user_id": {
+              "ordinal": 1,
+              "data_type": "integer",
+              "nullable": false,
+              "default": "nextval('users_user_id_seq'::regclass)"
+            }
+          },
+          "primary_key": [
+            "user_id"
+          ],
+          "foreign_keys": {},
+          "unique_constraints": {
+            "users_email_key": [
+              "email"
+            ]
+          },
+          "check_constraints": {},
+          "indexes": {
+            "users_email_key": {
+              "unique": true,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "email"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)"
+            },
+            "users_pkey": {
+              "unique": true,
+              "primary": true,
+              "method": "btree",
+              "columns": [
+                "user_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (user_id)"
+            }
+          }
+        }
+      }
+    }
+  }
+}
