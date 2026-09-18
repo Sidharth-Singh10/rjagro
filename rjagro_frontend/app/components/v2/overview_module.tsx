@@ -54,6 +54,11 @@ const STALE = 5 * 60 * 1000;
 
 const n = (v: unknown): number => Number(v) || 0;
 
+// API serializes payment_type enum as variant names ("Receivable", "Payable",
+// "Cash"), while the DB enum values are uppercase. Compare case-insensitively.
+const isPaymentType = (value: unknown, expected: string) =>
+    String(value ?? '').toUpperCase() === expected;
+
 const fmt = (v: number) =>
     `₹${n(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -1075,7 +1080,7 @@ const OverviewModule = () => {
         // Receivables: credit sales per trader minus payments received
         const receivableByTrader: Record<number, { amount: number; oldest?: string }> = {};
         batchSales.forEach(s => {
-            if ((s.payment_type ?? 'RECEIVABLE') !== 'RECEIVABLE') return;
+            if (!isPaymentType(s.payment_type ?? 'RECEIVABLE', 'RECEIVABLE')) return;
             const entry = receivableByTrader[s.trader_id] ?? { amount: 0 };
             entry.amount += n(s.value);
             if (!entry.oldest || s.created_at < entry.oldest) entry.oldest = s.created_at;
@@ -1097,7 +1102,7 @@ const OverviewModule = () => {
         // Payables: credit purchases per supplier minus payments made
         const payableBySupplier: Record<number, { amount: number; oldest?: string }> = {};
         purchases.forEach(p => {
-            if ((p.payment_type ?? '') !== 'PAYABLE') return;
+            if (!isPaymentType(p.payment_type, 'PAYABLE')) return;
             const entry = payableBySupplier[p.supplier_id] ?? { amount: 0 };
             entry.amount += n(p.total_cost);
             if (!entry.oldest || p.purchase_date < entry.oldest) entry.oldest = p.purchase_date;
