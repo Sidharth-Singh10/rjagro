@@ -464,6 +464,14 @@ pub struct CreateOtherExpense {
     pub created_by: i32,
 }
 
+#[derive(Deserialize)]
+pub struct UpdateOtherExpense {
+    pub category: OtherExpenseCategory,
+    pub amount: Decimal,
+    pub description: Option<String>,
+    pub expense_date: NaiveDate,
+}
+
 // ─── Trader app (live selling) ───────────────────────────────────────────────
 
 #[derive(Deserialize)]

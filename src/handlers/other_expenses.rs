@@ -1,9 +1,15 @@
-use crate::models::CreateOtherExpense;
-use axum::{extract::State, http::StatusCode, Json};
-use chrono::Utc;
+use crate::handlers::metrics::{period_key, refresh_metrics_range};
+use crate::models::{CreateOtherExpense, UpdateOtherExpense};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    Json,
+};
+use chrono::{NaiveDate, Utc};
 use entity::*;
 use sea_orm::{
-    ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, Set, TransactionTrait,
+    prelude::Decimal, ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter,
+    QueryOrder, Set, TransactionTrait,
 };
 use tracing::error;
 use uuid::Uuid;
@@ -126,6 +132,229 @@ pub async fn create_other_expense(
     })?;
 
     Ok(Json(saved_expense))
+}
+
+/// Updates an existing expense and keeps its double-entry ledger pair and the
+/// two account balances in sync. Because an edit can also move the expense to
+/// another day or month, the stored metric snapshots for the old and new
+/// periods are refreshed so the dashboard stays consistent.
+pub async fn update_other_expense(
+    State(db): State<DatabaseConnection>,
+    Path(expense_id): Path<i32>,
+    Json(payload): Json<UpdateOtherExpense>,
+) -> Result<Json<other_expenses::Model>, (StatusCode, String)> {
+    if payload.amount <= Decimal::ZERO {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Amount must be greater than zero".to_string(),
+        ));
+    }
+
+    let txn = db.begin().await.map_err(|e| {
+        error!("Failed to start transaction: {:?}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to start transaction".to_string(),
+        )
+    })?;
+
+    let existing = other_expenses::Entity::find_by_id(expense_id)
+        .one(&txn)
+        .await
+        .map_err(|e| {
+            error!("Failed to fetch other expense {}: {:?}", expense_id, e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to fetch other expense".to_string(),
+            )
+        })?
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                format!("Other expense {} not found", expense_id),
+            )
+        })?;
+
+    // The paired ledger entries: debit on 109 (other-expense), credit on 101 (cash).
+    let entries = ledger_entries::Entity::find()
+        .filter(ledger_entries::Column::ReferenceTable.eq(Some("other_expenses".to_string())))
+        .filter(ledger_entries::Column::ReferenceId.eq(Some(expense_id)))
+        .all(&txn)
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to fetch ledger entries for other expense {}: {:?}",
+                expense_id, e
+            );
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to fetch ledger entries".to_string(),
+            )
+        })?;
+
+    let debit_entry = entries
+        .iter()
+        .find(|entry| entry.account_id == OTHER_EXPENSE_ACCOUNT_ID)
+        .cloned();
+    let credit_entry = entries
+        .iter()
+        .find(|entry| entry.account_id == CASH_ACCOUNT_ID)
+        .cloned();
+
+    let (Some(debit_entry), Some(credit_entry)) = (debit_entry, credit_entry) else {
+        error!(
+            "Ledger entries missing for other expense {} — refusing to edit",
+            expense_id
+        );
+        return Err((
+            StatusCode::CONFLICT,
+            "Ledger entries for this expense are missing — cannot edit safely".to_string(),
+        ));
+    };
+
+    let old_amount = existing.amount;
+    let old_date = existing.expense_date;
+    let delta = payload.amount - old_amount;
+    let narration = payload
+        .description
+        .clone()
+        .or_else(|| Some("Other expense".to_string()));
+
+    // 1. Update the expense row itself.
+    let mut expense_am: other_expenses::ActiveModel = existing.into();
+    expense_am.category = Set(payload.category.clone());
+    expense_am.amount = Set(payload.amount);
+    expense_am.description = Set(payload.description.clone());
+    expense_am.expense_date = Set(payload.expense_date);
+
+    let updated = expense_am.update(&txn).await.map_err(|e| {
+        error!("Failed to update other expense {}: {:?}", expense_id, e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to update other expense".to_string(),
+        )
+    })?;
+
+    // 2. Keep the double-entry pair in sync.
+    let mut debit_am: ledger_entries::ActiveModel = debit_entry.into();
+    debit_am.debit = Set(Some(payload.amount));
+    debit_am.txn_date = Set(payload.expense_date);
+    debit_am.narration = Set(narration);
+    debit_am.update(&txn).await.map_err(|e| {
+        error!(
+            "Failed to update debit ledger entry for expense {}: {:?}",
+            expense_id, e
+        );
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to update ledger entry".to_string(),
+        )
+    })?;
+
+    let mut credit_am: ledger_entries::ActiveModel = credit_entry.into();
+    credit_am.credit = Set(Some(payload.amount));
+    credit_am.txn_date = Set(payload.expense_date);
+    credit_am.update(&txn).await.map_err(|e| {
+        error!(
+            "Failed to update credit ledger entry for expense {}: {:?}",
+            expense_id, e
+        );
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to update ledger entry".to_string(),
+        )
+    })?;
+
+    // 3. Move the account balances by the amount delta.
+    if !delta.is_zero() {
+        let mut expense_acct: ledger_accounts::ActiveModel =
+            ledger_accounts::Entity::find_by_id(OTHER_EXPENSE_ACCOUNT_ID)
+                .one(&txn)
+                .await
+                .map_err(|e| {
+                    error!("Failed to fetch other-expense account: {:?}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Failed to fetch other-expense account".to_string(),
+                    )
+                })?
+                .ok_or_else(|| {
+                    error!(
+                        "Other-expense account not found: {}",
+                        OTHER_EXPENSE_ACCOUNT_ID
+                    );
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Other-expense account not found".to_string(),
+                    )
+                })?
+                .into();
+
+        expense_acct.current_balance = Set(expense_acct.current_balance.unwrap() + delta);
+        expense_acct.update(&txn).await.map_err(|e| {
+            error!("Failed to update other-expense account balance: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to update account balance".to_string(),
+            )
+        })?;
+
+        let mut cash_acct: ledger_accounts::ActiveModel =
+            ledger_accounts::Entity::find_by_id(CASH_ACCOUNT_ID)
+                .one(&txn)
+                .await
+                .map_err(|e| {
+                    error!("Failed to fetch cash account: {:?}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Failed to fetch cash account".to_string(),
+                    )
+                })?
+                .ok_or_else(|| {
+                    error!("Cash account not found: {}", CASH_ACCOUNT_ID);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Cash account not found".to_string(),
+                    )
+                })?
+                .into();
+
+        cash_acct.current_balance = Set(cash_acct.current_balance.unwrap() - delta);
+        cash_acct.update(&txn).await.map_err(|e| {
+            error!("Failed to update cash account balance: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to update account balance".to_string(),
+            )
+        })?;
+    }
+
+    txn.commit().await.map_err(|e| {
+        error!("Failed to commit transaction: {:?}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to commit transaction".to_string(),
+        )
+    })?;
+
+    // 4. Refresh the stored metrics for the old and new periods. The hourly job
+    //    only covers the current month, so editing an older entry needs this to
+    //    keep the stored history in sync. Best-effort: a failure here must not
+    //    undo the edit itself.
+    let mut affected_dates: Vec<NaiveDate> = vec![old_date, payload.expense_date];
+    affected_dates.sort();
+    affected_dates.dedup();
+
+    for date in affected_dates {
+        for period_type in ["month", "day"] {
+            let key = period_key(period_type, date);
+            if let Err(e) = refresh_metrics_range(&db, period_type, &key, &key).await {
+                error!("Failed to refresh {} metrics for {}: {:?}", period_type, key, e);
+            }
+        }
+    }
+
+    Ok(Json(updated))
 }
 
 pub async fn get_all_other_expenses_handler(

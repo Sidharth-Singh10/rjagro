@@ -4,11 +4,13 @@ use entity::sea_orm_active_enums::UserRole;
 use sea_orm::DatabaseConnection;
 
 use crate::auth::middleware::{require_roles_middleware, RequireRoles};
+use crate::handlers::other_expenses::update_other_expense;
 use crate::handlers::purchase_orders::update_purchase_order;
 
 pub fn update_routes() -> Router<DatabaseConnection> {
     Router::new()
         .route("/purchase_orders/{id}", patch(update_purchase_order))
+        .route("/other_expenses/{id}", patch(update_other_expense))
         .layer(from_fn_with_state(
             RequireRoles::new(&[UserRole::Admin]),
             require_roles_middleware,

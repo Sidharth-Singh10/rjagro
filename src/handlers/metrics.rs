@@ -106,7 +106,7 @@ fn day_key(date: NaiveDate) -> String {
     date.format("%Y-%m-%d").to_string()
 }
 
-fn period_key(period_type: &str, date: NaiveDate) -> String {
+pub fn period_key(period_type: &str, date: NaiveDate) -> String {
     if period_type == "day" {
         day_key(date)
     } else {
