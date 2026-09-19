@@ -1,6 +1,7 @@
 import React from 'react';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
-import { Inbox,  Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save, Trash2 } from 'lucide-react';
+import Pagination from '@/app/components/ui/pagination';
+import { Inbox,  Edit, Filter, Plus, X, Save, Trash2 } from 'lucide-react';
 import { BatchAllocation, BatchAllocationLine, NewBatchAllocationLine, StockReceipt } from '@/app/types/interfaces';
 
 interface BatchAllocationLinesTableProps {
@@ -8,6 +9,15 @@ interface BatchAllocationLinesTableProps {
   batchAllocations: BatchAllocation[];
   stockReceipts: StockReceipt[];
   loading: boolean;
+  /** True until the first page has loaded — drives the skeleton. */
+  tableLoading: boolean;
+  /** True while another page is being fetched — dims the table. */
+  refreshing: boolean;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
   showAddForm: boolean;
   newAllocationLine: NewBatchAllocationLine;
   setShowAddForm: (show: boolean) => void;
@@ -21,6 +31,13 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
   batchAllocations,
   stockReceipts,
   loading,
+  tableLoading,
+  refreshing,
+  page,
+  pageSize,
+  totalCount,
+  totalPages,
+  onPageChange,
   showAddForm,
   newAllocationLine,
   setShowAddForm,
@@ -177,7 +194,7 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div className={`overflow-x-auto transition-opacity ${refreshing ? 'opacity-60' : ''}`}>
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
@@ -211,7 +228,7 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {loading ? (
+            {tableLoading ? (
               <TableSkeletonRows cols={9} />
             ) : allocationLines.length === 0 ? (
               <tr>
@@ -269,22 +286,13 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
         </table>
       </div>
 
-      <div className="flex items-center justify-between px-4 py-3 border-t">
-        <div className="text-sm text-gray-500">
-          Showing {allocationLines.length} of {allocationLines.length} results
-        </div>
-        <div className="flex items-center gap-2">
-          <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
-            <ChevronLeft size={16} />
-            Previous
-          </button>
-          <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
-          <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
-            Next
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        pageCount={totalPages}
+        total={totalCount}
+        pageSize={pageSize}
+        onPageChange={onPageChange}
+      />
     </div>
   );
 };

@@ -1,9 +1,53 @@
-import { Purchase, PurchaseOrderPayload, PurchasePayload } from '../types/interfaces';
+import { PaginatedPurchases, Purchase, PurchaseOrderPayload, PurchasePayload } from '../types/interfaces';
 import api from '../utils/api';
 import { toast } from 'react-toastify';
 
+export const PURCHASES_PAGE_SIZE = 25;
+
 export const fetchPurchases = async (): Promise<Purchase[]> => {
     const response = await api.get('/getall/purchases');
+    return response.data;
+};
+
+export interface PurchasesPageFilters {
+    supplierId?: number;
+    /** Inclusive ISO date, YYYY-MM-DD. */
+    from?: string;
+    /** Inclusive ISO date, YYYY-MM-DD. */
+    to?: string;
+    sort?: string;
+    dir?: 'asc' | 'desc';
+}
+
+export const fetchPurchasesPage = async (
+    page: number = 1,
+    pageSize: number = PURCHASES_PAGE_SIZE,
+    filters: PurchasesPageFilters = {}
+): Promise<PaginatedPurchases> => {
+    const params: Record<string, unknown> = { page, page_size: pageSize };
+    if (filters.supplierId) params.supplier_id = filters.supplierId;
+    if (filters.from) params.from = filters.from;
+    if (filters.to) params.to = filters.to;
+    if (filters.sort) {
+        params.sort = filters.sort;
+        params.dir = filters.dir ?? 'desc';
+    }
+
+    const response = await api.get('/getall/purchases/paginated', { params });
+    const data = response.data ?? {};
+    return {
+        items: data.items ?? [],
+        page: Number(data.page ?? 1),
+        page_size: Number(data.page_size ?? pageSize),
+        total_count: Number(data.total_count ?? 0),
+        total_pages: Number(data.total_pages ?? 0),
+        total_amount: Number(data.total_amount ?? 0),
+    };
+};
+
+/** Lines of one purchase order, fetched when its edit form opens. */
+export const fetchPurchaseOrderLines = async (orderId: number): Promise<Purchase[]> => {
+    const response = await api.get(`/getall/purchases/order/${orderId}`);
     return response.data;
 };
 

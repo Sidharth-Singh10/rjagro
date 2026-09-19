@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
-import { Inbox,  Filter, ChevronLeft, ChevronRight, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
+import Pagination from '@/app/components/ui/pagination';
+import { Inbox,  Filter, Plus, X, Save, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
 import { Item, Purchase, PurchaseOrderPayload, Supplier } from '@/app/types/interfaces';
 import { useQueryClient } from '@tanstack/react-query';
-import { handleAddPurchaseOrder, handleUpdatePurchaseOrder } from '@/app/api/purchases';
-import { TableConfigs, useTableSorting } from '@/app/hooks/sorting';
+import { fetchPurchaseOrderLines, handleAddPurchaseOrder, handleUpdatePurchaseOrder } from '@/app/api/purchases';
 import TableActionsDropdown from '../utils/table_actions';
 
 interface OrderItemRow {
@@ -22,6 +22,19 @@ interface PurchasesTableProps {
     items: Item[];
     suppliers: Supplier[];
     loading: boolean;
+    /** True until the first page has loaded — drives the skeleton. */
+    tableLoading: boolean;
+    /** True while another page is being fetched — dims the table. */
+    refreshing: boolean;
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    totalAmount: number;
+    onPageChange: (page: number) => void;
+    sortKey: string;
+    sortDir: 'asc' | 'desc';
+    onSortChange: (key: string) => void;
     showAddForm: boolean;
     setShowAddForm: (show: boolean) => void;
     createdBy: number;
@@ -32,10 +45,27 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
     items,
     suppliers,
     loading,
+    tableLoading,
+    refreshing,
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+    totalAmount,
+    onPageChange,
+    sortKey,
+    sortDir,
+    onSortChange,
     showAddForm,
     setShowAddForm,
     createdBy,
 }) => {
+    // Server-side sorting: the page is already ordered by the API.
+    const requestSort = (key: string) => onSortChange(key);
+    const getSortIcon = (key: string) => {
+        if (sortKey !== key) return 'ArrowUpDown';
+        return sortDir === 'asc' ? 'ArrowUp' : 'ArrowDown';
+    };
     const queryClient = useQueryClient();
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
@@ -64,8 +94,15 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
         resetForm();
     };
 
-    const openEditOrderForm = (orderId: number) => {
-        const lines = purchases.filter(p => p.purchase_order_id === orderId);
+    const openEditOrderForm = async (orderId: number) => {
+        // Lines may live on another page, so fetch this order's lines on demand.
+        let lines: Purchase[] = [];
+        try {
+            lines = await fetchPurchaseOrderLines(orderId);
+        } catch (error) {
+            console.error('Error loading purchase order lines:', error);
+            return;
+        }
         if (lines.length === 0) return;
         setSupplierId(lines[0].supplier_id);
         setPurchaseDate(lines[0].purchase_date);
@@ -169,12 +206,6 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
         }
     };
 
-    const { sortedData, requestSort, getSortIcon } = useTableSorting(
-        purchases,
-        { key: 'purchase_date', direction: 'desc' },
-        TableConfigs.purchases.getValueFn
-    );
-
     const getSupplierName = (supplierId: number) => {
         const supplier = suppliers.find(s => s.supplier_id === supplierId);
         return supplier?.name || 'Unknown';
@@ -204,7 +235,12 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
     return (
         <div className="bg-white rounded-lg shadow">
             <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-xl font-semibold text-gray-800">Purchases</h2>
+                <div className="flex items-center gap-4">
+                    <h2 className="text-xl font-semibold text-gray-800">Purchases</h2>
+                    <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        Total: ₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </span>
+                </div>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleOpenForm}
@@ -378,7 +414,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                 </div>
             )}
 
-            <div className="overflow-x-auto">
+            <div className={`overflow-x-auto transition-opacity ${refreshing ? 'opacity-60' : ''}`}>
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                         <tr>
@@ -403,9 +439,9 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {loading ? (
+                        {tableLoading ? (
                             <TableSkeletonRows cols={12} />
-                        ) : sortedData.length === 0 ? (
+                        ) : purchases.length === 0 ? (
                             <tr>
                                 <td colSpan={12} className="px-4 py-12 text-center">
                                     <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
@@ -413,7 +449,7 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                                 </td>
                             </tr>
                         ) : (
-                            sortedData.map((purchase) => (
+                            purchases.map((purchase) => (
                                 <tr key={purchase.purchase_id} className="hover:bg-gray-50">
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {purchase.purchase_order_id ? `#${purchase.purchase_order_id}` : '-'}
@@ -473,22 +509,13 @@ const PurchasesTable: React.FC<PurchasesTableProps> = ({
                 </table>
             </div>
 
-            <div className="flex items-center justify-between px-4 py-3 border-t">
-                <div className="text-sm text-gray-500">
-                    Showing {purchases.length} of {purchases.length} results
-                </div>
-                <div className="flex items-center gap-2">
-                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
-                        <ChevronLeft size={16} />
-                        Previous
-                    </button>
-                    <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
-                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
-                        Next
-                        <ChevronRight size={16} />
-                    </button>
-                </div>
-            </div>
+            <Pagination
+                page={page}
+                pageCount={totalPages}
+                total={totalCount}
+                pageSize={pageSize}
+                onPageChange={onPageChange}
+            />
         </div>
     );
 };

@@ -1,8 +1,8 @@
 'use client'
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/app/hooks/useAuth';
-import { fetchPurchases } from '@/app/api/purchases';
+import { fetchPurchasesPage, PURCHASES_PAGE_SIZE } from '@/app/api/purchases';
 import { fetchSuppliers } from '@/app/api/supplier';
 import { fetchItems } from '@/app/api/items';
 import { ShoppingCart } from 'lucide-react';
@@ -18,11 +18,38 @@ const PurchasesModule = () => {
     const [showAddForm, setShowAddForm] = useState(false);
 
     // --- Data Fetching ---
-    const { data: purchases = [], isLoading: isPurchasesLoading } = useQuery({
-        queryKey: ['purchases'],
-        queryFn: fetchPurchases,
+    const [page, setPage] = useState(1);
+    const [sortKey, setSortKey] = useState('purchase_date');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+    const {
+        data: purchasesPage,
+        isPending: isPurchasesPending,
+        isFetching: isPurchasesFetching,
+    } = useQuery({
+        queryKey: ['purchases', 'page', page, sortKey, sortDir],
+        queryFn: () => fetchPurchasesPage(page, PURCHASES_PAGE_SIZE, { sort: sortKey, dir: sortDir }),
+        placeholderData: keepPreviousData,
         staleTime: 5 * 60 * 1000,
     });
+
+    const purchases = purchasesPage?.items ?? [];
+
+    useEffect(() => {
+        if (purchasesPage && purchasesPage.total_pages > 0 && page > purchasesPage.total_pages) {
+            setPage(purchasesPage.total_pages);
+        }
+    }, [purchasesPage, page]);
+
+    const onSortChange = (key: string) => {
+        if (key === sortKey) {
+            setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortKey(key);
+            setSortDir('asc');
+        }
+        setPage(1);
+    };
 
     const { data: suppliers = [] } = useQuery({
         queryKey: ['suppliers'],
@@ -61,7 +88,18 @@ const PurchasesModule = () => {
                         purchases={purchases}
                         items={items}
                         suppliers={suppliers}
-                        loading={loading || isPurchasesLoading}
+                        loading={loading}
+                        tableLoading={isPurchasesPending}
+                        refreshing={isPurchasesFetching && !isPurchasesPending}
+                        page={page}
+                        pageSize={PURCHASES_PAGE_SIZE}
+                        totalCount={purchasesPage?.total_count ?? 0}
+                        totalPages={purchasesPage?.total_pages ?? 0}
+                        totalAmount={purchasesPage?.total_amount ?? 0}
+                        onPageChange={setPage}
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        onSortChange={onSortChange}
                         showAddForm={showAddForm}
                         setShowAddForm={setShowAddForm}
                         createdBy={user ? user.user_id : 9999}

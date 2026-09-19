@@ -1,10 +1,10 @@
 'use client'
-import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClipboardList, Boxes, ListTree } from 'lucide-react';
 import { fetchBatchRequirements, handleAddBatchRequirement } from '@/app/api/batch_requirements';
 import { fetchBatchAllocations } from '@/app/api/batch_allocations';
-import { fetchBatchAllocationLines, handleAddBatchAllocationLine, handleDeleteBatchAllocationLine } from '@/app/api/batch_allocation_lines';
+import { fetchAllocationLinesPage, handleAddBatchAllocationLine, handleDeleteBatchAllocationLine, ALLOCATION_LINES_PAGE_SIZE } from '@/app/api/batch_allocation_lines';
 import { fetchBatches } from '@/app/api/batches';
 import { fetchItems } from '@/app/api/items';
 import { fetchStockReceipts } from '@/app/api/stock_receipts';
@@ -28,17 +28,35 @@ const AllocationsModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: allocations = [], isLoading: isAllocationsLoading } = useQuery({
+    // Lines are paged; the tab fetches its own page on demand.
+    const [linesPage, setLinesPage] = useState(1);
+
+    // The allocations list is small and also feeds the Lines add form.
+    const { data: allocations = [] } = useQuery({
         queryKey: ["batch_allocations"],
         queryFn: fetchBatchAllocations,
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: allocationLines = [], isLoading: isAllocationLinesLoading } = useQuery({
-        queryKey: ["batch_allocation_lines"],
-        queryFn: fetchBatchAllocationLines,
+    const {
+        data: linesData,
+        isPending: isLinesPending,
+        isFetching: isLinesFetching,
+    } = useQuery({
+        queryKey: ["batch_allocation_lines", "page", linesPage],
+        queryFn: () => fetchAllocationLinesPage(linesPage, ALLOCATION_LINES_PAGE_SIZE),
+        placeholderData: keepPreviousData,
         staleTime: 5 * 60 * 1000,
+        enabled: subTab === 'Lines',
     });
+
+    const allocationLines = linesData?.items ?? [];
+
+    useEffect(() => {
+        if (linesData && linesData.total_pages > 0 && linesPage > linesData.total_pages) {
+            setLinesPage(linesData.total_pages);
+        }
+    }, [linesData, linesPage]);
 
     const { data: batches = [] } = useQuery({
         queryKey: ["batches"],
@@ -140,7 +158,7 @@ const AllocationsModule = () => {
                 {subTab === 'Allocations' && (
                     <BatchAllocationsTable
                         batchAllocations={allocations}
-                        loading={loading || isAllocationsLoading}
+                        loading={loading}
                         showAddForm={showAddForm}
                         setShowAddForm={setShowAddForm}
                     />
@@ -151,7 +169,14 @@ const AllocationsModule = () => {
                         allocationLines={allocationLines}
                         batchAllocations={allocations}
                         stockReceipts={stockReceipts}
-                        loading={loading || isAllocationLinesLoading}
+                        loading={loading}
+                        tableLoading={isLinesPending}
+                        refreshing={isLinesFetching && !isLinesPending}
+                        page={linesPage}
+                        pageSize={ALLOCATION_LINES_PAGE_SIZE}
+                        totalCount={linesData?.total_count ?? 0}
+                        totalPages={linesData?.total_pages ?? 0}
+                        onPageChange={setLinesPage}
                         showAddForm={showAddForm}
                         newAllocationLine={newAllocationLine}
                         setShowAddForm={setShowAddForm}

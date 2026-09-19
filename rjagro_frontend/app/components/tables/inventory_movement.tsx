@@ -1,12 +1,22 @@
 import React from 'react';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
-import { Inbox,  Edit, Filter, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import Pagination from '@/app/components/ui/pagination';
+import { Inbox,  Edit, Filter, Plus, X, Save } from 'lucide-react';
 import { InventoryMovement, Item, NewInventoryMovement } from '@/app/types/interfaces';
 
 interface InventoryMovementsTableProps {
     inventoryMovements: InventoryMovement[];
     items: Item[];
     loading: boolean;
+    /** True until the first page has loaded — drives the skeleton. */
+    tableLoading: boolean;
+    /** True while another page is being fetched — dims the table. */
+    refreshing: boolean;
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
     showAddForm: boolean;
     newMovement: NewInventoryMovement;
     setShowAddForm: (show: boolean) => void;
@@ -26,6 +36,13 @@ const InventoryMovementsTable: React.FC<InventoryMovementsTableProps> = ({
     inventoryMovements,
     items,
     loading,
+    tableLoading,
+    refreshing,
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+    onPageChange,
     showAddForm,
     newMovement,
     setShowAddForm,
@@ -186,7 +203,7 @@ const InventoryMovementsTable: React.FC<InventoryMovementsTableProps> = ({
                 </div>
             )}
 
-            <div className="overflow-x-auto">
+            <div className={`overflow-x-auto transition-opacity ${refreshing ? 'opacity-60' : ''}`}>
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                         <tr>
@@ -217,7 +234,7 @@ const InventoryMovementsTable: React.FC<InventoryMovementsTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {loading ? (
+                        {tableLoading ? (
                             <TableSkeletonRows cols={8} />
                         ) : inventoryMovements.length === 0 ? (
                             <tr>
@@ -266,22 +283,13 @@ const InventoryMovementsTable: React.FC<InventoryMovementsTableProps> = ({
                 </table>
             </div>
 
-            <div className="flex items-center justify-between px-4 py-3 border-t">
-                <div className="text-sm text-gray-500">
-                    Showing {inventoryMovements.length} of {inventoryMovements.length} results
-                </div>
-                <div className="flex items-center gap-2">
-                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
-                        <ChevronLeft size={16} />
-                        Previous
-                    </button>
-                    <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
-                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
-                        Next
-                        <ChevronRight size={16} />
-                    </button>
-                </div>
-            </div>
+            <Pagination
+                page={page}
+                pageCount={totalPages}
+                total={totalCount}
+                pageSize={pageSize}
+                onPageChange={onPageChange}
+            />
         </div>
     );
 };

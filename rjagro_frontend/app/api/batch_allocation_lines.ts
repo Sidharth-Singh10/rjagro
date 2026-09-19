@@ -1,10 +1,32 @@
-import { BatchAllocationLine, BatchAllocationLinePayload } from "../types/interfaces";
+import { BatchAllocationLine, BatchAllocationLinePayload, PaginatedAllocationLines } from "../types/interfaces";
 import api from "../utils/api";
 import { toast } from "react-toastify";
+
+export const ALLOCATION_LINES_PAGE_SIZE = 25;
 
 export const fetchBatchAllocationLines = async (): Promise<BatchAllocationLine[]> => {
   const response = await api.get("/getall/batch_allocation_lines");
   return response.data;
+};
+
+export const fetchAllocationLinesPage = async (
+  page: number = 1,
+  pageSize: number = ALLOCATION_LINES_PAGE_SIZE,
+  filters: { batchId?: number; allocationId?: number } = {}
+): Promise<PaginatedAllocationLines> => {
+  const params: Record<string, unknown> = { page, page_size: pageSize };
+  if (filters.batchId) params.batch_id = filters.batchId;
+  if (filters.allocationId) params.allocation_id = filters.allocationId;
+
+  const response = await api.get("/getall/batch_allocation_lines/paginated", { params });
+  const data = response.data ?? {};
+  return {
+    items: data.items ?? [],
+    page: Number(data.page ?? 1),
+    page_size: Number(data.page_size ?? pageSize),
+    total_count: Number(data.total_count ?? 0),
+    total_pages: Number(data.total_pages ?? 0),
+  };
 };
 
 export const handleAddBatchAllocationLine = async (

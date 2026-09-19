@@ -1,11 +1,11 @@
 'use client'
-import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package, ArrowLeftRight, ClipboardList, Layers } from 'lucide-react';
 import { fetchItems, handleAddItem } from '@/app/api/items';
 import { fetchInventory, handleAddInventory, handleUpdateInventory } from '@/app/api/inventory';
-import { fetchInventoryMovements, handleAddInventoryMovement } from '@/app/api/inventory_movement';
-import { fetchStockReceipts, handleAddStockReceipt } from '@/app/api/stock_receipts';
+import { fetchInventoryMovementsPage, handleAddInventoryMovement, INVENTORY_MOVEMENTS_PAGE_SIZE } from '@/app/api/inventory_movement';
+import { fetchStockReceiptsPage, handleAddStockReceipt, STOCK_RECEIPTS_PAGE_SIZE } from '@/app/api/stock_receipts';
 import { fetchPurchases } from '@/app/api/purchases';
 import { fetchSuppliers } from '@/app/api/supplier';
 import { ItemCategory } from '@/app/types/enums';
@@ -36,17 +36,72 @@ const InventoryModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: inventoryMovements = [], isLoading: isMovementsLoading } = useQuery({
-        queryKey: ["inventory_movements"],
-        queryFn: fetchInventoryMovements,
+    // Movements and receipts are paged; each tab fetches its own page on demand.
+    const [movementsPage, setMovementsPage] = useState(1);
+    const [receiptsPage, setReceiptsPage] = useState(1);
+    const [receiptsSortKey, setReceiptsSortKey] = useState('lot_id');
+    const [receiptsSortDir, setReceiptsSortDir] = useState<'asc' | 'desc'>('desc');
+    const [receiptsItemFilter, setReceiptsItemFilter] = useState('');
+
+    const {
+        data: movementsData,
+        isPending: isMovementsPending,
+        isFetching: isMovementsFetching,
+    } = useQuery({
+        queryKey: ["inventory_movements", "page", movementsPage],
+        queryFn: () => fetchInventoryMovementsPage(movementsPage),
+        placeholderData: keepPreviousData,
         staleTime: 5 * 60 * 1000,
+        enabled: subTab === 'Movements',
     });
 
-    const { data: stockReceipts = [], isLoading: isReceiptsLoading } = useQuery({
-        queryKey: ['stock_receipts'],
-        queryFn: () => fetchStockReceipts(),
+    const inventoryMovements = movementsData?.items ?? [];
+
+    useEffect(() => {
+        if (movementsData && movementsData.total_pages > 0 && movementsPage > movementsData.total_pages) {
+            setMovementsPage(movementsData.total_pages);
+        }
+    }, [movementsData, movementsPage]);
+
+    const {
+        data: receiptsData,
+        isPending: isReceiptsPending,
+        isFetching: isReceiptsFetching,
+    } = useQuery({
+        queryKey: ['stock_receipts', 'page', receiptsPage, receiptsSortKey, receiptsSortDir, receiptsItemFilter],
+        queryFn: () =>
+            fetchStockReceiptsPage(receiptsPage, STOCK_RECEIPTS_PAGE_SIZE, {
+                itemCode: receiptsItemFilter || undefined,
+                sort: receiptsSortKey,
+                dir: receiptsSortDir,
+            }),
+        placeholderData: keepPreviousData,
         staleTime: 5 * 60 * 1000,
+        enabled: subTab === 'Receipts',
     });
+
+    const stockReceipts = receiptsData?.items ?? [];
+
+    useEffect(() => {
+        if (receiptsData && receiptsData.total_pages > 0 && receiptsPage > receiptsData.total_pages) {
+            setReceiptsPage(receiptsData.total_pages);
+        }
+    }, [receiptsData, receiptsPage]);
+
+    const onReceiptsSortChange = (key: string) => {
+        if (key === receiptsSortKey) {
+            setReceiptsSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setReceiptsSortKey(key);
+            setReceiptsSortDir('asc');
+        }
+        setReceiptsPage(1);
+    };
+
+    const onReceiptsFilterChange = (itemCode: string) => {
+        setReceiptsItemFilter(itemCode);
+        setReceiptsPage(1);
+    };
 
     // Required for Stock Receipts dropdowns
     const { data: purchases = [] } = useQuery({
@@ -275,7 +330,14 @@ const InventoryModule = () => {
                     <InventoryMovementsTable
                         inventoryMovements={inventoryMovements}
                         items={items}
-                        loading={loading || isMovementsLoading}
+                        loading={loading}
+                        tableLoading={isMovementsPending}
+                        refreshing={isMovementsFetching && !isMovementsPending}
+                        page={movementsPage}
+                        pageSize={INVENTORY_MOVEMENTS_PAGE_SIZE}
+                        totalCount={movementsData?.total_count ?? 0}
+                        totalPages={movementsData?.total_pages ?? 0}
+                        onPageChange={setMovementsPage}
                         showAddForm={showAddForm}
                         newMovement={newMovement}
                         setShowAddForm={setShowAddForm}
@@ -290,7 +352,19 @@ const InventoryModule = () => {
                         stockReceipts={stockReceipts}
                         items={items}
                         purchases={purchases}
-                        loading={loading || isReceiptsLoading}
+                        loading={loading}
+                        tableLoading={isReceiptsPending}
+                        refreshing={isReceiptsFetching && !isReceiptsPending}
+                        page={receiptsPage}
+                        pageSize={STOCK_RECEIPTS_PAGE_SIZE}
+                        totalCount={receiptsData?.total_count ?? 0}
+                        totalPages={receiptsData?.total_pages ?? 0}
+                        onPageChange={setReceiptsPage}
+                        sortKey={receiptsSortKey}
+                        sortDir={receiptsSortDir}
+                        onSortChange={onReceiptsSortChange}
+                        itemFilter={receiptsItemFilter}
+                        onItemFilterChange={onReceiptsFilterChange}
                         showAddForm={showAddForm}
                         newStockReceipt={newStockReceipt}
                         setShowAddForm={setShowAddForm}

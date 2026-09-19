@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 import { fetchLedgerAccounts } from '@/app/api/ledger_accounts';
-import { fetchBatchSales } from '@/app/api/batch_sales';
+import { fetchBatchSales, fetchBatchSalesByBatchId } from '@/app/api/batch_sales';
 import { fetchPurchases } from '@/app/api/purchases';
 import { fetchBatches, fetchBatchClosures } from '@/app/api/batches';
 import { fetchLoans } from '@/app/api/loans';
@@ -16,10 +16,14 @@ import { fetchInventory } from '@/app/api/inventory';
 import { fetchItems } from '@/app/api/items';
 import { fetchSuppliers, fetchSupplierPaymentTotals } from '@/app/api/supplier';
 import { fetchTraders, fetchTraderPaymentTotals } from '@/app/api/traders';
-import { fetchBatchAllocationLines } from '@/app/api/batch_allocation_lines';
-import { fetchBatchAllocations } from '@/app/api/batch_allocations';
-import { fetchStockReceipts } from '@/app/api/stock_receipts';
 import { fetchLedgerEntriesSummary } from '@/app/api/ledger_entries';
+import {
+    fetchAllocationBatchCosts,
+    fetchAllocationCategoryTotals,
+    fetchAllocationFcr,
+    fetchBatchFeedLines,
+    fetchFeedSummary,
+} from '@/app/api/aggregates';
 import { fetchOtherExpensesSummary } from '@/app/api/other_expenses';
 import { fetchMetricSnapshots } from '@/app/api/metrics';
 import { Item, OTHER_EXPENSE_CATEGORY_LABELS } from '@/app/types/interfaces';
@@ -110,6 +114,11 @@ const OverviewModule = () => {
     const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1);
     const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
+    // ── Financial chart range filters (monthly) ───────────────────────
+    const [monthlyMode, setMonthlyMode] = useState('12m');
+    const [monthlyFrom, setMonthlyFrom] = useState('');
+    const [monthlyTo, setMonthlyTo] = useState('');
+
     // ── Data fetching ─────────────────────────────────────────────────
     const { data: ledgerAccounts = [] } = useQuery({
         queryKey: ['ledger_accounts'], queryFn: fetchLedgerAccounts, staleTime: STALE,
@@ -141,15 +150,6 @@ const OverviewModule = () => {
     const { data: batchClosures = [] } = useQuery({
         queryKey: ['batch_closures'], queryFn: fetchBatchClosures, staleTime: STALE,
     });
-    const { data: allocationLines = [] } = useQuery({
-        queryKey: ['batch_allocation_lines'], queryFn: fetchBatchAllocationLines, staleTime: STALE,
-    });
-    const { data: stockReceipts = [] } = useQuery({
-        queryKey: ['stock_receipts'], queryFn: () => fetchStockReceipts(), staleTime: STALE,
-    });
-    const { data: batchAllocations = [] } = useQuery({
-        queryKey: ['batch_allocations'], queryFn: fetchBatchAllocations, staleTime: STALE,
-    });
     const { data: ledgerSummary = [] } = useQuery({
         queryKey: ['ledger_entries', 'summary', lastMonthKey, thisMonthKey],
         queryFn: () => fetchLedgerEntriesSummary(lastMonthKey, thisMonthKey),
@@ -160,8 +160,41 @@ const OverviewModule = () => {
         queryFn: () => fetchOtherExpensesSummary(lastMonthKey, thisMonthKey),
         staleTime: STALE,
     });
+    const { data: feedSummary } = useQuery({
+        queryKey: ['inventory_feed_summary'], queryFn: fetchFeedSummary, staleTime: STALE,
+    });
+    const { data: allocationCategoryTotals = [] } = useQuery({
+        queryKey: ['allocation_category_totals', lastMonthKey, thisMonthKey],
+        queryFn: () => fetchAllocationCategoryTotals(lastMonthKey, thisMonthKey),
+        staleTime: STALE,
+    });
+    const { data: allocationBatchCosts = [] } = useQuery({
+        queryKey: ['allocation_batch_costs', 10],
+        queryFn: () => fetchAllocationBatchCosts(10),
+        staleTime: STALE,
+    });
+    const { data: allocationFcr = [] } = useQuery({
+        queryKey: ['allocation_fcr', 10],
+        queryFn: () => fetchAllocationFcr(10),
+        staleTime: STALE,
+    });
+
+    // Only the monthly snapshots are charted, and only for the selected range.
+    const metricRange = useMemo(() => {
+        if (monthlyMode === 'all') return { from: undefined as string | undefined, to: undefined as string | undefined };
+        if (monthlyMode === 'custom' && (monthlyFrom || monthlyTo)) {
+            return { from: monthlyFrom || undefined, to: monthlyTo || undefined };
+        }
+        const start = new Date();
+        start.setMonth(start.getMonth() - 11);
+        const from = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+        return { from, to: thisMonthKey };
+    }, [monthlyMode, monthlyFrom, monthlyTo, thisMonthKey]);
+
     const { data: metricSnapshots = [] } = useQuery({
-        queryKey: ['metric_snapshots'], queryFn: () => fetchMetricSnapshots(), staleTime: STALE,
+        queryKey: ['metric_snapshots', 'month', metricRange.from ?? '', metricRange.to ?? ''],
+        queryFn: () => fetchMetricSnapshots({ period_type: 'month', from: metricRange.from, to: metricRange.to }),
+        staleTime: STALE,
     });
     const { data: supplierPaymentTotals = [] } = useQuery({
         queryKey: ['supplier_payment_totals'], queryFn: fetchSupplierPaymentTotals, staleTime: STALE,
@@ -190,69 +223,29 @@ const OverviewModule = () => {
         return map;
     }, [items]);
 
-    const lotItemCodeMap = useMemo(() => {
-        const map: Record<number, string> = {};
-        stockReceipts.forEach(sr => { map[n(sr.lot_id)] = sr.item_code; });
-        return map;
-    }, [stockReceipts]);
-
-    const lotCategoryMap = useMemo(() => {
-        const map: Record<number, string> = {};
-        stockReceipts.forEach(sr => {
-            const cat = itemMap[sr.item_code]?.item_category;
-            if (cat) map[n(sr.lot_id)] = cat;
-        });
-        return map;
-    }, [stockReceipts, itemMap]);
-
-    const allocationDateById = useMemo(() => {
-        const map: Record<number, string> = {};
-        batchAllocations.forEach(a => { map[n(a.allocation_id)] = a.allocation_date; });
-        return map;
-    }, [batchAllocations]);
-
     const farmerNameByBatch = useMemo(() => {
         const map: Record<number, string> = {};
         batches.forEach(b => { map[n(b.batch_id)] = b.farmer_name; });
         return map;
     }, [batches]);
 
-    // ── Stored metrics history (monthly & daily snapshots) ────────────
+    // ── Stored metrics history (monthly snapshots only) ───────────────
     const metricPeriods = useMemo(() => {
-        const grouped: Record<'day' | 'month', Record<string, Record<string, number>>> = {
-            day: {},
-            month: {},
-        };
+        const grouped: Record<string, Record<string, number>> = {};
         metricSnapshots.forEach(snapshot => {
-            const bucket = grouped[snapshot.period_type]?.[snapshot.period_key] ?? {};
+            const bucket = grouped[snapshot.period_key] ?? {};
             bucket[snapshot.metric_key] = n(snapshot.value);
-            grouped[snapshot.period_type][snapshot.period_key] = bucket;
+            grouped[snapshot.period_key] = bucket;
         });
 
-        const monthRows: SeriesPoint[] = Object.entries(grouped.month)
+        const monthRows: SeriesPoint[] = Object.entries(grouped)
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([key, metrics]) => ({ key, label: getMonthLabel(key), ...metrics }));
 
-        const dayRows: SeriesPoint[] = Object.entries(grouped.day)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([key, metrics]) => {
-                const [year, month, day] = key.split('-').map(Number);
-                const date = new Date(year, month - 1, day);
-                return {
-                    key,
-                    label: date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
-                    ...metrics,
-                };
-            });
-
-        return { monthRows, dayRows };
+        return { monthRows };
     }, [metricSnapshots]);
 
     // ── Financial chart range filters (monthly) ───────────────────────
-    const [monthlyMode, setMonthlyMode] = useState('12m');
-    const [monthlyFrom, setMonthlyFrom] = useState('');
-    const [monthlyTo, setMonthlyTo] = useState('');
-
     const monthlyOptions = useMemo(() => [
         { key: '12m', label: 'Last 12M' },
         { key: 'all', label: 'All' },
@@ -499,25 +492,9 @@ const OverviewModule = () => {
         const payables = balance(105);
         const workingCapital = cashBalance + inventoryValue + receivables - payables;
 
-        // Feed days of cover: bags on hand ÷ average daily bags consumed
-        const feedOnHand = stockReceipts
-            .filter(sr => itemMap[sr.item_code]?.item_category === 'Feed' && itemMap[sr.item_code]?.item_name !== 'FEED DELIVERY')
-            .reduce((s, sr) => s + n(sr.remaining_qty), 0);
-        const datedFeed: { qty: number; date: string }[] = [];
-        allocationLines.forEach(l => {
-            if (lotCategoryMap[n(l.lot_id)] !== 'Feed') return;
-            const date = allocationDateById[n(l.allocation_id)];
-            if (date) datedFeed.push({ qty: n(l.qty), date });
-        });
-        let daysCover = 0;
-        if (feedOnHand > 0 && datedFeed.length > 0) {
-            const times = datedFeed.map(x => new Date(x.date + 'T00:00:00').getTime());
-            const start = Math.min(...times);
-            const end = Math.max(Date.now(), Math.max(...times));
-            const days = Math.max(1, Math.round((end - start) / 86400000) + 1);
-            const perDay = datedFeed.reduce((s, x) => s + x.qty, 0) / days;
-            daysCover = perDay > 0 ? feedOnHand / perDay : 0;
-        }
+        // Feed on hand and days of cover come precomputed from the server.
+        const feedOnHand = feedSummary?.feed_on_hand ?? 0;
+        const daysCover = feedSummary?.days_cover ?? 0;
 
         // Breakeven & realized rate for batches closed this month
         const closedThisMonth = new Set(closuresIn(thisMonthKey).map(c => c.batch_id));
@@ -547,7 +524,7 @@ const OverviewModule = () => {
             realizedRate,
             kgThisMonth,
         };
-    }, [ledgerAccounts, batchClosures, batchSales, expenseSummary, ledgerSummary, stockReceipts, allocationLines, allocationDateById, lotCategoryMap, itemMap, thisMonthKey]);
+    }, [ledgerAccounts, batchClosures, batchSales, expenseSummary, ledgerSummary, feedSummary, itemMap, thisMonthKey]);
 
     // ── Net profit breakdown (double-click detail) ────────────────────
     const [showNetProfit, setShowNetProfit] = useState(false);
@@ -764,12 +741,11 @@ const OverviewModule = () => {
     // ── COGS mix (month) by item category ─────────────────────────────
     const cogsMix = useMemo(() => {
         const byCategory: Record<string, number> = {};
-        allocationLines.forEach(l => {
-            const date = allocationDateById[n(l.allocation_id)];
-            if (!date || date.slice(0, 7) !== thisMonthKey) return;
-            const cat = lotCategoryMap[n(l.lot_id)] ?? 'Other';
-            byCategory[cat] = (byCategory[cat] ?? 0) + n(l.line_value);
-        });
+        allocationCategoryTotals
+            .filter(row => row.month === thisMonthKey)
+            .forEach(row => {
+                byCategory[row.category] = (byCategory[row.category] ?? 0) + n(row.total);
+            });
 
         const colors: Record<string, string> = {
             Feed: chart.amber,
@@ -785,7 +761,7 @@ const OverviewModule = () => {
         }));
 
         return { data, total: data.reduce((s, d) => s + d.value, 0) };
-    }, [allocationLines, allocationDateById, lotCategoryMap, thisMonthKey]);
+    }, [allocationCategoryTotals, thisMonthKey]);
 
     // ── Other expenses mix (month) by category ────────────────────────
     const otherExpenseMix = useMemo(() => {
@@ -820,19 +796,23 @@ const OverviewModule = () => {
 
     // ── Cost per Bird by category (per batch) ─────────────────────────
     const costPerBirdData: CostPerBirdData[] = useMemo(() => {
+        // batch_id -> category -> allocated value
+        const costByBatch: Record<number, Record<string, number>> = {};
+        allocationBatchCosts.forEach(row => {
+            const bucket = costByBatch[row.batch_id] ?? {};
+            bucket[row.category] = (bucket[row.category] ?? 0) + n(row.total);
+            costByBatch[row.batch_id] = bucket;
+        });
+
         return batches
-            .filter(b => allocationLines.some(l => n(l.batch_id) === b.batch_id))
+            .filter(b => costByBatch[n(b.batch_id)])
             .map(b => {
-                let feed = 0, chicks = 0, medicine = 0, other = 0;
-                allocationLines.forEach(l => {
-                    if (n(l.batch_id) !== b.batch_id) return;
-                    const cat = lotCategoryMap[n(l.lot_id)] ?? 'Other';
-                    const v = n(l.line_value);
-                    if (cat === 'Feed') feed += v;
-                    else if (cat === 'Chicks') chicks += v;
-                    else if (cat === 'Medicine') medicine += v;
-                    else other += v;
-                });
+                const costs = costByBatch[n(b.batch_id)] ?? {};
+                const feed = costs['Feed'] ?? 0;
+                const chicks = costs['Chicks'] ?? 0;
+                const medicine = costs['Medicine'] ?? 0;
+                const total = Object.values(costs).reduce((s, v) => s + v, 0);
+                const other = total - feed - chicks - medicine;
                 const birds = n(b.initial_bird_count);
                 const perBird = (v: number) => (birds > 0 ? parseFloat((v / birds).toFixed(2)) : 0);
                 return {
@@ -841,13 +821,13 @@ const OverviewModule = () => {
                     chicks: perBird(chicks),
                     medicine: perBird(medicine),
                     other: perBird(other),
-                    total: perBird(feed + chicks + medicine + other),
+                    total: perBird(total),
                     birds,
                 };
             })
             .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
             .slice(-10);
-    }, [batches, allocationLines, lotCategoryMap]);
+    }, [batches, allocationBatchCosts]);
 
     // ── Realized vs breakeven rate per closed batch ───────────────────
     const breakevenData: BreakevenData[] = useMemo(() => {
@@ -975,64 +955,62 @@ const OverviewModule = () => {
             });
     }, [batchSales, avgRateMode]);
 
-    // ── FCR per batch ─────────────────────────────────────────────────
-    const FEED_BAG_KG = 50;
-
+    // ── FCR per batch (server-side aggregate) ─────────────────────────
     const fcrData = useMemo(() => {
-        const feedPerBatch: Record<number, number> = {};
-        const feedBreakdownPerBatch: Record<number, { itemName: string; qty: number; unit: string; kg: number }[]> = {};
-        allocationLines.forEach(line => {
-            const batchId = n(line.batch_id);
-            if (!batchId) return;
-            const itemCode = lotItemCodeMap[n(line.lot_id)];
-            if (!itemCode) return;
-            const item = itemMap[itemCode];
-            if (!item || item.item_category !== 'Feed') return;
-            if (item.item_name.toUpperCase() === 'FEED DELIVERY') return;
-            const qty = n(line.qty);
-            const unit = item.unit ?? '';
-            const kgs = unit.toLowerCase() === 'bags' ? qty * FEED_BAG_KG : qty;
-            feedPerBatch[batchId] = (feedPerBatch[batchId] ?? 0) + kgs;
-            if (!feedBreakdownPerBatch[batchId]) feedBreakdownPerBatch[batchId] = [];
-            feedBreakdownPerBatch[batchId].push({ itemName: item.item_name, qty, unit, kg: kgs });
-        });
+        return allocationFcr.map(row => ({
+            label: `Batch ${row.batch_id}`,
+            fcr: row.fcr,
+            batchId: row.batch_id,
+            totalFeedKg: row.feed_kg,
+            totalWeightKg: row.weight_kg,
+            // Breakdowns load on demand when a bar is clicked.
+            feedBreakdown: [],
+            salesBreakdown: [],
+        }));
+    }, [allocationFcr]);
 
-        const weightPerBatch: Record<number, number> = {};
-        const salesBreakdownPerBatch: Record<number, { quantity: number; avgWeight: number; totalWeight: number }[]> = {};
-        batchSales.forEach(s => {
-            const batchId = n(s.batch_id);
-            const avgW = n(s.avg_weight);
+    // ── FCR breakdown for the selected batch (lazy) ───────────────────
+    const { data: fcrBreakdown } = useQuery({
+        queryKey: ['fcr_breakdown', selectedFCR?.batchId],
+        queryFn: async () => {
+            const batchId = selectedFCR!.batchId;
+            const [feedLines, sales] = await Promise.all([
+                fetchBatchFeedLines(batchId),
+                fetchBatchSalesByBatchId(batchId),
+            ]);
+            return { feedLines, sales };
+        },
+        enabled: !!selectedFCR,
+        staleTime: STALE,
+    });
+
+    const fcrModalData: FCRData | null = useMemo(() => {
+        if (!selectedFCR) return null;
+        const feedLines = fcrBreakdown?.feedLines ?? [];
+        const sales = fcrBreakdown?.sales ?? [];
+        const feedBreakdown = feedLines.map(f => ({
+            itemName: f.item_name,
+            qty: f.qty,
+            unit: f.unit ?? '',
+            kg: f.kg,
+        }));
+        const salesBreakdown = sales.map(s => {
             const qty = n(s.quantity);
-            weightPerBatch[batchId] = (weightPerBatch[batchId] ?? 0) + avgW;
-            if (!salesBreakdownPerBatch[batchId]) salesBreakdownPerBatch[batchId] = [];
-            salesBreakdownPerBatch[batchId].push({
+            const avgW = n(s.avg_weight);
+            return {
                 quantity: qty,
                 avgWeight: qty > 0 ? avgW / qty : 0,
                 totalWeight: avgW,
-            });
+            };
         });
-
-        const batchIds = new Set([...Object.keys(feedPerBatch), ...Object.keys(weightPerBatch)].map(Number));
-
-        return Array.from(batchIds)
-            .map(id => {
-                const feed = feedPerBatch[id] ?? 0;
-                const weight = weightPerBatch[id] ?? 0;
-                if (feed <= 0 || weight <= 0) return null;
-                return {
-                    label: `Batch ${id}`,
-                    fcr: parseFloat((feed / weight).toFixed(2)),
-                    batchId: id,
-                    totalFeedKg: feed,
-                    totalWeightKg: weight,
-                    feedBreakdown: feedBreakdownPerBatch[id] ?? [],
-                    salesBreakdown: salesBreakdownPerBatch[id] ?? [],
-                };
-            })
-            .filter((d): d is FCRData => d !== null)
-            .sort((a, b) => b.fcr - a.fcr)
-            .slice(0, 10);
-    }, [allocationLines, batchSales, lotItemCodeMap, itemMap]);
+        return {
+            ...selectedFCR,
+            totalFeedKg: feedBreakdown.reduce((s, f) => s + f.kg, 0) || selectedFCR.totalFeedKg,
+            totalWeightKg: salesBreakdown.reduce((s, x) => s + x.totalWeight, 0) || selectedFCR.totalWeightKg,
+            feedBreakdown,
+            salesBreakdown,
+        };
+    }, [selectedFCR, fcrBreakdown]);
 
     // ── Inventory levels with item details ────────────────────────────
     const inventoryData = useMemo(() => {
@@ -1326,7 +1304,7 @@ const OverviewModule = () => {
             <FCRDetailModal
                 isOpen={!!selectedFCR}
                 onClose={() => setSelectedFCR(null)}
-                data={selectedFCR}
+                data={fcrModalData}
             />
 
             {/* COGS / Gross Profit Breakdown Modal */}

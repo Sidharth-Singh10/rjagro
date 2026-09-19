@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
-import { Inbox,  Edit, ChevronLeft, ChevronRight, Plus, X, Save } from 'lucide-react';
+import Pagination from '@/app/components/ui/pagination';
+import { Inbox,  Edit, Plus, X, Save } from 'lucide-react';
 import { Item, NewStockReceipt, Purchase, StockReceipt } from '@/app/types/interfaces';
-import { useStockReceiptsSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from './sortable_headers/header';
 
 interface StockReceiptsTableProps {
@@ -10,6 +10,20 @@ interface StockReceiptsTableProps {
     items: Item[];
     purchases: Purchase[];
     loading: boolean;
+    /** True until the first page has loaded — drives the skeleton. */
+    tableLoading: boolean;
+    /** True while another page is being fetched — dims the table. */
+    refreshing: boolean;
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+    sortKey: string;
+    sortDir: 'asc' | 'desc';
+    onSortChange: (key: string) => void;
+    itemFilter: string;
+    onItemFilterChange: (itemCode: string) => void;
     showAddForm: boolean;
     newStockReceipt: NewStockReceipt;
     setShowAddForm: (show: boolean) => void;
@@ -24,6 +38,18 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
     items,
     purchases,
     loading,
+    tableLoading,
+    refreshing,
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+    onPageChange,
+    sortKey,
+    sortDir,
+    onSortChange,
+    itemFilter,
+    onItemFilterChange,
     showAddForm,
     newStockReceipt,
     setShowAddForm,
@@ -32,19 +58,16 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
     handlePurchaseSelect,
     handleAddStockReceipt,
 }) => {
-    const [filterItemCode, setFilterItemCode] = useState<string>('');
+    // Server-side sorting: the page is already ordered by the API.
+    const requestSort = (key: string) => onSortChange(key);
+    const getSortIcon = (columnKey: string) => {
+        if (sortKey !== columnKey) return 'ArrowUpDown';
+        return sortDir === 'asc' ? 'ArrowUp' : 'ArrowDown';
+    };
 
-    const filteredReceipts = useMemo(() => {
-        if (!filterItemCode) return stockReceipts;
-        return stockReceipts.filter(r => r.item_code === filterItemCode);
-    }, [stockReceipts, filterItemCode]);
-
-    const { sortedData, requestSort, getSortIcon } = useStockReceiptsSorting(filteredReceipts);
-
-    const uniqueItemCodes = useMemo(() => {
-        const codes = new Set(stockReceipts.map(r => r.item_code));
-        return Array.from(codes).sort();
-    }, [stockReceipts]);
+    const uniqueItemCodes = React.useMemo(() => {
+        return Array.from(new Set(items.map(i => i.item_code))).sort();
+    }, [items]);
 
     return (
     <div className="bg-white rounded-lg shadow">
@@ -52,8 +75,8 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
             <h2 className="text-xl font-semibold text-gray-800">Stock Receipts</h2>
             <div className="flex items-center gap-3">
                 <select
-                    value={filterItemCode}
-                    onChange={(e) => setFilterItemCode(e.target.value)}
+                    value={itemFilter}
+                    onChange={(e) => onItemFilterChange(e.target.value)}
                     className="px-3 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                     <option value="">All Item Codes</option>
@@ -61,9 +84,9 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
                         <option key={code} value={code}>{code}</option>
                     ))}
                 </select>
-                {filterItemCode && (
+                {itemFilter && (
                     <button
-                        onClick={() => setFilterItemCode('')}
+                        onClick={() => onItemFilterChange('')}
                         className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         <X size={14} />
@@ -226,14 +249,14 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
             </div>
         )}
 
-        <div className="overflow-x-auto">
+        <div className={`overflow-x-auto transition-opacity ${refreshing ? 'opacity-60' : ''}`}>
             <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                     <tr>
                         <SortableHeader<StockReceipt> columnKey="lot_id" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Lot ID</SortableHeader>
                         <SortableHeader<StockReceipt> columnKey="purchase_id" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Purchase ID</SortableHeader>
                         <SortableHeader<StockReceipt> columnKey="item_code" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Item Code</SortableHeader>
-                        <SortableHeader<StockReceipt> columnKey="item_name" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Item Name</SortableHeader>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
                         <SortableHeader<StockReceipt> columnKey="received_qty" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Received Qty</SortableHeader>
                         <SortableHeader<StockReceipt> columnKey="remaining_qty" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Remaining Qty</SortableHeader>
                         <SortableHeader<StockReceipt> columnKey="unit_cost" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Unit Cost</SortableHeader>
@@ -245,17 +268,17 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                    {loading ? (
+                    {tableLoading ? (
                         <TableSkeletonRows cols={10} />
-                    ) : sortedData.length === 0 ? (
+                    ) : stockReceipts.length === 0 ? (
                         <tr>
                             <td colSpan={10} className="px-4 py-12 text-center">
                                     <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" aria-hidden />
-                                    <p className="text-sm text-gray-500">{filterItemCode ? 'No stock receipts found for this item code' : 'No stock receipts found'}</p>
+                                    <p className="text-sm text-gray-500">{itemFilter ? 'No stock receipts found for this item code' : 'No stock receipts found'}</p>
                                 </td>
                         </tr>
                     ) : (
-                        sortedData.map((receipt) => (
+                        stockReceipts.map((receipt) => (
                             <tr key={receipt.lot_id} className="hover:bg-gray-50">
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {receipt.lot_id}
@@ -298,23 +321,13 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
             </table>
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3 border-t">
-            <div className="text-sm text-gray-500">
-                Showing {sortedData.length} of {stockReceipts.length} results
-                {filterItemCode && <span className="ml-1 text-green-600">(filtered by {filterItemCode})</span>}
-            </div>
-            <div className="flex items-center gap-2">
-                <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
-                    <ChevronLeft size={16} />
-                    Previous
-                </button>
-                <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
-                <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
-                    Next
-                    <ChevronRight size={16} />
-                </button>
-            </div>
-        </div>
+        <Pagination
+            page={page}
+            pageCount={totalPages}
+            total={totalCount}
+            pageSize={pageSize}
+            onPageChange={onPageChange}
+        />
     </div>
     );
 };

@@ -370,6 +370,80 @@ export interface TraderPaymentTotal {
   count: number;
 }
 
+export interface PaginatedInventoryMovements {
+  items: InventoryMovement[];
+  page: number;
+  page_size: number;
+  total_count: number;
+  total_pages: number;
+}
+
+export interface PaginatedStockReceipts {
+  items: StockReceipt[];
+  page: number;
+  page_size: number;
+  total_count: number;
+  total_pages: number;
+}
+
+export interface PaginatedPurchases {
+  items: Purchase[];
+  page: number;
+  page_size: number;
+  total_count: number;
+  total_pages: number;
+  total_amount: number;
+}
+
+export interface PaginatedAllocationLines {
+  items: BatchAllocationLine[];
+  page: number;
+  page_size: number;
+  total_count: number;
+  total_pages: number;
+}
+
+export interface PaginatedAllocations {
+  items: BatchAllocation[];
+  page: number;
+  page_size: number;
+  total_count: number;
+  total_pages: number;
+}
+
+export interface FeedSummary {
+  feed_on_hand: number;
+  avg_daily_consumption: number;
+  days_cover: number;
+}
+
+export interface AllocationCategoryTotal {
+  month: string;
+  category: string;
+  total: number;
+}
+
+export interface AllocationBatchCost {
+  batch_id: number;
+  category: string;
+  total: number;
+}
+
+export interface BatchFcr {
+  batch_id: number;
+  feed_kg: number;
+  weight_kg: number;
+  fcr: number;
+}
+
+export interface BatchFeedLine {
+  item_code: string;
+  item_name: string;
+  qty: number;
+  unit?: string;
+  kg: number;
+}
+
 export interface StockReceiptPayload {
   purchase_id?: number;
   item_code: string;
