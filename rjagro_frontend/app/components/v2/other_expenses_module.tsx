@@ -1,9 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchOtherExpenses, handleAddOtherExpense } from '@/app/api/other_expenses';
+import { fetchOtherExpenses, handleAddOtherExpense, handleUpdateOtherExpense } from '@/app/api/other_expenses';
 import { useAuth } from '@/app/hooks/useAuth';
-import { CreateOtherExpensePayload, NewOtherExpense } from '@/app/types/interfaces';
+import {
+    CreateOtherExpensePayload,
+    NewOtherExpense,
+    OtherExpense,
+    UpdateOtherExpensePayload,
+} from '@/app/types/interfaces';
 import OtherExpensesTable from '../tables/other_expenses';
 
 const OtherExpensesModule = () => {
@@ -24,6 +29,43 @@ const OtherExpensesModule = () => {
         description: '',
         expense_date: new Date().toISOString().slice(0, 10),
     });
+
+    const [editingExpense, setEditingExpense] = useState<OtherExpense | null>(null);
+    const [editForm, setEditForm] = useState<NewOtherExpense>({
+        category: '',
+        amount: '',
+        description: '',
+        expense_date: new Date().toISOString().slice(0, 10),
+    });
+
+    const openEditExpense = (expense: OtherExpense) => {
+        setEditingExpense(expense);
+        setEditForm({
+            category: expense.category,
+            amount: Number(expense.amount),
+            description: expense.description ?? '',
+            expense_date: expense.expense_date.slice(0, 10),
+        });
+    };
+
+    const onCancelEdit = () => {
+        setEditingExpense(null);
+    };
+
+    const onSaveEdit = () => {
+        if (!editingExpense || !editForm.category || !editForm.amount) return;
+
+        const payload: UpdateOtherExpensePayload = {
+            category: editForm.category,
+            amount: Number(editForm.amount),
+            description: editForm.description || undefined,
+            expense_date: editForm.expense_date,
+        };
+
+        handleUpdateOtherExpense(editingExpense.id, payload, queryClient, setLoading, () => {
+            setEditingExpense(null);
+        });
+    };
 
     const onAddExpense = () => {
         if (!newExpense.category || !newExpense.amount) return;
@@ -58,6 +100,12 @@ const OtherExpensesModule = () => {
                     setShowAddForm={setShowAddForm}
                     setNewExpense={setNewExpense}
                     handleAddExpense={onAddExpense}
+                    onEditClick={openEditExpense}
+                    editingExpense={editingExpense}
+                    editForm={editForm}
+                    setEditForm={setEditForm}
+                    onSaveEdit={onSaveEdit}
+                    onCancelEdit={onCancelEdit}
                 />
             </div>
         </div>

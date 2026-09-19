@@ -6,7 +6,8 @@ import {
     OTHER_EXPENSE_CATEGORY_LABELS,
 } from '@/app/types/interfaces';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
-import { Plus, X, Save, IndianRupee, Calendar, Filter } from 'lucide-react';
+import Modal from '@/app/components/ui/modal';
+import { Plus, X, Save, IndianRupee, Calendar, Filter, Edit } from 'lucide-react';
 import { useState } from 'react';
 
 interface OtherExpensesTableProps {
@@ -17,7 +18,79 @@ interface OtherExpensesTableProps {
     setShowAddForm: (show: boolean) => void;
     setNewExpense: React.Dispatch<React.SetStateAction<NewOtherExpense>>;
     handleAddExpense: () => void;
+    onEditClick: (expense: OtherExpense) => void;
+    editingExpense: OtherExpense | null;
+    editForm: NewOtherExpense;
+    setEditForm: React.Dispatch<React.SetStateAction<NewOtherExpense>>;
+    onSaveEdit: () => void;
+    onCancelEdit: () => void;
 }
+
+interface ExpenseFieldsProps {
+    value: NewOtherExpense;
+    onChange: (next: NewOtherExpense) => void;
+}
+
+const ExpenseFields: React.FC<ExpenseFieldsProps> = ({ value, onChange }) => (
+    <div className="grid grid-cols-1 text-gray-900 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+            <select
+                value={value.category}
+                onChange={(e) =>
+                    onChange({ ...value, category: e.target.value as OtherExpenseCategory })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+                <option value="">Select category</option>
+                {Object.values(OtherExpenseCategory).map((cat) => (
+                    <option key={cat} value={cat}>
+                        {OTHER_EXPENSE_CATEGORY_LABELS[cat]}
+                    </option>
+                ))}
+            </select>
+        </div>
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
+            <div className="relative">
+                <IndianRupee size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                    type="number"
+                    value={value.amount}
+                    onChange={(e) =>
+                        onChange({ ...value, amount: e.target.value ? Number(e.target.value) : '' })
+                    }
+                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                />
+            </div>
+        </div>
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+            <div className="relative">
+                <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                    type="date"
+                    value={value.expense_date}
+                    onChange={(e) => onChange({ ...value, expense_date: e.target.value })}
+                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+            </div>
+        </div>
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <input
+                type="text"
+                value={value.description}
+                onChange={(e) => onChange({ ...value, description: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Optional description"
+            />
+        </div>
+    </div>
+);
 
 const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
     expenses,
@@ -27,6 +100,12 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
     setShowAddForm,
     setNewExpense,
     handleAddExpense,
+    onEditClick,
+    editingExpense,
+    editForm,
+    setEditForm,
+    onSaveEdit,
+    onCancelEdit,
 }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 15;
@@ -77,80 +156,7 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 text-gray-900 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-                            <select
-                                value={newExpense.category}
-                                onChange={(e) =>
-                                    setNewExpense((prev) => ({
-                                        ...prev,
-                                        category: e.target.value as OtherExpenseCategory,
-                                    }))
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            >
-                                <option value="">Select category</option>
-                                {Object.values(OtherExpenseCategory).map((cat) => (
-                                    <option key={cat} value={cat}>
-                                        {OTHER_EXPENSE_CATEGORY_LABELS[cat]}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
-                            <div className="relative">
-                                <IndianRupee size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="number"
-                                    value={newExpense.amount}
-                                    onChange={(e) =>
-                                        setNewExpense((prev) => ({
-                                            ...prev,
-                                            amount: e.target.value ? Number(e.target.value) : '',
-                                        }))
-                                    }
-                                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                    placeholder="0.00"
-                                    min="0"
-                                    step="0.01"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                            <div className="relative">
-                                <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="date"
-                                    value={newExpense.expense_date}
-                                    onChange={(e) =>
-                                        setNewExpense((prev) => ({
-                                            ...prev,
-                                            expense_date: e.target.value,
-                                        }))
-                                    }
-                                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                            <input
-                                type="text"
-                                value={newExpense.description}
-                                onChange={(e) =>
-                                    setNewExpense((prev) => ({
-                                        ...prev,
-                                        description: e.target.value,
-                                    }))
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                placeholder="Optional description"
-                            />
-                        </div>
-                    </div>
+                    <ExpenseFields value={newExpense} onChange={(next) => setNewExpense(next)} />
 
                     <div className="flex justify-end mt-4">
                         <button
@@ -175,14 +181,15 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Created At</th>
+                            <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {loading ? (
-                            <TableSkeletonRows cols={6} />
+                            <TableSkeletonRows cols={7} />
                         ) : paginatedExpenses.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                                     No other expenses found
                                 </td>
                             </tr>
@@ -208,6 +215,16 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-400">
                                         {new Date(expense.created_at).toLocaleString('en-IN')}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-right">
+                                        <button
+                                            onClick={() => onEditClick(expense)}
+                                            className="p-2 rounded-lg text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors"
+                                            title="Edit expense"
+                                            aria-label="Edit expense"
+                                        >
+                                            <Edit size={16} />
+                                        </button>
                                     </td>
                                 </tr>
                             ))
@@ -242,6 +259,33 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                     </div>
                 </div>
             )}
+
+            <Modal
+                open={editingExpense !== null}
+                onClose={onCancelEdit}
+                title="Edit Expense"
+                description={editingExpense ? `Entry #${editingExpense.id}` : undefined}
+                size="lg"
+            >
+                <ExpenseFields value={editForm} onChange={(next) => setEditForm(next)} />
+
+                <div className="flex justify-end gap-3 mt-6">
+                    <button
+                        onClick={onCancelEdit}
+                        className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onSaveEdit}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                    >
+                        <Save size={18} />
+                        {loading ? 'Saving...' : 'Save Changes'}
+                    </button>
+                </div>
+            </Modal>
         </div>
     );
 };

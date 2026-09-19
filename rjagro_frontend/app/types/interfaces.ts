@@ -817,6 +817,13 @@ export interface CreateOtherExpensePayload {
   created_by: number;
 }
 
+export interface UpdateOtherExpensePayload {
+  category: OtherExpenseCategory;
+  amount: number;
+  description?: string;
+  expense_date: string;
+}
+
 export interface NewOtherExpense {
   category: OtherExpenseCategory | '';
   amount: number | '';
