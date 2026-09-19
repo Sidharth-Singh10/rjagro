@@ -2,9 +2,12 @@ use std::collections::{HashMap, HashSet};
 
 use crate::handlers::metrics::{month_end, month_start};
 use crate::models::{
-    BatchListQuery, BatchRequirementResponse, BatchResponse, FarmInfo, LedgerEntriesQuery,
-    LedgerMonthAccountSummary, LedgerSummaryQuery, PaginatedLedgerEntries, PaginationParams,
-    ProductionLineWithSupervisor, PurchaseWithItem, StockReceiptsQuery, SupplierPaymentTotal,
+    AllocationLinesPageQuery, AllocationsPageQuery, BatchListQuery, BatchRequirementResponse,
+    BatchResponse, BatchSalesQuery, FarmInfo, InventoryMovementsPageQuery, LedgerEntriesQuery,
+    LedgerMonthAccountSummary, LedgerSummaryQuery, PaginatedAllocationLines, PaginatedAllocations,
+    PaginatedInventoryMovements, PaginatedLedgerEntries, PaginatedPurchases,
+    PaginatedStockReceipts, PaginationParams, ProductionLineWithSupervisor, PurchaseWithItem,
+    PurchasesPageQuery, StockReceiptsPageQuery, StockReceiptsQuery, SupplierPaymentTotal,
     TraderPaymentTotal, UserSimplified,
 };
 use axum::extract::Query;
@@ -594,8 +597,16 @@ pub async fn get_batch_closure_summary_handler(
     }
 }
 
-pub async fn get_batch_sales_handler(State(db): State<DatabaseConnection>) -> impl IntoResponse {
-    match batch_sales::Entity::find().all(&db).await {
+pub async fn get_batch_sales_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<BatchSalesQuery>,
+) -> impl IntoResponse {
+    let mut query = batch_sales::Entity::find();
+    if let Some(batch_id) = params.batch_id {
+        query = query.filter(batch_sales::Column::BatchId.eq(batch_id));
+    }
+
+    match query.all(&db).await {
         Ok(data) => Json(data).into_response(),
         Err(e) => {
             eprintln!("Failed to fetch batch sales: {}", e);
@@ -894,4 +905,292 @@ pub async fn get_trader_payment_totals_handler(
     }
 
     Ok(Json(totals))
+}
+
+// INVENTORY MOVEMENTS — one page for the inventory screen (1-based page).
+pub async fn get_inventory_movements_paginated_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<InventoryMovementsPageQuery>,
+) -> Result<Json<PaginatedInventoryMovements>, StatusCode> {
+    let page_size = params.page_size.unwrap_or(25).clamp(1, 200);
+    let page = params.page.unwrap_or(1).max(1);
+
+    let mut query = inventory_movements::Entity::find();
+    if let Some(item_code) = params.item_code.as_deref() {
+        query = query.filter(inventory_movements::Column::ItemCode.eq(item_code));
+    }
+
+    let query = query
+        .order_by_desc(inventory_movements::Column::MovementDate)
+        .order_by_desc(inventory_movements::Column::MovementId);
+
+    let paginator = query.paginate(&db, page_size);
+    let total_count = paginator.num_items().await.map_err(|e| {
+        eprintln!("Failed to count inventory movements: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    let items = paginator.fetch_page(page - 1).await.map_err(|e| {
+        eprintln!("Failed to fetch inventory movement page {}: {}", page, e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let total_pages = if total_count == 0 {
+        0
+    } else {
+        (total_count + page_size - 1) / page_size
+    };
+
+    Ok(Json(PaginatedInventoryMovements {
+        items,
+        page,
+        page_size,
+        total_count,
+        total_pages,
+    }))
+}
+
+// STOCK RECEIPTS — one page, server-side sort (1-based page).
+pub async fn get_stock_receipts_paginated_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<StockReceiptsPageQuery>,
+) -> Result<Json<PaginatedStockReceipts>, StatusCode> {
+    let page_size = params.page_size.unwrap_or(25).clamp(1, 200);
+    let page = params.page.unwrap_or(1).max(1);
+
+    let mut query = stock_receipts::Entity::find();
+    if let Some(item_code) = params.item_code.as_deref() {
+        query = query.filter(stock_receipts::Column::ItemCode.eq(item_code));
+    }
+
+    let descending = params.dir.as_deref() != Some("asc");
+    let direction = if descending { Order::Desc } else { Order::Asc };
+    let nulls = NullOrdering::Last;
+
+    let query = match params.sort.as_deref().unwrap_or("lot_id") {
+        "purchase_id" => query.order_by_with_nulls(stock_receipts::Column::PurchaseId, direction, nulls),
+        "item_code" => query.order_by(stock_receipts::Column::ItemCode, direction),
+        "received_qty" => query.order_by(stock_receipts::Column::ReceivedQty, direction),
+        "remaining_qty" => query.order_by(stock_receipts::Column::RemainingQty, direction),
+        "unit_cost" => query.order_by(stock_receipts::Column::UnitCost, direction),
+        "received_date" => query.order_by(stock_receipts::Column::ReceivedDate, direction),
+        "supplier" => query.order_by_with_nulls(stock_receipts::Column::Supplier, direction, nulls),
+        _ => query.order_by(stock_receipts::Column::LotId, direction),
+    };
+
+    let paginator = query.paginate(&db, page_size);
+    let total_count = paginator.num_items().await.map_err(|e| {
+        eprintln!("Failed to count stock receipts: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    let items = paginator.fetch_page(page - 1).await.map_err(|e| {
+        eprintln!("Failed to fetch stock receipt page {}: {}", page, e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let total_pages = if total_count == 0 {
+        0
+    } else {
+        (total_count + page_size - 1) / page_size
+    };
+
+    Ok(Json(PaginatedStockReceipts {
+        items,
+        page,
+        page_size,
+        total_count,
+        total_pages,
+    }))
+}
+
+// PURCHASES — one page of purchase lines with a running total (1-based page).
+pub async fn get_purchases_paginated_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<PurchasesPageQuery>,
+) -> Result<Json<PaginatedPurchases>, StatusCode> {
+    let page_size = params.page_size.unwrap_or(25).clamp(1, 200);
+    let page = params.page.unwrap_or(1).max(1);
+
+    let mut query = purchases::Entity::find();
+    if let Some(supplier_id) = params.supplier_id {
+        query = query.filter(purchases::Column::SupplierId.eq(supplier_id));
+    }
+    if let Some(from) = params.from {
+        query = query.filter(purchases::Column::PurchaseDate.gte(from));
+    }
+    if let Some(to) = params.to {
+        query = query.filter(purchases::Column::PurchaseDate.lte(to));
+    }
+
+    // Total spend over the whole filtered set, not just this page.
+    let total_amount = query
+        .clone()
+        .select_only()
+        .column_as(
+            Expr::col(purchases::Column::TotalCost).sum(),
+            "total_amount",
+        )
+        .into_tuple::<Option<Decimal>>()
+        .one(&db)
+        .await
+        .map_err(|e| {
+            eprintln!("Failed to total purchases: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .flatten()
+        .unwrap_or_default();
+
+    let descending = params.dir.as_deref() != Some("asc");
+    let direction = if descending { Order::Desc } else { Order::Asc };
+    let nulls = NullOrdering::Last;
+
+    let query = match params.sort.as_deref().unwrap_or("purchase_date") {
+        "purchase_id" => query.order_by(purchases::Column::PurchaseId, direction),
+        "item_code" => query.order_by(purchases::Column::ItemCode, direction),
+        "quantity" => query.order_by(purchases::Column::Quantity, direction),
+        "cost_per_unit" => query.order_by(purchases::Column::CostPerUnit, direction),
+        "total_cost" => query.order_by_with_nulls(purchases::Column::TotalCost, direction, nulls),
+        "supplier_id" => query.order_by(purchases::Column::SupplierId, direction),
+        _ => query
+            .order_by(purchases::Column::PurchaseDate, direction)
+            .order_by(purchases::Column::PurchaseId, Order::Desc),
+    };
+
+    let paginator = query.paginate(&db, page_size);
+    let total_count = paginator.num_items().await.map_err(|e| {
+        eprintln!("Failed to count purchases: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    let items = paginator.fetch_page(page - 1).await.map_err(|e| {
+        eprintln!("Failed to fetch purchase page {}: {}", page, e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let total_pages = if total_count == 0 {
+        0
+    } else {
+        (total_count + page_size - 1) / page_size
+    };
+
+    Ok(Json(PaginatedPurchases {
+        items,
+        page,
+        page_size,
+        total_count,
+        total_pages,
+        total_amount,
+    }))
+}
+
+// PURCHASES — the lines of one order, for the edit form.
+pub async fn get_purchase_order_lines_handler(
+    State(db): State<DatabaseConnection>,
+    axum::extract::Path(order_id): axum::extract::Path<i32>,
+) -> Result<Json<Vec<purchases::Model>>, StatusCode> {
+    match purchases::Entity::find()
+        .filter(purchases::Column::PurchaseOrderId.eq(Some(order_id)))
+        .order_by_asc(purchases::Column::PurchaseId)
+        .all(&db)
+        .await
+    {
+        Ok(lines) => Ok(Json(lines)),
+        Err(e) => {
+            eprintln!("Failed to fetch purchase order lines: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+// BATCH ALLOCATION LINES — one page (1-based page).
+pub async fn get_batch_allocation_lines_paginated_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<AllocationLinesPageQuery>,
+) -> Result<Json<PaginatedAllocationLines>, StatusCode> {
+    let page_size = params.page_size.unwrap_or(25).clamp(1, 200);
+    let page = params.page.unwrap_or(1).max(1);
+
+    let mut query = batch_allocation_lines::Entity::find();
+    if let Some(batch_id) = params.batch_id {
+        query = query.filter(batch_allocation_lines::Column::BatchId.eq(Some(batch_id)));
+    }
+    if let Some(allocation_id) = params.allocation_id {
+        query = query.filter(batch_allocation_lines::Column::AllocationId.eq(allocation_id));
+    }
+
+    let query = query.order_by_desc(batch_allocation_lines::Column::AllocationLineId);
+
+    let paginator = query.paginate(&db, page_size);
+    let total_count = paginator.num_items().await.map_err(|e| {
+        eprintln!("Failed to count allocation lines: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    let items = paginator.fetch_page(page - 1).await.map_err(|e| {
+        eprintln!("Failed to fetch allocation line page {}: {}", page, e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let total_pages = if total_count == 0 {
+        0
+    } else {
+        (total_count + page_size - 1) / page_size
+    };
+
+    Ok(Json(PaginatedAllocationLines {
+        items,
+        page,
+        page_size,
+        total_count,
+        total_pages,
+    }))
+}
+
+// BATCH ALLOCATIONS — one page (1-based page).
+pub async fn get_batch_allocations_paginated_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<AllocationsPageQuery>,
+) -> Result<Json<PaginatedAllocations>, StatusCode> {
+    let page_size = params.page_size.unwrap_or(25).clamp(1, 200);
+    let page = params.page.unwrap_or(1).max(1);
+
+    let mut query = batch_allocations::Entity::find();
+    if let Some(batch_id) = params.batch_id {
+        // Allocations are batch-agnostic headers; filter through their lines.
+        let allocation_ids: Vec<i32> = batch_allocation_lines::Entity::find()
+            .filter(batch_allocation_lines::Column::BatchId.eq(Some(batch_id)))
+            .all(&db)
+            .await
+            .map_err(|e| {
+                eprintln!("Failed to resolve allocation ids for batch: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?
+            .into_iter()
+            .map(|line| line.allocation_id)
+            .collect();
+        query = query.filter(batch_allocations::Column::AllocationId.is_in(allocation_ids));
+    }
+
+    let query = query.order_by_desc(batch_allocations::Column::AllocationId);
+
+    let paginator = query.paginate(&db, page_size);
+    let total_count = paginator.num_items().await.map_err(|e| {
+        eprintln!("Failed to count allocations: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    let items = paginator.fetch_page(page - 1).await.map_err(|e| {
+        eprintln!("Failed to fetch allocation page {}: {}", page, e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let total_pages = if total_count == 0 {
+        0
+    } else {
+        (total_count + page_size - 1) / page_size
+    };
+
+    Ok(Json(PaginatedAllocations {
+        items,
+        page,
+        page_size,
+        total_count,
+        total_pages,
+    }))
 }

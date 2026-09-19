@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::auth::trader_login::TraderPublic;
 use crate::models::{
     BatchDetailResponse, CreateOrderPayload, CreditSummary, LiveBatchResponse, OrderResponse,
-    TimeslotInfo, TraderOrderQuery,
+    PaginatedOrderResponses, TimeslotInfo, TraderOrderQuery, TraderOrdersPageQuery,
 };
 use axum::{
     extract::{Extension, Path, Query, State},
@@ -359,6 +359,50 @@ pub async fn list_orders_handler(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(build_order_responses(&db, orders_list).await?))
+}
+
+/// GET /trader/orders/paginated?page=&page_size=&status=
+pub async fn list_orders_paginated_handler(
+    State(db): State<DatabaseConnection>,
+    Extension(sub): Extension<String>,
+    Query(params): Query<TraderOrdersPageQuery>,
+) -> Result<Json<PaginatedOrderResponses>, StatusCode> {
+    let trader_id = trader_id_from_sub(&sub)?;
+    let page_size = params.page_size.unwrap_or(25).clamp(1, 200);
+    let page = params.page.unwrap_or(1).max(1);
+
+    let mut query = orders::Entity::find().filter(orders::Column::TraderId.eq(trader_id));
+
+    if let Some(raw) = params.status {
+        let status = parse_order_status(&raw).ok_or(StatusCode::BAD_REQUEST)?;
+        query = query.filter(orders::Column::Status.eq(status));
+    }
+
+    let query = query.order_by_desc(orders::Column::CreatedAt);
+
+    let paginator = query.paginate(&db, page_size);
+    let total_count = paginator
+        .num_items()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let orders_list = paginator
+        .fetch_page(page - 1)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let total_pages = if total_count == 0 {
+        0
+    } else {
+        (total_count + page_size - 1) / page_size
+    };
+
+    Ok(Json(PaginatedOrderResponses {
+        items: build_order_responses(&db, orders_list).await?,
+        page,
+        page_size,
+        total_count,
+        total_pages,
+    }))
 }
 
 /// GET /trader/orders/{id}

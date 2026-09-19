@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use crate::handlers::batch_sales::{insert_batch_sales_ledger_entries, update_batch_financials};
 use crate::handlers::trader_app::{build_order_response, build_order_responses, order_status_str, parse_order_status};
 use crate::models::{
-    AppTraderView, CloseOrderPayload, OrderResponse, RejectOrderPayload, SupervisorBatchResponse,
-    SupervisorOrderQuery, TraderOrderQuery, WeightPayload,
+    AppTraderView, CloseOrderPayload, OrderResponse, PaginatedOrderResponses, RejectOrderPayload,
+    SupervisorBatchResponse, SupervisorOrderQuery, SupervisorOrdersPageQuery, TraderOrderQuery,
+    WeightPayload,
 };
 use axum::{
     extract::{Extension, Path, Query, State},
@@ -16,8 +17,8 @@ use entity::sea_orm_active_enums::{BatchStatus, OrderStatus, PaymentType};
 use entity::{app_traders, audit_log, batch_sales, batches, farms, orders};
 use sea_orm::prelude::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
-    QueryOrder, Set, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
+    QueryFilter, QueryOrder, Set, TransactionTrait,
 };
 
 fn parse_batch_status(raw: &str) -> Option<BatchStatus> {
@@ -476,6 +477,52 @@ pub async fn all_orders_handler(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(build_order_responses(&db, orders_list).await?))
+}
+
+/// GET /supervisor/orders/paginated?page=&page_size=&batch_id=&status=
+pub async fn supervisor_orders_paginated_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<SupervisorOrdersPageQuery>,
+) -> Result<Json<PaginatedOrderResponses>, StatusCode> {
+    let page_size = params.page_size.unwrap_or(25).clamp(1, 200);
+    let page = params.page.unwrap_or(1).max(1);
+
+    let mut query = orders::Entity::find();
+
+    if let Some(batch_id) = params.batch_id {
+        query = query.filter(orders::Column::BatchId.eq(batch_id));
+    }
+
+    if let Some(raw) = params.status {
+        let status = parse_order_status(&raw).ok_or(StatusCode::BAD_REQUEST)?;
+        query = query.filter(orders::Column::Status.eq(status));
+    }
+
+    let query = query.order_by_desc(orders::Column::CreatedAt);
+
+    let paginator = query.paginate(&db, page_size);
+    let total_count = paginator
+        .num_items()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let orders_list = paginator
+        .fetch_page(page - 1)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let total_pages = if total_count == 0 {
+        0
+    } else {
+        (total_count + page_size - 1) / page_size
+    };
+
+    Ok(Json(PaginatedOrderResponses {
+        items: build_order_responses(&db, orders_list).await?,
+        page,
+        page_size,
+        total_count,
+        total_pages,
+    }))
 }
 
 /// GET /supervisor/orders/{id}

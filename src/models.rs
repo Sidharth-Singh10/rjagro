@@ -564,6 +564,176 @@ pub struct TraderPaymentTotal {
     pub count: i64,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct InventoryMovementsPageQuery {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub item_code: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginatedInventoryMovements {
+    pub items: Vec<entity::inventory_movements::Model>,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_count: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StockReceiptsPageQuery {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub item_code: Option<String>,
+    pub sort: Option<String>,
+    pub dir: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginatedStockReceipts {
+    pub items: Vec<entity::stock_receipts::Model>,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_count: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PurchasesPageQuery {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub supplier_id: Option<i32>,
+    /// Inclusive date, "YYYY-MM-DD".
+    pub from: Option<NaiveDate>,
+    /// Inclusive date, "YYYY-MM-DD".
+    pub to: Option<NaiveDate>,
+    pub sort: Option<String>,
+    pub dir: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginatedPurchases {
+    pub items: Vec<entity::purchases::Model>,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_count: u64,
+    pub total_pages: u64,
+    pub total_amount: Decimal,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AllocationLinesPageQuery {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub batch_id: Option<i32>,
+    pub allocation_id: Option<i32>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginatedAllocationLines {
+    pub items: Vec<entity::batch_allocation_lines::Model>,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_count: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AllocationsPageQuery {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub batch_id: Option<i32>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginatedAllocations {
+    pub items: Vec<entity::batch_allocations::Model>,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_count: u64,
+    pub total_pages: u64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct FeedSummary {
+    pub feed_on_hand: Decimal,
+    pub avg_daily_consumption: Decimal,
+    pub days_cover: Decimal,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AllocationCategoryTotal {
+    pub month: String,
+    pub category: ItemCategory,
+    pub total: Decimal,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AllocationBatchCost {
+    pub batch_id: i32,
+    pub category: ItemCategory,
+    pub total: Decimal,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BatchFcr {
+    pub batch_id: i32,
+    pub feed_kg: Decimal,
+    pub weight_kg: Decimal,
+    pub fcr: Decimal,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BatchFeedLine {
+    pub item_code: String,
+    pub item_name: String,
+    pub qty: Decimal,
+    pub unit: Option<String>,
+    pub kg: Decimal,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AllocationRangeQuery {
+    /// Inclusive month key, e.g. "2026-08".
+    pub from: String,
+    /// Inclusive month key, e.g. "2026-09".
+    pub to: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LimitQuery {
+    pub limit: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BatchSalesQuery {
+    pub batch_id: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SupervisorOrdersPageQuery {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub batch_id: Option<i32>,
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TraderOrdersPageQuery {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginatedOrderResponses {
+    pub items: Vec<OrderResponse>,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_count: u64,
+    pub total_pages: u64,
+}
+
 // ─── Trader app (live selling) ───────────────────────────────────────────────
 
 #[derive(Deserialize)]

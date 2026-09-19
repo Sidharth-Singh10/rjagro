@@ -7,7 +7,8 @@ use sea_orm::DatabaseConnection;
 use crate::auth::middleware::{require_roles_middleware, RequireRoles};
 use crate::handlers::trader_app::{
     batch_detail_handler, cancel_order_handler, create_order_handler, credit_summary_handler,
-    list_orders_handler, live_batches_handler, me_handler, order_detail_handler,
+    list_orders_handler, list_orders_paginated_handler, live_batches_handler, me_handler,
+    order_detail_handler,
 };
 
 pub fn trader_app_routes() -> Router<DatabaseConnection> {
@@ -17,6 +18,7 @@ pub fn trader_app_routes() -> Router<DatabaseConnection> {
         .route("/batches/live", get(live_batches_handler))
         .route("/batches/{id}", get(batch_detail_handler))
         .route("/orders", get(list_orders_handler))
+        .route("/orders/paginated", get(list_orders_paginated_handler))
         .route("/orders", post(create_order_handler))
         .route("/orders/{id}", get(order_detail_handler))
         .route("/orders/{id}/cancel", post(cancel_order_handler))
