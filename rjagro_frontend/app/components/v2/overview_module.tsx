@@ -20,7 +20,7 @@ import { fetchBatchAllocationLines } from '@/app/api/batch_allocation_lines';
 import { fetchBatchAllocations } from '@/app/api/batch_allocations';
 import { fetchStockReceipts } from '@/app/api/stock_receipts';
 import { fetchLedgerEntries } from '@/app/api/ledger_entries';
-import { fetchOtherExpenses } from '@/app/api/other_expenses';
+import { fetchOtherExpensesSummary } from '@/app/api/other_expenses';
 import { fetchMetricSnapshots } from '@/app/api/metrics';
 import { Item, OTHER_EXPENSE_CATEGORY_LABELS } from '@/app/types/interfaces';
 
@@ -105,6 +105,11 @@ const OverviewKPI = memo(({ title, value, subtext, icon: Icon, color, onDoubleCl
 OverviewKPI.displayName = 'OverviewKPI';
 
 const OverviewModule = () => {
+    const now = new Date();
+    const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1);
+    const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
     // ── Data fetching ─────────────────────────────────────────────────
     const { data: ledgerAccounts = [] } = useQuery({
         queryKey: ['ledger_accounts'], queryFn: fetchLedgerAccounts, staleTime: STALE,
@@ -148,8 +153,10 @@ const OverviewModule = () => {
     const { data: ledgerEntries = [] } = useQuery({
         queryKey: ['ledger_entries'], queryFn: fetchLedgerEntries, staleTime: STALE,
     });
-    const { data: otherExpenses = [] } = useQuery({
-        queryKey: ['other_expenses'], queryFn: fetchOtherExpenses, staleTime: STALE,
+    const { data: expenseSummary = [] } = useQuery({
+        queryKey: ['other_expenses', 'summary', lastMonthKey, thisMonthKey],
+        queryFn: () => fetchOtherExpensesSummary(lastMonthKey, thisMonthKey),
+        staleTime: STALE,
     });
     const { data: metricSnapshots = [] } = useQuery({
         queryKey: ['metric_snapshots'], queryFn: () => fetchMetricSnapshots(), staleTime: STALE,
@@ -382,11 +389,6 @@ const OverviewModule = () => {
         </span>
     );
 
-    const now = new Date();
-    const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1);
-    const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
-
     // ── KPI aggregations ──────────────────────────────────────────────
     const kpis = useMemo(() => {
         const now = new Date();
@@ -491,9 +493,8 @@ const OverviewModule = () => {
                 .reduce((s, e) => s + n(e.debit) - n(e.credit), 0);
 
         const grossProfitThisMonth = sumRevenue(thisMonthKey) - sumCogs(thisMonthKey);
-        const otherExpensesThisMonth = otherExpenses
-            .filter(e => inMonth(e.expense_date, thisMonthKey))
-            .reduce((s, e) => s + n(e.amount), 0);
+        const otherExpensesThisMonth =
+            expenseSummary.find(s => s.month === thisMonthKey)?.total ?? 0;
         const commissionThisMonth = ledgerNet(106, thisMonthKey);
         const interestThisMonth = ledgerNet(112, thisMonthKey);
         const netProfitThisMonth = grossProfitThisMonth - otherExpensesThisMonth - commissionThisMonth - interestThisMonth;
@@ -557,7 +558,7 @@ const OverviewModule = () => {
             realizedRate,
             kgThisMonth,
         };
-    }, [ledgerAccounts, batchClosures, batchSales, otherExpenses, ledgerEntries, stockReceipts, allocationLines, allocationDateById, lotCategoryMap, itemMap, thisMonthKey]);
+    }, [ledgerAccounts, batchClosures, batchSales, expenseSummary, ledgerEntries, stockReceipts, allocationLines, allocationDateById, lotCategoryMap, itemMap, thisMonthKey]);
 
     // ── Net profit breakdown (double-click detail) ────────────────────
     const [showNetProfit, setShowNetProfit] = useState(false);
@@ -569,13 +570,14 @@ const OverviewModule = () => {
             const cogs = closures.reduce((s, c) => s + n(c.revenue) - n(c.gross_profit), 0);
             const grossProfit = revenue - cogs;
 
-            const monthOther = otherExpenses.filter(e => e.expense_date.slice(0, 7) === key);
-            const otherSum = monthOther.reduce((s, e) => s + n(e.amount), 0);
-            const byCat: Record<string, number> = {};
-            monthOther.forEach(e => {
-                const label = OTHER_EXPENSE_CATEGORY_LABELS[e.category] ?? e.category;
-                byCat[label] = (byCat[label] ?? 0) + n(e.amount);
-            });
+            const monthOther = expenseSummary.find(s => s.month === key);
+            const otherSum = monthOther?.total ?? 0;
+            const otherByCategory = (monthOther?.by_category ?? [])
+                .map(row => ({
+                    name: OTHER_EXPENSE_CATEGORY_LABELS[row.category] ?? row.category,
+                    value: parseFloat(n(row.total).toFixed(2)),
+                }))
+                .sort((a, b) => b.value - a.value);
 
             const ledgerNet = (accountId: number) =>
                 ledgerEntries
@@ -594,13 +596,11 @@ const OverviewModule = () => {
                 commission,
                 interest,
                 netProfit: grossProfit - otherSum - commission - interest,
-                otherByCategory: Object.entries(byCat)
-                    .map(([name, value]) => ({ name, value: parseFloat(value.toFixed(2)) }))
-                    .sort((a, b) => b.value - a.value),
+                otherByCategory,
             };
         };
         return { month: buildMonth(thisMonthKey), previousMonth: buildMonth(lastMonthKey) };
-    }, [batchClosures, otherExpenses, ledgerEntries, thisMonthKey, lastMonthKey]);
+    }, [batchClosures, expenseSummary, ledgerEntries, thisMonthKey, lastMonthKey]);
 
     // ── COGS breakdown (double-click detail) ──────────────────────────
     const [showCogsBreakdown, setShowCogsBreakdown] = useState(false);
@@ -800,25 +800,18 @@ const OverviewModule = () => {
 
     // ── Other expenses mix (month) by category ────────────────────────
     const otherExpenseMix = useMemo(() => {
-        const byCategory: Record<string, number> = {};
-        otherExpenses
-            .filter(e => e.expense_date.slice(0, 7) === thisMonthKey)
-            .forEach(e => {
-                const label = OTHER_EXPENSE_CATEGORY_LABELS[e.category] ?? e.category;
-                byCategory[label] = (byCategory[label] ?? 0) + n(e.amount);
-            });
-
+        const summary = expenseSummary.find(s => s.month === thisMonthKey);
         const palette = [chart.orange, chart.rose, chart.blue, chart.teal, chart.violet, chart.amber, chart.magenta, chart.slate];
-        const data = Object.entries(byCategory)
-            .sort((a, b) => b[1] - a[1])
-            .map(([name, value], i) => ({
-                name,
-                value: parseFloat(n(value).toFixed(2)),
+        const data = [...(summary?.by_category ?? [])]
+            .sort((a, b) => b.total - a.total)
+            .map((row, i) => ({
+                name: OTHER_EXPENSE_CATEGORY_LABELS[row.category] ?? row.category,
+                value: parseFloat(n(row.total).toFixed(2)),
                 color: palette[i % palette.length],
             }));
 
         return { data, total: data.reduce((s, d) => s + d.value, 0) };
-    }, [otherExpenses, thisMonthKey]);
+    }, [expenseSummary, thisMonthKey]);
 
     // ── Batch profitability with Gross Margin % and Cost Per Bird ─────
     const batchProfitData = useMemo(() => {
@@ -1191,7 +1184,7 @@ const OverviewModule = () => {
                 <OverviewKPI
                     title="Other Expenses (Month)"
                     value={fmt(financials.otherExpensesThisMonth)}
-                    subtext={`${otherExpenses.filter(e => e.expense_date.slice(0, 7) === thisMonthKey).length} entries this month`}
+                    subtext={`${expenseSummary.find(s => s.month === thisMonthKey)?.count ?? 0} entries this month`}
                     icon={Receipt}
                     color={chart.rose}
                 />

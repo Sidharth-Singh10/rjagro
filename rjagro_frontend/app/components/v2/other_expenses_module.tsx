@@ -1,7 +1,12 @@
 'use client';
-import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchOtherExpenses, handleAddOtherExpense, handleUpdateOtherExpense } from '@/app/api/other_expenses';
+import { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    fetchOtherExpensesPage,
+    handleAddOtherExpense,
+    handleUpdateOtherExpense,
+    OTHER_EXPENSES_PAGE_SIZE,
+} from '@/app/api/other_expenses';
 import { useAuth } from '@/app/hooks/useAuth';
 import {
     CreateOtherExpensePayload,
@@ -16,12 +21,27 @@ const OtherExpensesModule = () => {
     const queryClient = useQueryClient();
     const [loading, setLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [page, setPage] = useState(1);
 
-    const { data: expenses = [] } = useQuery({
-        queryKey: ['other_expenses'],
-        queryFn: fetchOtherExpenses,
+    const { data, isPending, isFetching } = useQuery({
+        queryKey: ['other_expenses', 'page', page],
+        queryFn: () => fetchOtherExpensesPage(page, OTHER_EXPENSES_PAGE_SIZE),
+        placeholderData: keepPreviousData,
         staleTime: 5 * 60 * 1000,
     });
+
+    const expenses = data?.items ?? [];
+    const totalCount = data?.total_count ?? 0;
+    const totalPages = data?.total_pages ?? 0;
+    const totalAmount = data?.total_amount ?? 0;
+
+    // If the current page disappears (e.g. the list shrank), fall back to the
+    // last valid page instead of showing an empty table.
+    useEffect(() => {
+        if (data && data.total_pages > 0 && page > data.total_pages) {
+            setPage(data.total_pages);
+        }
+    }, [data, page]);
 
     const [newExpense, setNewExpense] = useState<NewOtherExpense>({
         category: '',
@@ -80,6 +100,7 @@ const OtherExpensesModule = () => {
 
         handleAddOtherExpense(payload, queryClient, setLoading, () => {
             setShowAddForm(false);
+            setPage(1);
             setNewExpense({
                 category: '',
                 amount: '',
@@ -95,6 +116,14 @@ const OtherExpensesModule = () => {
                 <OtherExpensesTable
                     expenses={expenses}
                     loading={loading}
+                    tableLoading={isPending}
+                    refreshing={isFetching && !isPending}
+                    page={page}
+                    pageSize={OTHER_EXPENSES_PAGE_SIZE}
+                    totalCount={totalCount}
+                    totalPages={totalPages}
+                    totalAmount={totalAmount}
+                    onPageChange={setPage}
                     showAddForm={showAddForm}
                     newExpense={newExpense}
                     setShowAddForm={setShowAddForm}

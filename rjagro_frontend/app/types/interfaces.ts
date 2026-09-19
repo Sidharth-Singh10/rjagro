@@ -824,6 +824,29 @@ export interface UpdateOtherExpensePayload {
   expense_date: string;
 }
 
+export interface PaginatedOtherExpenses {
+  items: OtherExpense[];
+  page: number;
+  page_size: number;
+  total_count: number;
+  total_pages: number;
+  total_amount: number;
+}
+
+export interface OtherExpenseCategoryTotal {
+  category: OtherExpenseCategory;
+  total: number;
+  count: number;
+}
+
+export interface OtherExpenseMonthSummary {
+  /** Month key, e.g. "2026-09". */
+  month: string;
+  total: number;
+  count: number;
+  by_category: OtherExpenseCategoryTotal[];
+}
+
 export interface NewOtherExpense {
   category: OtherExpenseCategory | '';
   amount: number | '';

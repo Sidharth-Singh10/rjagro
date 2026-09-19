@@ -7,12 +7,22 @@ import {
 } from '@/app/types/interfaces';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import Modal from '@/app/components/ui/modal';
+import Pagination from '@/app/components/ui/pagination';
 import { Plus, X, Save, IndianRupee, Calendar, Filter, Edit } from 'lucide-react';
-import { useState } from 'react';
 
 interface OtherExpensesTableProps {
     expenses: OtherExpense[];
     loading: boolean;
+    /** True until the first page has loaded — drives the skeleton. */
+    tableLoading: boolean;
+    /** True while another page is being fetched — dims the table. */
+    refreshing: boolean;
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    totalAmount: number;
+    onPageChange: (page: number) => void;
     showAddForm: boolean;
     newExpense: NewOtherExpense;
     setShowAddForm: (show: boolean) => void;
@@ -100,6 +110,14 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
     setShowAddForm,
     setNewExpense,
     handleAddExpense,
+    tableLoading,
+    refreshing,
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+    totalAmount,
+    onPageChange,
     onEditClick,
     editingExpense,
     editForm,
@@ -107,19 +125,6 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
     onSaveEdit,
     onCancelEdit,
 }) => {
-    const [currentPage, setCurrentPage] = useState(1);
-    const pageSize = 15;
-    const totalPages = Math.ceil(expenses.length / pageSize);
-    const paginatedExpenses = expenses.slice(
-        (currentPage - 1) * pageSize,
-        currentPage * pageSize
-    );
-
-    const totalAmount = expenses.reduce((sum, e) => {
-        const amt = typeof e.amount === 'string' ? parseFloat(e.amount) : e.amount;
-        return sum + (amt || 0);
-    }, 0);
-
     return (
         <div className="bg-white rounded-lg shadow">
             <div className="flex items-center justify-between p-4 border-b">
@@ -171,7 +176,7 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                 </div>
             )}
 
-            <div className="overflow-x-auto">
+            <div className={`overflow-x-auto transition-opacity ${refreshing ? 'opacity-60' : ''}`}>
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                         <tr>
@@ -185,19 +190,19 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {loading ? (
+                        {tableLoading ? (
                             <TableSkeletonRows cols={7} />
-                        ) : paginatedExpenses.length === 0 ? (
+                        ) : expenses.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                                     No other expenses found
                                 </td>
                             </tr>
                         ) : (
-                            paginatedExpenses.map((expense, idx) => (
+                            expenses.map((expense, idx) => (
                                 <tr key={expense.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-4 py-3 text-sm text-gray-500">
-                                        {(currentPage - 1) * pageSize + idx + 1}
+                                        {(page - 1) * pageSize + idx + 1}
                                     </td>
                                     <td className="px-4 py-3 text-sm font-medium text-gray-800">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
@@ -234,30 +239,13 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
             </div>
 
             {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t">
-                    <span className="text-sm text-gray-500">
-                        Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, expenses.length)} of {expenses.length}
-                    </span>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="px-3 py-1 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Previous
-                        </button>
-                        <span className="text-sm text-gray-600">
-                            Page {currentPage} of {totalPages}
-                        </span>
-                        <button
-                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="px-3 py-1 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Next
-                        </button>
-                    </div>
-                </div>
+                <Pagination
+                    page={page}
+                    pageCount={totalPages}
+                    total={totalCount}
+                    pageSize={pageSize}
+                    onPageChange={onPageChange}
+                />
             )}
 
             <Modal
