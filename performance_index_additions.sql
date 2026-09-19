@@ -43,3 +43,19 @@ CREATE INDEX IF NOT EXISTS idx_orders_trader_created
     ON public.orders (trader_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_status_created
     ON public.orders (status, created_at);
+
+-- Purchases screen pagination/date filters.
+CREATE INDEX IF NOT EXISTS idx_purchases_purchase_date
+    ON public.purchases (purchase_date DESC);
+
+-- Allocation-line lookups per allocation (lines per header).
+CREATE INDEX IF NOT EXISTS idx_batch_allocation_lines_allocation_id
+    ON public.batch_allocation_lines (allocation_id);
+
+-- Inventory movements default ordering (newest first).
+CREATE INDEX IF NOT EXISTS idx_inventory_movements_movement_date
+    ON public.inventory_movements (movement_date DESC);
+
+-- Stock receipts default ordering / date filters.
+CREATE INDEX IF NOT EXISTS idx_stock_receipts_received_date
+    ON public.stock_receipts (received_date DESC);
