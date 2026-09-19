@@ -1,16 +1,30 @@
 'use client'
 import React, { useState } from 'react';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
-import { Inbox,  Filter, ChevronLeft, ChevronRight, Plus, X, Save, DollarSign } from 'lucide-react';
+import Pagination from '@/app/components/ui/pagination';
+import { Inbox,  Filter, Plus, X, Save, DollarSign } from 'lucide-react';
 import { LedgerAccount, LedgerEntry, LedgerEntryPayload, NewLedgerEntry } from '@/app/types/interfaces';
 import { capitalizeWords } from '@/app/utils/helper';
-import { useLedgerEntriesSorting } from '@/app/hooks/custom_sorting';
 import SortableHeader from './sortable_headers/header';
 
 interface LedgerEntriesTableProps {
     ledgerEntries: LedgerEntry[];
     ledgerAccounts: LedgerAccount[];
     loading: boolean;
+    /** True until the first page has loaded — drives the skeleton. */
+    tableLoading: boolean;
+    /** True while another page is being fetched — dims the table. */
+    refreshing: boolean;
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    totalDebit: number;
+    totalCredit: number;
+    sortKey: string;
+    sortDir: 'asc' | 'desc';
+    onSortChange: (key: string) => void;
+    onPageChange: (page: number) => void;
     showAddForm: boolean;
     newLedgerEntry: NewLedgerEntry;
     setShowAddForm: (show: boolean) => void;
@@ -22,13 +36,30 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
     ledgerEntries,
     ledgerAccounts,
     loading,
+    tableLoading,
+    refreshing,
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+    totalDebit,
+    totalCredit,
+    sortKey,
+    sortDir,
+    onSortChange,
+    onPageChange,
     showAddForm,
     newLedgerEntry,
     setShowAddForm,
     setNewLedgerEntry,
     handleAddLedgerEntry,
 }) => {
-    const { sortedData, requestSort, getSortIcon } = useLedgerEntriesSorting(ledgerEntries);
+    // Server-side sorting: the page is already ordered by the API.
+    const requestSort = (key: string) => onSortChange(key);
+    const getSortIcon = (columnKey: string) => {
+        if (sortKey !== columnKey) return 'ArrowUpDown';
+        return sortDir === 'asc' ? 'ArrowUp' : 'ArrowDown';
+    };
 
     const getAccountDetails = (account_id: number) => {
         const account = ledgerAccounts.find(acc => acc.account_id === account_id);
@@ -346,7 +377,20 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
                 </div>
             )}
 
-            <div className="overflow-x-auto">
+            <div className="flex items-center justify-between px-4 py-2 text-xs text-gray-500 border-b bg-gray-50/60">
+                <span>
+                    Debits ₹{totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    {' · '}
+                    Credits ₹{totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </span>
+                <span className={totalDebit === totalCredit ? 'text-green-600' : 'text-red-600'}>
+                    {totalDebit === totalCredit
+                        ? 'Balanced'
+                        : `Out by ₹${Math.abs(totalDebit - totalCredit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
+                </span>
+            </div>
+
+            <div className={`overflow-x-auto transition-opacity ${refreshing ? 'opacity-60' : ''}`}>
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                         <tr>
@@ -389,7 +433,7 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {loading ? (
+                        {tableLoading ? (
                             <TableSkeletonRows cols={10} />
                         ) : ledgerEntries.length === 0 ? (
                             <tr>
@@ -399,7 +443,7 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
                                 </td>
                             </tr>
                         ) : (
-                            sortedData.map((entry) => (
+                            ledgerEntries.map((entry) => (
                                 <tr key={entry.entry_id} className="hover:bg-gray-50">
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         #{entry.entry_id}
@@ -452,45 +496,15 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
                 </table>
             </div>
 
-            {/* Summary Footer */}
-            {ledgerEntries.length > 0 && (
-                <div className="border-t bg-gray-50 px-4 py-3">
-                    <div className="flex justify-between text-sm">
-                        <div className="text-gray-600">
-                            Showing {ledgerEntries.length} entries
-                        </div>
-                        <div className="flex gap-6">
-                            <div className="text-red-600 font-medium">
-                                Total Debits: {formatCurrency(
-                                    ledgerEntries.reduce((sum, entry) => sum + (Number(entry.debit) || 0), 0)
-                                )}
-                            </div>
-                            <div className="text-green-600 font-medium">
-                                Total Credits: {formatCurrency(
-                                    ledgerEntries.reduce((sum, entry) => sum + (Number(entry.credit) || 0), 0)
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {totalPages > 1 && (
+                <Pagination
+                    page={page}
+                    pageCount={totalPages}
+                    total={totalCount}
+                    pageSize={pageSize}
+                    onPageChange={onPageChange}
+                />
             )}
-
-            <div className="flex items-center justify-between px-4 py-3 border-t">
-                <div className="text-sm text-gray-500">
-                    Showing {ledgerEntries.length} of {ledgerEntries.length} results
-                </div>
-                <div className="flex items-center gap-2">
-                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
-                        <ChevronLeft size={16} />
-                        Previous
-                    </button>
-                    <span className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium" aria-current="page">1</span>
-                    <button disabled className="flex items-center gap-1 px-3 py-2 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed opacity-40">
-                        Next
-                        <ChevronRight size={16} />
-                    </button>
-                </div>
-            </div>
         </div>
     );
 };

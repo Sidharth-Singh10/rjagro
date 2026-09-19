@@ -1,6 +1,15 @@
-import { Trader, TraderPayment, TraderPaymentPayload, TraderReceivable } from '../types/interfaces';
+import { Trader, TraderPayment, TraderPaymentPayload, TraderPaymentTotal, TraderReceivable } from '../types/interfaces';
 import api from '../utils/api';
 import { toast } from 'react-toastify';
+
+export const fetchTraderPaymentTotals = async (): Promise<TraderPaymentTotal[]> => {
+  const response = await api.get('/getall/trader_payments/totals');
+  return (response.data ?? []).map((row: any) => ({
+    trader_id: Number(row.trader_id),
+    total: Number(row.total),
+    count: Number(row.count),
+  }));
+};
 
 export const fetchTraders = async (): Promise<Trader[]> => {
   const response = await api.get('/getall/traders');

@@ -1,6 +1,15 @@
-import { Supplier, SupplierPayable, SupplierPayload, SupplierPayment, SupplierPaymentPayload } from "../types/interfaces";
+import { Supplier, SupplierPayable, SupplierPayload, SupplierPayment, SupplierPaymentPayload, SupplierPaymentTotal } from "../types/interfaces";
 import api from "../utils/api";
 import { toast } from "react-toastify";
+
+export const fetchSupplierPaymentTotals = async (): Promise<SupplierPaymentTotal[]> => {
+  const response = await api.get('/getall/supplier_payments/totals');
+  return (response.data ?? []).map((row: any) => ({
+    supplier_id: Number(row.supplier_id),
+    total: Number(row.total),
+    count: Number(row.count),
+  }));
+};
 
 export const fetchSuppliers = async (): Promise<Supplier[]> => {
   const response = await api.get('/getall/suppliers');

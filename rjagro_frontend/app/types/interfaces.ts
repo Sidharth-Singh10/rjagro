@@ -339,6 +339,37 @@ export interface NewLedgerEntry {
   narration: string;
 }
 
+export interface PaginatedLedgerEntries {
+  items: LedgerEntry[];
+  page: number;
+  page_size: number;
+  total_count: number;
+  total_pages: number;
+  total_debit: number;
+  total_credit: number;
+}
+
+export interface LedgerMonthAccountSummary {
+  /** Month key, e.g. "2026-09". */
+  month: string;
+  account_id: number;
+  total_debit: number;
+  total_credit: number;
+  count: number;
+}
+
+export interface SupplierPaymentTotal {
+  supplier_id: number;
+  total: number;
+  count: number;
+}
+
+export interface TraderPaymentTotal {
+  trader_id: number;
+  total: number;
+  count: number;
+}
+
 export interface StockReceiptPayload {
   purchase_id?: number;
   item_code: string;

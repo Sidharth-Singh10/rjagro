@@ -1,9 +1,9 @@
 import { fetchLedgerAccounts, handleAddLedgerAccount } from "@/app/api/ledger_accounts";
-import { fetchLedgerEntries, handleAddLedgerEntry } from "@/app/api/ledger_entries";
+import { fetchLedgerEntriesPage, handleAddLedgerEntry, LEDGER_ENTRIES_PAGE_SIZE } from "@/app/api/ledger_entries";
 import { useAuth } from "@/app/hooks/useAuth";
 import { LedgerEntryPayload, NewLedgerAccount, NewLedgerEntry } from "@/app/types/interfaces";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import LedgerAccountsTable from "../tables/ledger_accounts";
 import LedgerEntriesTable from "../tables/ledger_entries";
 
@@ -22,11 +22,43 @@ export const LedgerModule = () => {
     const [showAddForm, setShowAddForm] = useState(false);
 
     // --- Data Fetching ---
-    const { data: ledgerEntries = [], isLoading: isEntriesLoading } = useQuery({
-        queryKey: ["ledger_entries"],
-        queryFn: fetchLedgerEntries,
+    const [page, setPage] = useState(1);
+    const [sortKey, setSortKey] = useState('txn_date');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+    const {
+        data: entriesPage,
+        isPending: isEntriesPending,
+        isFetching: isEntriesFetching,
+    } = useQuery({
+        queryKey: ["ledger_entries", "page", page, sortKey, sortDir],
+        queryFn: () =>
+            fetchLedgerEntriesPage(page, LEDGER_ENTRIES_PAGE_SIZE, { sort: sortKey, dir: sortDir }),
+        placeholderData: keepPreviousData,
         staleTime: 5 * 60 * 1000,
+        enabled: subTab === 'Entries',
     });
+
+    const ledgerEntries = entriesPage?.items ?? [];
+    const totalCount = entriesPage?.total_count ?? 0;
+    const totalPages = entriesPage?.total_pages ?? 0;
+
+    // If the current page disappears, fall back to the last valid page.
+    useEffect(() => {
+        if (entriesPage && entriesPage.total_pages > 0 && page > entriesPage.total_pages) {
+            setPage(entriesPage.total_pages);
+        }
+    }, [entriesPage, page]);
+
+    const onSortChange = (key: string) => {
+        if (key === sortKey) {
+            setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortKey(key);
+            setSortDir('asc');
+        }
+        setPage(1);
+    };
 
     const { data: ledgerAccounts = [], isLoading: isAccountsLoading } = useQuery({
         queryKey: ['ledger_accounts'],
@@ -66,6 +98,7 @@ export const LedgerModule = () => {
 
         handleAddLedgerEntry(payload, queryClient, setLoading, () => {
             setShowAddForm(false);
+            setPage(1);
             setNewLedgerEntry({
                 account_id: '',
                 debit: '',
@@ -131,7 +164,19 @@ export const LedgerModule = () => {
                     <LedgerEntriesTable
                         ledgerEntries={ledgerEntries}
                         ledgerAccounts={ledgerAccounts}
-                        loading={loading || isEntriesLoading}
+                        loading={loading}
+                        tableLoading={isEntriesPending}
+                        refreshing={isEntriesFetching && !isEntriesPending}
+                        page={page}
+                        pageSize={LEDGER_ENTRIES_PAGE_SIZE}
+                        totalCount={totalCount}
+                        totalPages={totalPages}
+                        totalDebit={entriesPage?.total_debit ?? 0}
+                        totalCredit={entriesPage?.total_credit ?? 0}
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        onSortChange={onSortChange}
+                        onPageChange={setPage}
                         showAddForm={showAddForm}
                         newLedgerEntry={newLedgerEntry}
                         setShowAddForm={setShowAddForm}

@@ -14,12 +14,12 @@ import { fetchBatches, fetchBatchClosures } from '@/app/api/batches';
 import { fetchLoans } from '@/app/api/loans';
 import { fetchInventory } from '@/app/api/inventory';
 import { fetchItems } from '@/app/api/items';
-import { fetchSuppliers, fetchSupplierPayments } from '@/app/api/supplier';
-import { fetchTraders, fetchTraderPayments } from '@/app/api/traders';
+import { fetchSuppliers, fetchSupplierPaymentTotals } from '@/app/api/supplier';
+import { fetchTraders, fetchTraderPaymentTotals } from '@/app/api/traders';
 import { fetchBatchAllocationLines } from '@/app/api/batch_allocation_lines';
 import { fetchBatchAllocations } from '@/app/api/batch_allocations';
 import { fetchStockReceipts } from '@/app/api/stock_receipts';
-import { fetchLedgerEntries } from '@/app/api/ledger_entries';
+import { fetchLedgerEntriesSummary } from '@/app/api/ledger_entries';
 import { fetchOtherExpensesSummary } from '@/app/api/other_expenses';
 import { fetchMetricSnapshots } from '@/app/api/metrics';
 import { Item, OTHER_EXPENSE_CATEGORY_LABELS } from '@/app/types/interfaces';
@@ -150,8 +150,10 @@ const OverviewModule = () => {
     const { data: batchAllocations = [] } = useQuery({
         queryKey: ['batch_allocations'], queryFn: fetchBatchAllocations, staleTime: STALE,
     });
-    const { data: ledgerEntries = [] } = useQuery({
-        queryKey: ['ledger_entries'], queryFn: fetchLedgerEntries, staleTime: STALE,
+    const { data: ledgerSummary = [] } = useQuery({
+        queryKey: ['ledger_entries', 'summary', lastMonthKey, thisMonthKey],
+        queryFn: () => fetchLedgerEntriesSummary(lastMonthKey, thisMonthKey),
+        staleTime: STALE,
     });
     const { data: expenseSummary = [] } = useQuery({
         queryKey: ['other_expenses', 'summary', lastMonthKey, thisMonthKey],
@@ -161,38 +163,25 @@ const OverviewModule = () => {
     const { data: metricSnapshots = [] } = useQuery({
         queryKey: ['metric_snapshots'], queryFn: () => fetchMetricSnapshots(), staleTime: STALE,
     });
-    const { data: supplierPaymentsBySupplier = {} } = useQuery({
-        queryKey: ['overview_supplier_payments', suppliers.map(s => s.supplier_id)],
-        queryFn: async () => {
-            const entries = await Promise.all(suppliers.map(async s => {
-                try {
-                    const payments = await fetchSupplierPayments(s.supplier_id);
-                    return [s.supplier_id, payments.reduce((sum, p) => sum + n(p.amount), 0)] as const;
-                } catch {
-                    return [s.supplier_id, 0] as const;
-                }
-            }));
-            return Object.fromEntries(entries) as Record<number, number>;
-        },
-        enabled: suppliers.length > 0,
-        staleTime: STALE,
+    const { data: supplierPaymentTotals = [] } = useQuery({
+        queryKey: ['supplier_payment_totals'], queryFn: fetchSupplierPaymentTotals, staleTime: STALE,
     });
-    const { data: traderPaymentsByTrader = {} } = useQuery({
-        queryKey: ['overview_trader_payments', traders.map(t => t.trader_id)],
-        queryFn: async () => {
-            const entries = await Promise.all(traders.map(async t => {
-                try {
-                    const payments = await fetchTraderPayments(t.trader_id);
-                    return [t.trader_id, payments.reduce((sum, p) => sum + n(p.amount), 0)] as const;
-                } catch {
-                    return [t.trader_id, 0] as const;
-                }
-            }));
-            return Object.fromEntries(entries) as Record<number, number>;
-        },
-        enabled: traders.length > 0,
-        staleTime: STALE,
+    const { data: traderPaymentTotals = [] } = useQuery({
+        queryKey: ['trader_payment_totals'], queryFn: fetchTraderPaymentTotals, staleTime: STALE,
     });
+
+    // Per-entity payment totals, computed server-side in one query each.
+    const supplierPaymentsBySupplier = useMemo(() => {
+        const map: Record<number, number> = {};
+        supplierPaymentTotals.forEach(row => { map[row.supplier_id] = row.total; });
+        return map;
+    }, [supplierPaymentTotals]);
+
+    const traderPaymentsByTrader = useMemo(() => {
+        const map: Record<number, number> = {};
+        traderPaymentTotals.forEach(row => { map[row.trader_id] = row.total; });
+        return map;
+    }, [traderPaymentTotals]);
 
     // ── Lookup maps ───────────────────────────────────────────────────
     const itemMap = useMemo(() => {
@@ -487,10 +476,10 @@ const OverviewModule = () => {
         const closuresIn = (key: string) => batchClosures.filter(c => inMonth(c.end_date, key));
         const sumRevenue = (key: string) => closuresIn(key).reduce((s, c) => s + n(c.revenue), 0);
         const sumCogs = (key: string) => closuresIn(key).reduce((s, c) => s + n(c.revenue) - n(c.gross_profit), 0);
-        const ledgerNet = (accountId: number, key: string) =>
-            ledgerEntries
-                .filter(e => e.account_id === accountId && inMonth(e.txn_date, key))
-                .reduce((s, e) => s + n(e.debit) - n(e.credit), 0);
+        const ledgerNet = (accountId: number, key: string) => {
+            const row = ledgerSummary.find(s => s.account_id === accountId && s.month === key);
+            return row ? row.total_debit - row.total_credit : 0;
+        };
 
         const grossProfitThisMonth = sumRevenue(thisMonthKey) - sumCogs(thisMonthKey);
         const otherExpensesThisMonth =
@@ -499,9 +488,9 @@ const OverviewModule = () => {
         const interestThisMonth = ledgerNet(112, thisMonthKey);
         const netProfitThisMonth = grossProfitThisMonth - otherExpensesThisMonth - commissionThisMonth - interestThisMonth;
 
-        const cashEntries = ledgerEntries.filter(e => e.account_id === 101 && inMonth(e.txn_date, thisMonthKey));
-        const cashIn = cashEntries.reduce((s, e) => s + n(e.debit), 0);
-        const cashOut = cashEntries.reduce((s, e) => s + n(e.credit), 0);
+        const cashSummary = ledgerSummary.find(s => s.account_id === 101 && s.month === thisMonthKey);
+        const cashIn = cashSummary?.total_debit ?? 0;
+        const cashOut = cashSummary?.total_credit ?? 0;
 
         const balance = (id: number) => n(ledgerAccounts.find(a => a.account_id === id)?.current_balance);
         const cashBalance = balance(101);
@@ -558,7 +547,7 @@ const OverviewModule = () => {
             realizedRate,
             kgThisMonth,
         };
-    }, [ledgerAccounts, batchClosures, batchSales, expenseSummary, ledgerEntries, stockReceipts, allocationLines, allocationDateById, lotCategoryMap, itemMap, thisMonthKey]);
+    }, [ledgerAccounts, batchClosures, batchSales, expenseSummary, ledgerSummary, stockReceipts, allocationLines, allocationDateById, lotCategoryMap, itemMap, thisMonthKey]);
 
     // ── Net profit breakdown (double-click detail) ────────────────────
     const [showNetProfit, setShowNetProfit] = useState(false);
@@ -579,10 +568,10 @@ const OverviewModule = () => {
                 }))
                 .sort((a, b) => b.value - a.value);
 
-            const ledgerNet = (accountId: number) =>
-                ledgerEntries
-                    .filter(e => e.account_id === accountId && (e.txn_date ?? '').slice(0, 7) === key)
-                    .reduce((s, e) => s + n(e.debit) - n(e.credit), 0);
+            const ledgerNet = (accountId: number) => {
+                const row = ledgerSummary.find(s => s.account_id === accountId && s.month === key);
+                return row ? row.total_debit - row.total_credit : 0;
+            };
             const commission = ledgerNet(106);
             const interest = ledgerNet(112);
 
@@ -600,7 +589,7 @@ const OverviewModule = () => {
             };
         };
         return { month: buildMonth(thisMonthKey), previousMonth: buildMonth(lastMonthKey) };
-    }, [batchClosures, expenseSummary, ledgerEntries, thisMonthKey, lastMonthKey]);
+    }, [batchClosures, expenseSummary, ledgerSummary, thisMonthKey, lastMonthKey]);
 
     // ── COGS breakdown (double-click detail) ──────────────────────────
     const [showCogsBreakdown, setShowCogsBreakdown] = useState(false);
