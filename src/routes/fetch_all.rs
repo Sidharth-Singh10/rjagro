@@ -10,10 +10,11 @@ use crate::{
         get_bird_count_history_handler, get_bird_sell_history_handler, get_farmers_handler,
         get_farms_handler, get_inventory_handler, get_inventory_movements_handler,
         get_items_handler, get_ledger_accounts_handler, get_ledger_entries_handler,
+        get_ledger_entries_paginated_handler, get_ledger_entries_summary_handler,
         get_loan_payments_handler, get_loans_handler, get_paginated_returns_handler,
-        get_production_lines_handler, get_purchases_handler,
-        get_stock_receipts_handler,
-        get_supervisors_handler, get_suppliers_handler, get_traders_handler, get_users_handler,
+        get_production_lines_handler, get_purchases_handler, get_stock_receipts_handler,
+        get_supervisors_handler, get_supplier_payment_totals_handler, get_suppliers_handler,
+        get_trader_payment_totals_handler, get_traders_handler, get_users_handler,
     },
     handlers::other_expenses::{
         get_all_other_expenses_handler, get_other_expenses_paginated_handler,
@@ -74,6 +75,22 @@ pub fn fetch_all() -> Router<DatabaseConnection> {
         .route(
             "/other_expenses/summary",
             get(get_other_expenses_summary_handler),
+        )
+        .route(
+            "/ledger_entries/paginated",
+            get(get_ledger_entries_paginated_handler),
+        )
+        .route(
+            "/ledger_entries/summary",
+            get(get_ledger_entries_summary_handler),
+        )
+        .route(
+            "/supplier_payments/totals",
+            get(get_supplier_payment_totals_handler),
+        )
+        .route(
+            "/trader_payments/totals",
+            get(get_trader_payment_totals_handler),
         )
         .route("/metric_snapshots", get(get_metric_snapshots_handler))
 }

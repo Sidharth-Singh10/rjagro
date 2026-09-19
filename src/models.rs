@@ -505,6 +505,65 @@ pub struct OtherExpenseSummaryQuery {
     pub to: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct LedgerEntriesQuery {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub account_id: Option<i32>,
+    /// Inclusive date, "YYYY-MM-DD".
+    pub from: Option<NaiveDate>,
+    /// Inclusive date, "YYYY-MM-DD".
+    pub to: Option<NaiveDate>,
+    pub reference_table: Option<String>,
+    /// entry_id | txn_date | account_id | debit | credit | created_at
+    pub sort: Option<String>,
+    /// "asc" | "desc"
+    pub dir: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginatedLedgerEntries {
+    pub items: Vec<entity::ledger_entries::Model>,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_count: u64,
+    pub total_pages: u64,
+    /// Totals over the whole filtered set, for reconciliation.
+    pub total_debit: Decimal,
+    pub total_credit: Decimal,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LedgerSummaryQuery {
+    /// Inclusive month key, e.g. "2026-08".
+    pub from: String,
+    /// Inclusive month key, e.g. "2026-09".
+    pub to: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LedgerMonthAccountSummary {
+    pub month: String,
+    pub account_id: i32,
+    pub total_debit: Decimal,
+    pub total_credit: Decimal,
+    pub count: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SupplierPaymentTotal {
+    pub supplier_id: i32,
+    pub total: Decimal,
+    pub count: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TraderPaymentTotal {
+    pub trader_id: i32,
+    pub total: Decimal,
+    pub count: i64,
+}
+
 // ─── Trader app (live selling) ───────────────────────────────────────────────
 
 #[derive(Deserialize)]

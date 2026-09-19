@@ -1,8 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
+use crate::handlers::metrics::{month_end, month_start};
 use crate::models::{
-    BatchListQuery, BatchRequirementResponse, BatchResponse, FarmInfo, PaginationParams,
-    ProductionLineWithSupervisor, PurchaseWithItem, StockReceiptsQuery, UserSimplified,
+    BatchListQuery, BatchRequirementResponse, BatchResponse, FarmInfo, LedgerEntriesQuery,
+    LedgerMonthAccountSummary, LedgerSummaryQuery, PaginatedLedgerEntries, PaginationParams,
+    ProductionLineWithSupervisor, PurchaseWithItem, StockReceiptsQuery, SupplierPaymentTotal,
+    TraderPaymentTotal, UserSimplified,
 };
 use axum::extract::Query;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
@@ -10,7 +13,9 @@ use entity::{
     sea_orm_active_enums::{BatchStatus, UserRole},
     *,
 };
-use sea_orm::{ColumnTrait, PaginatorTrait};
+use sea_orm::prelude::Decimal;
+use sea_orm::sea_query::{Expr, NullOrdering, Order};
+use sea_orm::{ColumnTrait, ConnectionTrait, PaginatorTrait, QuerySelect};
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter};
 use sea_orm::{DbBackend, QueryOrder, Statement};
 
@@ -647,4 +652,246 @@ pub async fn get_paginated_returns_handler(
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
+}
+
+// LEDGER ENTRIES — one page for the ledger screen (1-based page).
+pub async fn get_ledger_entries_paginated_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<LedgerEntriesQuery>,
+) -> Result<Json<PaginatedLedgerEntries>, StatusCode> {
+    let page_size = params.page_size.unwrap_or(25).clamp(1, 200);
+    let page = params.page.unwrap_or(1).max(1);
+
+    let mut query = ledger_entries::Entity::find();
+
+    if let Some(account_id) = params.account_id {
+        query = query.filter(ledger_entries::Column::AccountId.eq(account_id));
+    }
+    if let Some(from) = params.from {
+        query = query.filter(ledger_entries::Column::TxnDate.gte(from));
+    }
+    if let Some(to) = params.to {
+        query = query.filter(ledger_entries::Column::TxnDate.lte(to));
+    }
+    if let Some(reference_table) = params.reference_table.as_deref() {
+        query = query.filter(ledger_entries::Column::ReferenceTable.eq(reference_table));
+    }
+
+    // Totals over the whole filtered set (not only this page) so the ledger
+    // footer can reconcile debits against credits.
+    let totals = query
+        .clone()
+        .select_only()
+        .column_as(Expr::col(ledger_entries::Column::Debit).sum(), "total_debit")
+        .column_as(
+            Expr::col(ledger_entries::Column::Credit).sum(),
+            "total_credit",
+        )
+        .into_tuple::<(Option<Decimal>, Option<Decimal>)>()
+        .one(&db)
+        .await
+        .map_err(|e| {
+            eprintln!("Failed to total ledger entries: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let (total_debit, total_credit) = totals.unwrap_or((None, None));
+
+    let descending = params.dir.as_deref() != Some("asc");
+    let direction = if descending { Order::Desc } else { Order::Asc };
+    // NULL means "no debit/credit on this side" — keep those rows at the end.
+    let nulls = NullOrdering::Last;
+
+    let query = match params.sort.as_deref().unwrap_or("txn_date") {
+        "entry_id" => query.order_by(ledger_entries::Column::EntryId, direction),
+        "account_id" => query.order_by(ledger_entries::Column::AccountId, direction),
+        "debit" => query.order_by_with_nulls(ledger_entries::Column::Debit, direction, nulls),
+        "credit" => query.order_by_with_nulls(ledger_entries::Column::Credit, direction, nulls),
+        "created_at" => query.order_by(ledger_entries::Column::CreatedAt, direction),
+        // Newest first by default, oldest entry first within the same date.
+        _ => query
+            .order_by(ledger_entries::Column::TxnDate, direction)
+            .order_by(ledger_entries::Column::EntryId, Order::Asc),
+    };
+
+    let paginator = query.paginate(&db, page_size);
+    let total_count = paginator.num_items().await.map_err(|e| {
+        eprintln!("Failed to count ledger entries: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    let items = paginator.fetch_page(page - 1).await.map_err(|e| {
+        eprintln!("Failed to fetch ledger entry page {}: {}", page, e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let total_pages = if total_count == 0 {
+        0
+    } else {
+        (total_count + page_size - 1) / page_size
+    };
+
+    Ok(Json(PaginatedLedgerEntries {
+        items,
+        page,
+        page_size,
+        total_count,
+        total_pages,
+        total_debit: total_debit.unwrap_or_default(),
+        total_credit: total_credit.unwrap_or_default(),
+    }))
+}
+
+// LEDGER ENTRIES — per month + account totals for the Overview dashboard.
+pub async fn get_ledger_entries_summary_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<LedgerSummaryQuery>,
+) -> Result<Json<Vec<LedgerMonthAccountSummary>>, (StatusCode, String)> {
+    let Some(from) = month_start(&params.from) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("Invalid from month '{}', expected YYYY-MM", params.from),
+        ));
+    };
+    let Some(to) = month_end(&params.to) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("Invalid to month '{}', expected YYYY-MM", params.to),
+        ));
+    };
+    if from > to {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "from month must not be after to month".to_string(),
+        ));
+    }
+
+    let stmt = Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        r#"
+        SELECT
+            to_char(txn_date, 'YYYY-MM') AS month,
+            account_id,
+            COALESCE(SUM(debit), 0) AS total_debit,
+            COALESCE(SUM(credit), 0) AS total_credit,
+            COUNT(*)::bigint AS count
+        FROM
+            ledger_entries
+        WHERE
+            txn_date >= $1
+            AND txn_date <= $2
+        GROUP BY
+            1, 2
+        ORDER BY
+            1, 2
+        "#,
+        vec![from.into(), to.into()],
+    );
+
+    let rows = db.query_all(stmt).await.map_err(|e| {
+        eprintln!("Failed to summarize ledger entries: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to summarize ledger entries".to_string(),
+        )
+    })?;
+
+    let mut summaries = Vec::with_capacity(rows.len());
+    let decode = |e: sea_orm::DbErr| {
+        eprintln!("Failed to decode ledger summary: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to decode ledger summary".to_string(),
+        )
+    };
+
+    for row in rows {
+        let month: String = row.try_get("", "month").map_err(decode)?;
+        let account_id: i32 = row.try_get("", "account_id").map_err(decode)?;
+        let total_debit: Decimal = row.try_get("", "total_debit").map_err(decode)?;
+        let total_credit: Decimal = row.try_get("", "total_credit").map_err(decode)?;
+        let count: i64 = row.try_get("", "count").map_err(decode)?;
+
+        summaries.push(LedgerMonthAccountSummary {
+            month,
+            account_id,
+            total_debit,
+            total_credit,
+            count,
+        });
+    }
+
+    Ok(Json(summaries))
+}
+
+// PAYMENTS — per-entity totals so the Overview does not fetch one list per entity.
+pub async fn get_supplier_payment_totals_handler(
+    State(db): State<DatabaseConnection>,
+) -> Result<Json<Vec<SupplierPaymentTotal>>, StatusCode> {
+    let stmt = Statement::from_string(
+        DbBackend::Postgres,
+        "SELECT supplier_id, COALESCE(SUM(amount), 0) AS total, COUNT(*)::bigint AS count \
+         FROM supplier_payments GROUP BY supplier_id ORDER BY supplier_id"
+            .to_string(),
+    );
+
+    let rows = db.query_all(stmt).await.map_err(|e| {
+        eprintln!("Failed to total supplier payments: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let mut totals = Vec::with_capacity(rows.len());
+    for row in rows {
+        let supplier_id = row.try_get::<i32>("", "supplier_id").map_err(|e| {
+            eprintln!("Failed to decode supplier payment total: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+        let total = row
+            .try_get::<Decimal>("", "total")
+            .unwrap_or_default();
+        let count = row.try_get::<i64>("", "count").unwrap_or(0);
+
+        totals.push(SupplierPaymentTotal {
+            supplier_id,
+            total,
+            count,
+        });
+    }
+
+    Ok(Json(totals))
+}
+
+pub async fn get_trader_payment_totals_handler(
+    State(db): State<DatabaseConnection>,
+) -> Result<Json<Vec<TraderPaymentTotal>>, StatusCode> {
+    let stmt = Statement::from_string(
+        DbBackend::Postgres,
+        "SELECT trader_id, COALESCE(SUM(amount), 0) AS total, COUNT(*)::bigint AS count \
+         FROM trader_payments GROUP BY trader_id ORDER BY trader_id"
+            .to_string(),
+    );
+
+    let rows = db.query_all(stmt).await.map_err(|e| {
+        eprintln!("Failed to total trader payments: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let mut totals = Vec::with_capacity(rows.len());
+    for row in rows {
+        let trader_id = row.try_get::<i32>("", "trader_id").map_err(|e| {
+            eprintln!("Failed to decode trader payment total: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+        let total = row
+            .try_get::<Decimal>("", "total")
+            .unwrap_or_default();
+        let count = row.try_get::<i64>("", "count").unwrap_or(0);
+
+        totals.push(TraderPaymentTotal {
+            trader_id,
+            total,
+            count,
+        });
+    }
+
+    Ok(Json(totals))
 }

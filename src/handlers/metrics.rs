@@ -20,7 +20,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use chrono::{DateTime, Datelike, FixedOffset, NaiveDate, Utc};
+use chrono::{DateTime, Datelike, FixedOffset, Months, NaiveDate, Utc};
 use entity::{
     batch_closure_summary, batch_sales, batches, ledger_accounts, ledger_entries,
     metric_snapshots, other_expenses,
@@ -112,6 +112,20 @@ pub fn period_key(period_type: &str, date: NaiveDate) -> String {
     } else {
         month_key(date)
     }
+}
+
+/// Parses a `YYYY-MM` key into the first day of that month.
+pub fn month_start(key: &str) -> Option<NaiveDate> {
+    if key.len() != 7 {
+        return None;
+    }
+    NaiveDate::parse_from_str(&format!("{key}-01"), "%Y-%m-%d").ok()
+}
+
+/// Parses a `YYYY-MM` key into the last day of that month.
+pub fn month_end(key: &str) -> Option<NaiveDate> {
+    let start = month_start(key)?;
+    start.checked_add_months(Months::new(1))?.pred_opt()
 }
 
 fn last_day_of_month(date: NaiveDate) -> NaiveDate {

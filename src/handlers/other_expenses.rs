@@ -1,4 +1,4 @@
-use crate::handlers::metrics::{period_key, refresh_metrics_range};
+use crate::handlers::metrics::{month_end, month_start, period_key, refresh_metrics_range};
 use crate::models::{
     CreateOtherExpense, OtherExpenseCategoryTotal, OtherExpenseMonthSummary,
     OtherExpenseSummaryQuery, PaginatedOtherExpenses, PaginationParams, UpdateOtherExpense,
@@ -8,7 +8,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use chrono::{Months, NaiveDate, Utc};
+use chrono::{NaiveDate, Utc};
 use entity::sea_orm_active_enums::OtherExpenseCategory;
 use entity::*;
 use sea_orm::{
@@ -430,20 +430,6 @@ pub async fn get_other_expenses_paginated_handler(
         total_pages,
         total_amount,
     }))
-}
-
-/// Parses a `YYYY-MM` key into the first day of that month.
-fn month_start(key: &str) -> Option<NaiveDate> {
-    if key.len() != 7 {
-        return None;
-    }
-    NaiveDate::parse_from_str(&format!("{key}-01"), "%Y-%m-%d").ok()
-}
-
-/// Parses a `YYYY-MM` key into the last day of that month.
-fn month_end(key: &str) -> Option<NaiveDate> {
-    let start = month_start(key)?;
-    start.checked_add_months(Months::new(1))?.pred_opt()
 }
 
 fn summary_decode_error(e: impl std::fmt::Display) -> (StatusCode, String) {
