@@ -472,6 +472,39 @@ pub struct UpdateOtherExpense {
     pub expense_date: NaiveDate,
 }
 
+#[derive(Debug, Serialize)]
+pub struct PaginatedOtherExpenses {
+    pub items: Vec<entity::other_expenses::Model>,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_count: u64,
+    pub total_pages: u64,
+    pub total_amount: Decimal,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OtherExpenseCategoryTotal {
+    pub category: OtherExpenseCategory,
+    pub total: Decimal,
+    pub count: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OtherExpenseMonthSummary {
+    pub month: String,
+    pub total: Decimal,
+    pub count: i64,
+    pub by_category: Vec<OtherExpenseCategoryTotal>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OtherExpenseSummaryQuery {
+    /// Inclusive month key, e.g. "2026-08".
+    pub from: String,
+    /// Inclusive month key, e.g. "2026-09".
+    pub to: String,
+}
+
 // ─── Trader app (live selling) ───────────────────────────────────────────────
 
 #[derive(Deserialize)]

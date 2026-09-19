@@ -1,15 +1,19 @@
 use crate::handlers::metrics::{period_key, refresh_metrics_range};
-use crate::models::{CreateOtherExpense, UpdateOtherExpense};
+use crate::models::{
+    CreateOtherExpense, OtherExpenseCategoryTotal, OtherExpenseMonthSummary,
+    OtherExpenseSummaryQuery, PaginatedOtherExpenses, PaginationParams, UpdateOtherExpense,
+};
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
-use chrono::{NaiveDate, Utc};
+use chrono::{Months, NaiveDate, Utc};
+use entity::sea_orm_active_enums::OtherExpenseCategory;
 use entity::*;
 use sea_orm::{
-    prelude::Decimal, ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter,
-    QueryOrder, Set, TransactionTrait,
+    prelude::Decimal, ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend,
+    EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, Set, Statement, TransactionTrait,
 };
 use tracing::error;
 use uuid::Uuid;
@@ -371,4 +375,167 @@ pub async fn get_all_other_expenses_handler(
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
+}
+
+/// One page of expenses (newest first), plus the exact totals the table needs
+/// for its badge and footer.
+pub async fn get_other_expenses_paginated_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<PaginationParams>,
+) -> Result<Json<PaginatedOtherExpenses>, StatusCode> {
+    let page_size = params.page_size.unwrap_or(15).clamp(1, 100);
+    let page = params.page.unwrap_or(1).max(1);
+
+    let paginator = other_expenses::Entity::find()
+        .order_by_desc(other_expenses::Column::CreatedAt)
+        .paginate(&db, page_size);
+
+    let items = paginator.fetch_page(page - 1).await.map_err(|e| {
+        error!("Failed to fetch page {} of other expenses: {}", page, e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    // Count + sum in one aggregate so the badge and page count stay exact
+    // without downloading every row.
+    let totals = Statement::from_string(
+        DbBackend::Postgres,
+        "SELECT COUNT(*)::bigint AS total_count, COALESCE(SUM(amount), 0) AS total_amount \
+         FROM other_expenses"
+            .to_string(),
+    );
+
+    let (total_count, total_amount) = match db.query_one(totals).await {
+        Ok(Some(row)) => (
+            row.try_get::<i64>("", "total_count").unwrap_or(0).max(0) as u64,
+            row.try_get::<Decimal>("", "total_amount").unwrap_or_default(),
+        ),
+        Ok(None) => (0, Decimal::ZERO),
+        Err(e) => {
+            error!("Failed to compute other expense totals: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    let total_pages = if total_count == 0 {
+        0
+    } else {
+        (total_count + page_size - 1) / page_size
+    };
+
+    Ok(Json(PaginatedOtherExpenses {
+        items,
+        page,
+        page_size,
+        total_count,
+        total_pages,
+        total_amount,
+    }))
+}
+
+/// Parses a `YYYY-MM` key into the first day of that month.
+fn month_start(key: &str) -> Option<NaiveDate> {
+    if key.len() != 7 {
+        return None;
+    }
+    NaiveDate::parse_from_str(&format!("{key}-01"), "%Y-%m-%d").ok()
+}
+
+/// Parses a `YYYY-MM` key into the last day of that month.
+fn month_end(key: &str) -> Option<NaiveDate> {
+    let start = month_start(key)?;
+    start.checked_add_months(Months::new(1))?.pred_opt()
+}
+
+fn summary_decode_error(e: impl std::fmt::Display) -> (StatusCode, String) {
+    error!("Failed to decode other expense summary: {}", e);
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Failed to decode other expense summary".to_string(),
+    )
+}
+
+/// Per-month totals, entry counts and category splits for the Overview
+/// dashboard, which only needs the current and previous month.
+pub async fn get_other_expenses_summary_handler(
+    State(db): State<DatabaseConnection>,
+    Query(params): Query<OtherExpenseSummaryQuery>,
+) -> Result<Json<Vec<OtherExpenseMonthSummary>>, (StatusCode, String)> {
+    let Some(from) = month_start(&params.from) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("Invalid from month '{}', expected YYYY-MM", params.from),
+        ));
+    };
+    let Some(to) = month_end(&params.to) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("Invalid to month '{}', expected YYYY-MM", params.to),
+        ));
+    };
+    if from > to {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "from month must not be after to month".to_string(),
+        ));
+    }
+
+    let stmt = Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        r#"
+        SELECT
+            to_char(expense_date, 'YYYY-MM') AS month,
+            CAST(category AS text) AS category,
+            SUM(amount) AS total,
+            COUNT(*)::bigint AS count
+        FROM
+            other_expenses
+        WHERE
+            expense_date >= $1
+            AND expense_date <= $2
+        GROUP BY
+            1, 2
+        ORDER BY
+            1, 2
+        "#,
+        vec![from.into(), to.into()],
+    );
+
+    let rows = db.query_all(stmt).await.map_err(|e| {
+        error!("Failed to summarize other expenses: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to summarize other expenses".to_string(),
+        )
+    })?;
+
+    // Rows arrive grouped by month, so a new month starts a new summary.
+    let mut summaries: Vec<OtherExpenseMonthSummary> = Vec::new();
+
+    for row in rows {
+        let month: String = row.try_get("", "month").map_err(summary_decode_error)?;
+        let category: OtherExpenseCategory =
+            row.try_get("", "category").map_err(summary_decode_error)?;
+        let total: Decimal = row.try_get("", "total").map_err(summary_decode_error)?;
+        let count: i64 = row.try_get("", "count").map_err(summary_decode_error)?;
+
+        if summaries.last().map(|s| s.month != month).unwrap_or(true) {
+            summaries.push(OtherExpenseMonthSummary {
+                month: month.clone(),
+                total: Decimal::ZERO,
+                count: 0,
+                by_category: Vec::new(),
+            });
+        }
+
+        let summary = summaries.last_mut().expect("summary just pushed");
+        summary.total += total;
+        summary.count += count;
+        summary.by_category.push(OtherExpenseCategoryTotal {
+            category,
+            total,
+            count,
+        });
+    }
+
+    Ok(Json(summaries))
 }
