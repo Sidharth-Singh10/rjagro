@@ -13,10 +13,12 @@ export const fetchStockReceipts = async (itemCode?: string): Promise<StockReceip
 export const fetchStockReceiptsPage = async (
     page: number = 1,
     pageSize: number = STOCK_RECEIPTS_PAGE_SIZE,
-    filters: { itemCode?: string; sort?: string; dir?: 'asc' | 'desc' } = {}
+    filters: { itemCode?: string; search?: string; hasRemaining?: boolean; sort?: string; dir?: 'asc' | 'desc' } = {}
 ): Promise<PaginatedStockReceipts> => {
     const params: Record<string, unknown> = { page, page_size: pageSize };
     if (filters.itemCode) params.item_code = filters.itemCode;
+    if (filters.search) params.search = filters.search;
+    if (filters.hasRemaining) params.has_remaining = 'true';
     if (filters.sort) {
         params.sort = filters.sort;
         params.dir = filters.dir ?? 'desc';

@@ -6,7 +6,7 @@ import { fetchItems, handleAddItem } from '@/app/api/items';
 import { fetchInventory, handleAddInventory, handleUpdateInventory } from '@/app/api/inventory';
 import { fetchInventoryMovementsPage, handleAddInventoryMovement, INVENTORY_MOVEMENTS_PAGE_SIZE } from '@/app/api/inventory_movement';
 import { fetchStockReceiptsPage, handleAddStockReceipt, STOCK_RECEIPTS_PAGE_SIZE } from '@/app/api/stock_receipts';
-import { fetchPurchases } from '@/app/api/purchases';
+import { fetchPurchasesPage } from '@/app/api/purchases';
 import { fetchSuppliers } from '@/app/api/supplier';
 import { ItemCategory } from '@/app/types/enums';
 import { InventoryMovementPayload, InventoryPayload, Item, MovementType, NewInventory, NewInventoryMovement, NewStockReceipt, StockReceiptPayload } from '@/app/types/interfaces';
@@ -103,12 +103,18 @@ const InventoryModule = () => {
         setReceiptsPage(1);
     };
 
-    // Required for Stock Receipts dropdowns
-    const { data: purchases = [] } = useQuery({
-        queryKey: ['purchases'],
-        queryFn: fetchPurchases,
-        staleTime: 5 * 60 * 1000,
+    // Purchase picker for the stock-receipt form (search-backed, on demand).
+    const [purchaseSearch, setPurchaseSearch] = useState('');
+    const {
+        data: purchasePickerData,
+        isFetching: isPurchasePickerFetching,
+    } = useQuery({
+        queryKey: ['purchases', 'picker', purchaseSearch],
+        queryFn: () => fetchPurchasesPage(1, 50, { search: purchaseSearch || undefined }),
+        enabled: subTab === 'Receipts' && showAddForm,
+        staleTime: 60 * 1000,
     });
+    const purchasePickerItems = purchasePickerData?.items ?? [];
 
     const { data: suppliers = [] } = useQuery({
         queryKey: ['suppliers'],
@@ -229,7 +235,7 @@ const InventoryModule = () => {
     };
 
     const handleStockReceiptPurchaseSelect = (purchaseId: string) => {
-        const selectedPurchase = purchases.find(purchase => purchase.purchase_id === parseInt(purchaseId));
+        const selectedPurchase = purchasePickerItems.find(purchase => purchase.purchase_id === parseInt(purchaseId));
         if (selectedPurchase) {
             setNewStockReceipt(prev => ({
                 ...prev,
@@ -351,7 +357,9 @@ const InventoryModule = () => {
                     <StockReceiptsTable
                         stockReceipts={stockReceipts}
                         items={items}
-                        purchases={purchases}
+                        purchases={purchasePickerItems}
+                        purchasesLoading={isPurchasePickerFetching}
+                        onPurchaseSearch={setPurchaseSearch}
                         loading={loading}
                         tableLoading={isReceiptsPending}
                         refreshing={isReceiptsFetching && !isReceiptsPending}

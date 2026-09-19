@@ -1,6 +1,7 @@
 import React from 'react';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import Pagination from '@/app/components/ui/pagination';
+import SearchableSelect from '@/app/components/ui/searchable_select';
 import { Inbox,  Edit, Plus, X, Save } from 'lucide-react';
 import { Item, NewStockReceipt, Purchase, StockReceipt } from '@/app/types/interfaces';
 import SortableHeader from './sortable_headers/header';
@@ -8,7 +9,10 @@ import SortableHeader from './sortable_headers/header';
 interface StockReceiptsTableProps {
     stockReceipts: StockReceipt[];
     items: Item[];
+    /** Current search results for the purchase picker (not the full table). */
     purchases: Purchase[];
+    purchasesLoading: boolean;
+    onPurchaseSearch: (query: string) => void;
     loading: boolean;
     /** True until the first page has loaded — drives the skeleton. */
     tableLoading: boolean;
@@ -37,6 +41,8 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
     stockReceipts,
     items,
     purchases,
+    purchasesLoading,
+    onPurchaseSearch,
     loading,
     tableLoading,
     refreshing,
@@ -121,18 +127,19 @@ const StockReceiptsTable: React.FC<StockReceiptsTableProps> = ({
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Purchase ID (Optional)
                         </label>
-                        <select
+                        <SearchableSelect
                             value={newStockReceipt.purchase_id}
-                            onChange={(e) => handlePurchaseSelect(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        >
-                            <option value="">Select Purchase (Optional)</option>
-                            {purchases.map((purchase) => (
-                                <option key={purchase.purchase_id} value={purchase.purchase_id}>
-                                    #{purchase.purchase_id} - {purchase.item_code}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={handlePurchaseSelect}
+                            options={purchases.map((purchase) => ({
+                                value: purchase.purchase_id,
+                                label: `#${purchase.purchase_id} · ${purchase.item_code} · ${purchase.quantity}`,
+                            }))}
+                            placeholder="Select Purchase (Optional)"
+                            searchPlaceholder="Search purchase # or item code..."
+                            onSearch={onPurchaseSearch}
+                            loading={purchasesLoading}
+                            emptyText="No matching purchases"
+                        />
                     </div>
 
                     <div>

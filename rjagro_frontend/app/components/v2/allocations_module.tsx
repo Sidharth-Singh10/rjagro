@@ -7,7 +7,7 @@ import { fetchBatchAllocations } from '@/app/api/batch_allocations';
 import { fetchAllocationLinesPage, handleAddBatchAllocationLine, handleDeleteBatchAllocationLine, ALLOCATION_LINES_PAGE_SIZE } from '@/app/api/batch_allocation_lines';
 import { fetchBatches } from '@/app/api/batches';
 import { fetchItems } from '@/app/api/items';
-import { fetchStockReceipts } from '@/app/api/stock_receipts';
+import { fetchStockReceiptsPage } from '@/app/api/stock_receipts';
 import { BatchAllocationLinePayload, NewBatchAllocationLine, NewBatchRequirement } from '@/app/types/interfaces';
 import BatchAllocationsTable from '../tables/batch_allocations';
 import BatchAllocationLinesTable from '../tables/batch_allocation_line';
@@ -70,12 +70,6 @@ const AllocationsModule = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: stockReceipts = [] } = useQuery({
-        queryKey: ['stock_receipts'],
-        queryFn: () => fetchStockReceipts(),
-        staleTime: 5 * 60 * 1000,
-    });
-
     const [newRequirement, setNewRequirement] = useState<NewBatchRequirement>({
         batch_id: '',
         item_code: '',
@@ -95,6 +89,31 @@ const AllocationsModule = () => {
         qty: '',
         unit_cost: ''
     });
+
+    // ── Lot picker (on-demand, filtered to the allocation's requirement item) ──
+    const [lotSearch, setLotSearch] = useState('');
+
+    const selectedAllocation = allocations.find(
+        a => a.allocation_id === Number(newAllocationLine.allocation_id)
+    );
+    const selectedRequirement = requirements.find(
+        r => r.requirement_id === selectedAllocation?.requirement_id
+    );
+    const lotItemFilter = selectedRequirement?.item_code ?? '';
+
+    const { data: lotsData, isFetching: isLotsFetching } = useQuery({
+        queryKey: ['stock_receipts', 'picker', lotSearch, lotItemFilter],
+        queryFn: () =>
+            fetchStockReceiptsPage(1, 50, {
+                search: lotSearch || undefined,
+                itemCode: lotItemFilter || undefined,
+                hasRemaining: true,
+            }),
+        enabled: subTab === 'Lines' && showAddForm,
+        staleTime: 60 * 1000,
+    });
+
+    const lotReceipts = lotsData?.items ?? [];
 
     const onAddAllocationLine = () => {
         const finalAllocationLine: BatchAllocationLinePayload = {
@@ -168,7 +187,9 @@ const AllocationsModule = () => {
                     <BatchAllocationLinesTable
                         allocationLines={allocationLines}
                         batchAllocations={allocations}
-                        stockReceipts={stockReceipts}
+                        lots={lotReceipts}
+                        lotsLoading={isLotsFetching}
+                        onLotSearch={setLotSearch}
                         loading={loading}
                         tableLoading={isLinesPending}
                         refreshing={isLinesFetching && !isLinesPending}

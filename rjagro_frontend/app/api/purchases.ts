@@ -11,6 +11,8 @@ export const fetchPurchases = async (): Promise<Purchase[]> => {
 
 export interface PurchasesPageFilters {
     supplierId?: number;
+    /** Free-text match on purchase id or item code (for pickers). */
+    search?: string;
     /** Inclusive ISO date, YYYY-MM-DD. */
     from?: string;
     /** Inclusive ISO date, YYYY-MM-DD. */
@@ -26,6 +28,7 @@ export const fetchPurchasesPage = async (
 ): Promise<PaginatedPurchases> => {
     const params: Record<string, unknown> = { page, page_size: pageSize };
     if (filters.supplierId) params.supplier_id = filters.supplierId;
+    if (filters.search) params.search = filters.search;
     if (filters.from) params.from = filters.from;
     if (filters.to) params.to = filters.to;
     if (filters.sort) {

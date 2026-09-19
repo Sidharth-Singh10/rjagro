@@ -1,13 +1,17 @@
 import React from 'react';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import Pagination from '@/app/components/ui/pagination';
+import SearchableSelect from '@/app/components/ui/searchable_select';
 import { Inbox,  Edit, Filter, Plus, X, Save, Trash2 } from 'lucide-react';
 import { BatchAllocation, BatchAllocationLine, NewBatchAllocationLine, StockReceipt } from '@/app/types/interfaces';
 
 interface BatchAllocationLinesTableProps {
   allocationLines: BatchAllocationLine[];
   batchAllocations: BatchAllocation[];
-  stockReceipts: StockReceipt[];
+  /** Current search results for the lot picker (not the full table). */
+  lots: StockReceipt[];
+  lotsLoading: boolean;
+  onLotSearch: (query: string) => void;
   loading: boolean;
   /** True until the first page has loaded — drives the skeleton. */
   tableLoading: boolean;
@@ -29,7 +33,9 @@ interface BatchAllocationLinesTableProps {
 const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
   allocationLines,
   batchAllocations,
-  stockReceipts,
+  lots,
+  lotsLoading,
+  onLotSearch,
   loading,
   tableLoading,
   refreshing,
@@ -53,7 +59,7 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
   };
 
   const handleLotSelect = (lotId: string) => {
-    const selectedLot = stockReceipts.find(receipt => receipt.lot_id === parseInt(lotId));
+    const selectedLot = lots.find(receipt => receipt.lot_id === parseInt(lotId));
     if (selectedLot) {
       setNewAllocationLine(prev => ({
         ...prev,
@@ -104,7 +110,10 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
                 value={newAllocationLine.allocation_id}
                 onChange={(e) => setNewAllocationLine(prev => ({ 
                   ...prev, 
-                  allocation_id: e.target.value ? parseInt(e.target.value) : '' 
+                  allocation_id: e.target.value ? parseInt(e.target.value) : '',
+                  // The lot list is filtered by the allocation's requirement item.
+                  lot_id: '',
+                  unit_cost: '',
                 }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
@@ -121,18 +130,19 @@ const BatchAllocationLinesTable: React.FC<BatchAllocationLinesTableProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Stock Lot *
               </label>
-              <select
+              <SearchableSelect
                 value={newAllocationLine.lot_id}
-                onChange={(e) => handleLotSelect(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="">Select Lot</option>
-                {stockReceipts.map((receipt) => (
-                  <option key={receipt.lot_id} value={receipt.lot_id}>
-                    Lot #{receipt.lot_id} - {receipt.item_code} ({receipt.received_qty} available)
-                  </option>
-                ))}
-              </select>
+                onChange={handleLotSelect}
+                options={lots.map((receipt) => ({
+                  value: receipt.lot_id,
+                  label: `Lot #${receipt.lot_id} · ${receipt.item_code} · ${receipt.remaining_qty} left`,
+                }))}
+                placeholder="Select Lot"
+                searchPlaceholder="Search lot # or item code..."
+                onSearch={onLotSearch}
+                loading={lotsLoading}
+                emptyText="No lots with stock"
+              />
             </div>
 
             <div>
