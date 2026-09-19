@@ -17,7 +17,7 @@ use entity::{
     *,
 };
 use sea_orm::prelude::Decimal;
-use sea_orm::sea_query::{Expr, NullOrdering, Order};
+use sea_orm::sea_query::{Condition, Expr, NullOrdering, Order};
 use sea_orm::{ColumnTrait, ConnectionTrait, PaginatorTrait, QuerySelect};
 use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter};
 use sea_orm::{DbBackend, QueryOrder, Statement};
@@ -961,6 +961,20 @@ pub async fn get_stock_receipts_paginated_handler(
     if let Some(item_code) = params.item_code.as_deref() {
         query = query.filter(stock_receipts::Column::ItemCode.eq(item_code));
     }
+    if let Some(search) = params.search.as_deref() {
+        let pattern = format!("%{search}%");
+        query = query.filter(
+            Condition::any()
+                .add(stock_receipts::Column::ItemCode.like(pattern.clone()))
+                .add(Expr::cust_with_values(
+                    "CAST(lot_id AS text) ILIKE $1",
+                    vec![pattern.clone()],
+                )),
+        );
+    }
+    if params.has_remaining.unwrap_or(false) {
+        query = query.filter(stock_receipts::Column::RemainingQty.gt(Decimal::ZERO));
+    }
 
     let descending = params.dir.as_deref() != Some("asc");
     let direction = if descending { Order::Desc } else { Order::Asc };
@@ -1013,6 +1027,17 @@ pub async fn get_purchases_paginated_handler(
     let mut query = purchases::Entity::find();
     if let Some(supplier_id) = params.supplier_id {
         query = query.filter(purchases::Column::SupplierId.eq(supplier_id));
+    }
+    if let Some(search) = params.search.as_deref() {
+        let pattern = format!("%{search}%");
+        query = query.filter(
+            Condition::any()
+                .add(purchases::Column::ItemCode.like(pattern.clone()))
+                .add(Expr::cust_with_values(
+                    "CAST(purchase_id AS text) ILIKE $1",
+                    vec![pattern.clone()],
+                )),
+        );
     }
     if let Some(from) = params.from {
         query = query.filter(purchases::Column::PurchaseDate.gte(from));

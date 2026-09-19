@@ -585,6 +585,10 @@ pub struct StockReceiptsPageQuery {
     pub page: Option<u64>,
     pub page_size: Option<u64>,
     pub item_code: Option<String>,
+    /// Free-text match on lot id or item code (for pickers).
+    pub search: Option<String>,
+    /// Only lots that still have stock on hand.
+    pub has_remaining: Option<bool>,
     pub sort: Option<String>,
     pub dir: Option<String>,
 }
@@ -603,6 +607,8 @@ pub struct PurchasesPageQuery {
     pub page: Option<u64>,
     pub page_size: Option<u64>,
     pub supplier_id: Option<i32>,
+    /// Free-text match on purchase id or item code (for pickers).
+    pub search: Option<String>,
     /// Inclusive date, "YYYY-MM-DD".
     pub from: Option<NaiveDate>,
     /// Inclusive date, "YYYY-MM-DD".
