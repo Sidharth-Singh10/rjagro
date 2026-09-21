@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 
 const inputBaseClasses = "w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500/30 focus:border-green-600 outline-none transition-all";
 
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
 const readOnlyBaseClasses = "w-full px-3.5 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 font-medium cursor-not-allowed select-none";
 
 interface BatchSaleFormState extends Omit<BatchSalePayload, 'trader_id' | 'app_trader_id' | 'avg_weight' | 'rate' | 'quantity'> {
@@ -50,6 +52,7 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
         value: 0,
         payment_type: "Receivable",
         created_by: 1,
+        sale_date: todayIso(),
     };
 
     const [formState, setFormState] = useState(initialFormState);
@@ -69,6 +72,7 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
                 value: 0,
                 payment_type: "Receivable",
                 created_by: 1,
+                sale_date: todayIso(),
             });
         }
     }, [isOpen, batchId]);
@@ -122,12 +126,13 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
             value: 0,
             payment_type: "Receivable",
             created_by: 1,
+            sale_date: todayIso(),
         });
     };
 
     const handleSubmit = async () => {
         const traderSelected = formState.trader_id !== "" || formState.app_trader_id !== "";
-        if (!traderSelected || !formState.avg_weight || !formState.rate || !formState.quantity) {
+        if (!traderSelected || !formState.avg_weight || !formState.rate || !formState.quantity || !formState.sale_date) {
             alert("Please fill in all required fields");
             return;
         }
@@ -142,6 +147,7 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
             payment_type: formState.payment_type,
             created_by: formState.created_by,
             app_trader_id: formState.app_trader_id !== "" ? Number(formState.app_trader_id) : undefined,
+            sale_date: formState.sale_date,
         };
 
         await onSubmit(payload);
@@ -228,7 +234,15 @@ const AddBatchSaleModal: React.FC<AddBatchSaleModalProps> = ({
                         </select>
                     </div>
                     {/* Empty container to align grid */}
-                    <div className="hidden lg:block"></div>
+                    <div>
+                        <FieldLabel required>Sale Date</FieldLabel>
+                        <input
+                            type="date"
+                            value={formState.sale_date}
+                            onChange={(e) => setFormState((prev) => ({ ...prev, sale_date: e.target.value }))}
+                            className={inputBaseClasses}
+                        />
+                    </div>
 
 
                     <div>

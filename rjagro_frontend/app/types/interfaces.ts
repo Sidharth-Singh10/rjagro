@@ -643,6 +643,7 @@ export interface BatchSalePayload {
   payment_type: string;
   created_by: number;
   app_trader_id?: number;
+  sale_date: string;
 }
 
 export interface AppTrader {

@@ -95,6 +95,7 @@ pub async fn create_batch_sale(
         quantity: Set(payload.quantity),
         value: Set(computed_value),
         payment_type: Set(payload.payment_type),
+        sale_date: Set(payload.sale_date),
         ..Default::default()
     };
 
