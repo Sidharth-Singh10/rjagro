@@ -52,6 +52,8 @@ Unknown — needs verification.
 
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
+| idx_other_expenses_created_at | no | btree | created_at | — |
+| idx_other_expenses_expense_date | no | btree | expense_date | — |
 | other_expenses_pkey | yes | btree | id | — |
 
 ## Constraints

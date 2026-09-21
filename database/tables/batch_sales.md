@@ -42,7 +42,7 @@ Overview dashboard, batch sales tab, trader receivables, metrics snapshots
 | payment_type | payment_type | no | 'CASH'::payment_type |
 | quantity | numeric | no | — |
 | rate | numeric | no | — |
-| sale_date | date | no | '2026-01-01'::date |
+| sale_date | date | no | CURRENT_DATE |
 | trader_id | integer | no | — |
 | value | numeric | no | — |
 
@@ -64,6 +64,8 @@ Overview dashboard, batch sales tab, trader receivables, metrics snapshots
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
 | batch_sales_pkey | yes | btree | id | — |
+| idx_batch_sales_batch_id | no | btree | batch_id | — |
+| idx_batch_sales_created_at | no | btree | created_at | — |
 
 ## Constraints
 

@@ -55,6 +55,7 @@ Unknown — needs verification.
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
 | batch_allocation_lines_pkey | yes | btree | allocation_line_id | — |
+| idx_batch_allocation_lines_allocation_id | no | btree | allocation_id | — |
 | idx_batch_allocation_lines_batch_id | no | btree | batch_id | — |
 
 ## Constraints

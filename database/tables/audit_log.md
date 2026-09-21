@@ -55,6 +55,7 @@ Unknown — needs verification.
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
 | audit_log_pkey | yes | btree | audit_id | — |
+| idx_audit_log_order_id | no | btree | order_id | — |
 
 ## Constraints
 

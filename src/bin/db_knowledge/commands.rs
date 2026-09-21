@@ -1008,16 +1008,6 @@ exceed receivable sales; the traders list colors negative balances green.
 **Check:** compare per-trader sums of `batch_sales.value` and
 `trader_payments.amount`; look for rounded-up final payments.
 
-### All `batch_sales.sale_date` values are the same placeholder date
-
-**Cause:** `batch_sales.sale_date` defaults to `2026-01-01` and is not always
-set by the sale form; use `created_at` for real timing.
-
-**Evidence:** `batch_sales.sale_date` column default; Overview charts use
-`created_at`.
-
-**Check:** `SELECT sale_date, COUNT(*) FROM batch_sales GROUP BY 1 ORDER BY 2 DESC;`
-
 ## Adding a debugging note
 
 Record: symptom → what to check (ordered) → evidence → date verified.

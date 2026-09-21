@@ -61,6 +61,8 @@ account balances via `ledger_accounts`.
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
 | idx_ledger_entries_account_id | no | btree | account_id | — |
+| idx_ledger_entries_reference | no | btree | reference_table, reference_id | — |
+| idx_ledger_entries_txn_date | no | btree | txn_date | — |
 | idx_ledger_entries_txn_group_id | no | btree | txn_group_id | — |
 | ledger_entries_pkey | yes | btree | entry_id | — |
 

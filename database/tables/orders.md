@@ -65,6 +65,8 @@ Unknown — needs verification.
 
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
+| idx_orders_status_created | no | btree | status, created_at | — |
+| idx_orders_trader_created | no | btree | trader_id, created_at | — |
 | orders_inquiry_number_key | yes | btree | inquiry_number | — |
 | orders_pkey | yes | btree | order_id | — |
 

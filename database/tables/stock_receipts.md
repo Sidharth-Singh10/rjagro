@@ -54,6 +54,8 @@ Unknown — needs verification.
 
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
+| idx_stock_receipts_item_code | no | btree | item_code | — |
+| idx_stock_receipts_received_date | no | btree | received_date | — |
 | stock_receipts_pkey | yes | btree | lot_id | — |
 
 ## Constraints

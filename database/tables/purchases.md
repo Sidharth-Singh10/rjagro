@@ -58,6 +58,7 @@ Unknown — needs verification.
 
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
+| idx_purchases_purchase_date | no | btree | purchase_date | — |
 | idx_purchases_purchase_order_id | no | btree | purchase_order_id | — |
 | idx_purchases_supplier_id | no | btree | supplier_id | — |
 | purchases_pkey | yes | btree | purchase_id | — |

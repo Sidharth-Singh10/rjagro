@@ -53,6 +53,7 @@ Unknown — needs verification.
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
 | batch_allocations_pkey | yes | btree | allocation_id | — |
+| idx_batch_allocations_allocation_date | no | btree | allocation_date | — |
 
 ## Constraints
 

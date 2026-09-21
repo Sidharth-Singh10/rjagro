@@ -53,6 +53,7 @@ Unknown — needs verification.
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
 | bird_count_history_pkey | yes | btree | record_id | — |
+| idx_bird_count_history_batch_date | no | btree | batch_id, record_date | — |
 
 ## Constraints
 

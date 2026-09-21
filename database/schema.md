@@ -9,8 +9,8 @@
 - Database: `rjagro`
 - Server: PostgreSQL 16.11
 - Schemas: public
-- Tables: 38 · Columns: 299 · Indexes: 64
-- Snapshot format: 1 · Generated: 2026-09-18
+- Tables: 38 · Columns: 299 · Indexes: 81
+- Snapshot format: 1 · Generated: 2026-09-22
 <!-- END GENERATED: stats -->
 
 ## Purpose

@@ -294,6 +294,16 @@
               ],
               "predicate": null,
               "definition": "CREATE UNIQUE INDEX audit_log_pkey ON public.audit_log USING btree (audit_id)"
+            },
+            "idx_audit_log_order_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "order_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_audit_log_order_id ON public.audit_log USING btree (order_id)"
             }
           }
         },
@@ -396,6 +406,16 @@
               "predicate": null,
               "definition": "CREATE UNIQUE INDEX batch_allocation_lines_pkey ON public.batch_allocation_lines USING btree (allocation_line_id)"
             },
+            "idx_batch_allocation_lines_allocation_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "allocation_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_batch_allocation_lines_allocation_id ON public.batch_allocation_lines USING btree (allocation_id)"
+            },
             "idx_batch_allocation_lines_batch_id": {
               "unique": false,
               "primary": false,
@@ -488,6 +508,16 @@
               ],
               "predicate": null,
               "definition": "CREATE UNIQUE INDEX batch_allocations_pkey ON public.batch_allocations USING btree (allocation_id)"
+            },
+            "idx_batch_allocations_allocation_date": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "allocation_date"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_batch_allocations_allocation_date ON public.batch_allocations USING btree (allocation_date)"
             }
           }
         },
@@ -753,7 +783,7 @@
               "ordinal": 11,
               "data_type": "date",
               "nullable": false,
-              "default": "'2026-01-01'::date"
+              "default": "CURRENT_DATE"
             },
             "trader_id": {
               "ordinal": 4,
@@ -833,6 +863,26 @@
               ],
               "predicate": null,
               "definition": "CREATE UNIQUE INDEX batch_sales_pkey ON public.batch_sales USING btree (id)"
+            },
+            "idx_batch_sales_batch_id": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "batch_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_batch_sales_batch_id ON public.batch_sales USING btree (batch_id)"
+            },
+            "idx_batch_sales_created_at": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "created_at"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_batch_sales_created_at ON public.batch_sales USING btree (created_at)"
             }
           }
         },
@@ -1065,6 +1115,17 @@
               ],
               "predicate": null,
               "definition": "CREATE UNIQUE INDEX bird_count_history_pkey ON public.bird_count_history USING btree (record_id)"
+            },
+            "idx_bird_count_history_batch_date": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "batch_id",
+                "record_date"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_bird_count_history_batch_date ON public.bird_count_history USING btree (batch_id, record_date)"
             }
           }
         },
@@ -1539,6 +1600,27 @@
           "unique_constraints": {},
           "check_constraints": {},
           "indexes": {
+            "idx_inventory_movements_item_date": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "item_code",
+                "movement_date"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_inventory_movements_item_date ON public.inventory_movements USING btree (item_code, movement_date)"
+            },
+            "idx_inventory_movements_movement_date": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "movement_date"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_inventory_movements_movement_date ON public.inventory_movements USING btree (movement_date DESC)"
+            },
             "inventory_movements_pkey": {
               "unique": true,
               "primary": true,
@@ -1769,6 +1851,27 @@
               ],
               "predicate": null,
               "definition": "CREATE INDEX idx_ledger_entries_account_id ON public.ledger_entries USING btree (account_id)"
+            },
+            "idx_ledger_entries_reference": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "reference_table",
+                "reference_id"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_ledger_entries_reference ON public.ledger_entries USING btree (reference_table, reference_id)"
+            },
+            "idx_ledger_entries_txn_date": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "txn_date"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_ledger_entries_txn_date ON public.ledger_entries USING btree (txn_date DESC)"
             },
             "idx_ledger_entries_txn_group_id": {
               "unique": false,
@@ -2285,6 +2388,28 @@
           },
           "check_constraints": {},
           "indexes": {
+            "idx_orders_status_created": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "status",
+                "created_at"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_orders_status_created ON public.orders USING btree (status, created_at)"
+            },
+            "idx_orders_trader_created": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "trader_id",
+                "created_at"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_orders_trader_created ON public.orders USING btree (trader_id, created_at DESC)"
+            },
             "orders_inquiry_number_key": {
               "unique": true,
               "primary": false,
@@ -2372,6 +2497,26 @@
           "unique_constraints": {},
           "check_constraints": {},
           "indexes": {
+            "idx_other_expenses_created_at": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "created_at"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_other_expenses_created_at ON public.other_expenses USING btree (created_at DESC)"
+            },
+            "idx_other_expenses_expense_date": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "expense_date"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_other_expenses_expense_date ON public.other_expenses USING btree (expense_date)"
+            },
             "other_expenses_pkey": {
               "unique": true,
               "primary": true,
@@ -2670,6 +2815,16 @@
           "unique_constraints": {},
           "check_constraints": {},
           "indexes": {
+            "idx_purchases_purchase_date": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "purchase_date"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_purchases_purchase_date ON public.purchases USING btree (purchase_date DESC)"
+            },
             "idx_purchases_purchase_order_id": {
               "unique": false,
               "primary": false,
@@ -2819,6 +2974,26 @@
           "unique_constraints": {},
           "check_constraints": {},
           "indexes": {
+            "idx_stock_receipts_item_code": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "item_code"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_stock_receipts_item_code ON public.stock_receipts USING btree (item_code)"
+            },
+            "idx_stock_receipts_received_date": {
+              "unique": false,
+              "primary": false,
+              "method": "btree",
+              "columns": [
+                "received_date"
+              ],
+              "predicate": null,
+              "definition": "CREATE INDEX idx_stock_receipts_received_date ON public.stock_receipts USING btree (received_date DESC)"
+            },
             "stock_receipts_pkey": {
               "unique": true,
               "primary": true,

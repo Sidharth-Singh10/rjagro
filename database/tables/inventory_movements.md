@@ -51,6 +51,8 @@ Unknown — needs verification.
 
 | Index | Unique | Method | Columns | Predicate |
 |---|---|---|---|---|
+| idx_inventory_movements_item_date | no | btree | item_code, movement_date | — |
+| idx_inventory_movements_movement_date | no | btree | movement_date | — |
 | inventory_movements_pkey | yes | btree | movement_id | — |
 
 ## Constraints
