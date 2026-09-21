@@ -180,7 +180,7 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                         <tr>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
                             <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
@@ -199,10 +199,10 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                                 </td>
                             </tr>
                         ) : (
-                            expenses.map((expense, idx) => (
+                            expenses.map((expense) => (
                                 <tr key={expense.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-4 py-3 text-sm text-gray-500">
-                                        {(page - 1) * pageSize + idx + 1}
+                                        {expense.id}
                                     </td>
                                     <td className="px-4 py-3 text-sm font-medium text-gray-800">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
