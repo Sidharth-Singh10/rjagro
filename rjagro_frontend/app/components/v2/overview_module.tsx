@@ -993,6 +993,8 @@ const OverviewModule = () => {
             qty: f.qty,
             unit: f.unit ?? '',
             kg: f.kg,
+            returnedQty: f.returned_qty ?? 0,
+            returnedKg: f.returned_kg ?? 0,
         }));
         const salesBreakdown = sales.map(s => {
             const qty = n(s.quantity);

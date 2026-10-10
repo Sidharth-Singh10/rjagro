@@ -1,5 +1,9 @@
 import { toast } from "react-toastify";
-import { StockReturn, StockReturnPayload } from "../types/interfaces";
+import {
+    ReturnableAllocationLine,
+    StockReturn,
+    StockReturnPayload,
+} from "../types/interfaces";
 import api from "../utils/api";
 
 export const fetchStockReturnsByBatch = async (batchId: number): Promise<StockReturn[]> => {
@@ -50,11 +54,20 @@ export const handleAddStockReturn = async (
     try {
         await api.post("/insert/stock_returns", payload);
 
-        queryClient.invalidateQueries(["stock_returns"]);
+        // The batch page keys its returns query as ["stock_returns_new", batchId],
+        // so invalidate every stock-return query, not just the bare root key.
+        queryClient.invalidateQueries({
+            predicate: (query: any) =>
+                Array.isArray(query.queryKey) &&
+                String(query.queryKey[0]).startsWith("stock_returns"),
+        });
         queryClient.invalidateQueries(["inventory"]);
         queryClient.invalidateQueries(["batch_allocations"]);
         queryClient.invalidateQueries(["batches"]);
+        queryClient.invalidateQueries(["batch_new"]);
         queryClient.invalidateQueries(["ledger_entries"]);
+        queryClient.invalidateQueries(["allocation_fcr"]);
+        queryClient.invalidateQueries(["inventory_feed_summary"]);
 
         toast.success("Stock return processed successfully!");
 
@@ -71,15 +84,17 @@ export const handleAddStockReturn = async (
     }
 };
 
-interface StockReturnCostResponse {
-    allocation_line_id: number;
-    unit_cost: number;
-}
-
-export const fetchStockReturnUnitCost = async (
+/**
+ * Lists the allocation lines of a batch/item that still have quantity left to
+ * return. Returns are always priced from these lines by the server, so the
+ * form lets the user pick a line (lot) rather than assuming the latest one.
+ */
+export const fetchReturnableAllocationLines = async (
     batchId: number,
     itemCode: string
-): Promise<StockReturnCostResponse> => {
-    const response = await api.get(`getbyid/get_stock_return_unit_cost/bid/${batchId}/${encodeURIComponent(itemCode)}`);
-    return response.data;
+): Promise<ReturnableAllocationLine[]> => {
+    const response = await api.get(
+        `getbyid/returnable_lines/${batchId}/${encodeURIComponent(itemCode)}`
+    );
+    return response.data ?? [];
 };

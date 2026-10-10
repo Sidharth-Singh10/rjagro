@@ -86,7 +86,14 @@ export const FCRDetailModal = memo(({ isOpen, onClose, data }: Props) => {
                                 <tbody>
                                     {data.feedBreakdown.map((f, i) => (
                                         <tr key={i} className="border-t border-gray-50">
-                                            <td className="px-3 py-2 text-gray-700">{f.itemName}</td>
+                                            <td className="px-3 py-2 text-gray-700">
+                                                {f.itemName}
+                                                {(f.returnedKg ?? 0) > 0 && (
+                                                    <div className="text-[11px] text-amber-600">
+                                                        net of {(f.returnedKg ?? 0).toFixed(1)} kg returned
+                                                    </div>
+                                                )}
+                                            </td>
                                             <td className="px-3 py-2 text-right text-gray-600">{f.qty}</td>
                                             <td className="px-3 py-2 text-right text-gray-600">{f.unit}</td>
                                             <td className="px-3 py-2 text-right font-medium text-gray-800">{f.kg.toFixed(1)}</td>

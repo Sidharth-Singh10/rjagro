@@ -442,6 +442,8 @@ export interface BatchFeedLine {
   qty: number;
   unit?: string;
   kg: number;
+  returned_qty?: number;
+  returned_kg?: number;
 }
 
 export interface StockReceiptPayload {
@@ -704,6 +706,8 @@ export interface StockReturn {
   return_value: number;
   return_date: string;
   created_at: string;
+  item_code: string;
+  lot_id: number;
 }
 
 export interface StockReturnPayload {
@@ -713,6 +717,16 @@ export interface StockReturnPayload {
   unit_cost: number;
   return_value: number;
   return_date: string;
+}
+
+/** One allocation line that still has quantity available to return. */
+export interface ReturnableAllocationLine {
+  allocation_line_id: number;
+  lot_id: number;
+  allocated_qty: number;
+  returned_qty: number;
+  returnable_qty: number;
+  unit_cost: number;
 }
 
 export interface SupplierPayable {

@@ -66,5 +66,7 @@ export const fetchBatchFeedLines = async (batchId: number): Promise<BatchFeedLin
         qty: toNumber(row.qty),
         unit: row.unit ?? undefined,
         kg: toNumber(row.kg),
+        returned_qty: toNumber(row.returned_qty),
+        returned_kg: toNumber(row.returned_kg),
     }));
 };

@@ -259,6 +259,7 @@ export default function BatchDetailsPage() {
                             <StockReturnsTable
                                 stockReturns={stockReturns}
                                 items={items}
+                                allocations={allocations}
                                 loading={isStockReturnsLoading}
                                 batchId={batchId}
                                 isAdmin={isAdmin}

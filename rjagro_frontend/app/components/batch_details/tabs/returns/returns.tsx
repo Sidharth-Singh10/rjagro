@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Package, Plus, FileText } from "lucide-react";
-import { Item, StockReturn, StockReturnPayload } from '@/app/types/interfaces';
+import { AllocatedRequirement, Item, StockReturn, StockReturnPayload } from '@/app/types/interfaces';
 import { useTableSorting } from '@/app/hooks/sorting';
 import { handleAddStockReturn } from '@/app/api/stock_returns';
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import AddStockReturnModal from './add';
 interface StockReturnsTableProps {
     stockReturns: StockReturn[];
     items: Item[];
+    allocations?: AllocatedRequirement[];
     loading: boolean;
     batchId: number;
     isAdmin?: boolean;
@@ -18,6 +19,7 @@ interface StockReturnsTableProps {
 const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
     stockReturns,
     items,
+    allocations,
     loading,
     batchId,
     isAdmin = false,
@@ -27,6 +29,13 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
         { key: 'return_date', direction: 'desc' },
         (item: any, key: string) => item[key]
     );
+
+    // Only items that actually have stock allocated to this batch can be returned.
+    const returnableItems = useMemo(() => {
+        if (!allocations || allocations.length === 0) return items;
+        const allocatedCodes = new Set(allocations.map(a => a.item_code));
+        return items.filter(item => allocatedCodes.has(item.item_code));
+    }, [items, allocations]);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,13 +58,15 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
 
             <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/50 rounded-t-lg">
                 <h3 className="font-semibold text-gray-700">Stock Returns</h3>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium shadow-sm"
-                >
-                    <Plus size={16} />
-                    Add Return
-                </button>
+                {isAdmin && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium shadow-sm"
+                    >
+                        <Plus size={16} />
+                        Add Return
+                    </button>
+                )}
             </div>
 
             <div className="overflow-x-auto">
@@ -70,8 +81,8 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                                 Date
                             </SortableHeader>
 
-                            <SortableHeader columnKey="allocation_line_id" requestSort={requestSort} getSortIcon={getSortIcon} isSortable={true}>
-                                Allocation Ref
+                            <SortableHeader columnKey="item_code" requestSort={requestSort} getSortIcon={getSortIcon} isSortable={false}>
+                                Item
                             </SortableHeader>
 
                             <SortableHeader columnKey="return_qty" requestSort={requestSort} getSortIcon={getSortIcon} isSortable={true}>
@@ -121,10 +132,15 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                                         </div>
                                     </td>
 
-                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-700">
                                         <div className="flex items-center gap-2">
                                             <FileText size={16} className="text-gray-400" />
-                                            #{row.allocation_line_id}
+                                            <div>
+                                                <div className="font-medium text-gray-800">{row.item_code}</div>
+                                                <div className="text-xs text-gray-400">
+                                                    Line #{row.allocation_line_id} · Lot #{row.lot_id}
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
 
@@ -183,7 +199,7 @@ const StockReturnsTable: React.FC<StockReturnsTableProps> = ({
                 onSubmit={handleSaveRecord}
                 isSubmitting={isSubmitting}
                 batchId={batchId}
-                items={items}
+                items={returnableItems}
             />
         </div>
     );

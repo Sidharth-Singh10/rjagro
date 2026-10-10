@@ -11,6 +11,8 @@ export interface FeedBreakdownItem {
     qty: number;
     unit: string;
     kg: number;
+    returnedQty?: number;
+    returnedKg?: number;
 }
 
 export interface SalesBreakdownItem {
