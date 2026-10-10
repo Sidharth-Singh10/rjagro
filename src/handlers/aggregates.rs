@@ -59,10 +59,19 @@ pub async fn feed_summary_handler(
                     batch_allocation_lines bal
                     JOIN batch_allocations ba ON ba.allocation_id = bal.allocation_id
                     JOIN feed_lots fl ON fl.lot_id = bal.lot_id
+            ),
+            feed_returns AS (
+                SELECT
+                    srt.return_qty
+                FROM
+                    stock_returns srt
+                    JOIN batch_allocation_lines bal ON bal.allocation_line_id = srt.allocation_line_id
+                    JOIN feed_lots fl ON fl.lot_id = bal.lot_id
             )
             SELECT
                 COALESCE((SELECT SUM(remaining_qty) FROM feed_lots), 0) AS feed_on_hand,
-                COALESCE((SELECT SUM(qty) FROM feed_usage), 0) AS consumed_qty,
+                COALESCE((SELECT SUM(qty) FROM feed_usage), 0)
+                    - COALESCE((SELECT SUM(return_qty) FROM feed_returns), 0) AS consumed_qty,
                 (SELECT MIN(allocation_date) FROM feed_usage) AS first_date,
                 (SELECT MAX(allocation_date) FROM feed_usage) AS last_date
             "#
@@ -144,17 +153,36 @@ pub async fn allocation_category_totals_handler(
         DbBackend::Postgres,
         r#"
         SELECT
-            to_char(ba.allocation_date, 'YYYY-MM') AS month,
-            CAST(i.item_category AS text) AS category,
-            COALESCE(SUM(bal.line_value), 0) AS total
-        FROM
-            batch_allocation_lines bal
-            JOIN batch_allocations ba ON ba.allocation_id = bal.allocation_id
-            JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
-            JOIN items i ON i.item_code = sr.item_code
-        WHERE
-            ba.allocation_date >= $1
-            AND ba.allocation_date <= $2
+            month,
+            category,
+            COALESCE(SUM(signed_total), 0) AS total
+        FROM (
+            SELECT
+                to_char(ba.allocation_date, 'YYYY-MM') AS month,
+                CAST(i.item_category AS text) AS category,
+                bal.line_value AS signed_total
+            FROM
+                batch_allocation_lines bal
+                JOIN batch_allocations ba ON ba.allocation_id = bal.allocation_id
+                JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
+                JOIN items i ON i.item_code = sr.item_code
+            WHERE
+                ba.allocation_date >= $1
+                AND ba.allocation_date <= $2
+            UNION ALL
+            SELECT
+                to_char(srt.return_date, 'YYYY-MM') AS month,
+                CAST(i.item_category AS text) AS category,
+                -srt.return_value AS signed_total
+            FROM
+                stock_returns srt
+                JOIN batch_allocation_lines bal ON bal.allocation_line_id = srt.allocation_line_id
+                JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
+                JOIN items i ON i.item_code = sr.item_code
+            WHERE
+                srt.return_date >= $1
+                AND srt.return_date <= $2
+        ) merged
         GROUP BY
             1, 2
         ORDER BY
@@ -204,18 +232,38 @@ pub async fn allocation_batch_costs_handler(
         DbBackend::Postgres,
         r#"
         SELECT
-            bal.batch_id,
-            CAST(i.item_category AS text) AS category,
-            COALESCE(SUM(bal.line_value), 0) AS total
-        FROM
-            batch_allocation_lines bal
-            JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
-            JOIN items i ON i.item_code = sr.item_code
-        WHERE
-            bal.batch_id IS NOT NULL
-            AND bal.batch_id IN (
-                SELECT batch_id FROM batches ORDER BY batch_id DESC LIMIT $1
-            )
+            batch_id,
+            category,
+            COALESCE(SUM(signed_total), 0) AS total
+        FROM (
+            SELECT
+                bal.batch_id,
+                CAST(i.item_category AS text) AS category,
+                bal.line_value AS signed_total
+            FROM
+                batch_allocation_lines bal
+                JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
+                JOIN items i ON i.item_code = sr.item_code
+            WHERE
+                bal.batch_id IS NOT NULL
+                AND bal.batch_id IN (
+                    SELECT batch_id FROM batches ORDER BY batch_id DESC LIMIT $1
+                )
+            UNION ALL
+            SELECT
+                srt.batch_id,
+                CAST(i.item_category AS text) AS category,
+                -srt.return_value AS signed_total
+            FROM
+                stock_returns srt
+                JOIN batch_allocation_lines bal ON bal.allocation_line_id = srt.allocation_line_id
+                JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
+                JOIN items i ON i.item_code = sr.item_code
+            WHERE
+                srt.batch_id IN (
+                    SELECT batch_id FROM batches ORDER BY batch_id DESC LIMIT $1
+                )
+        ) merged
         GROUP BY
             1, 2
         ORDER BY
@@ -280,6 +328,35 @@ pub async fn allocation_fcr_handler(
             GROUP BY
                 bal.batch_id
         ),
+        feed_returns AS (
+            SELECT
+                bal.batch_id,
+                SUM(
+                    CASE
+                        WHEN LOWER(i.unit) = 'bags' THEN srt.return_qty * 50
+                        ELSE srt.return_qty
+                    END
+                ) AS returned_kg
+            FROM
+                stock_returns srt
+                JOIN batch_allocation_lines bal ON bal.allocation_line_id = srt.allocation_line_id
+                JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
+                JOIN items i ON i.item_code = sr.item_code
+            WHERE
+                i.item_category = 'feed'
+                AND UPPER(i.item_name) <> 'FEED DELIVERY'
+                AND bal.batch_id IS NOT NULL
+            GROUP BY
+                bal.batch_id
+        ),
+        net_feed AS (
+            SELECT
+                f.batch_id,
+                f.feed_kg - COALESCE(r.returned_kg, 0) AS feed_kg
+            FROM
+                feed f
+                LEFT JOIN feed_returns r ON r.batch_id = f.batch_id
+        ),
         weight AS (
             SELECT
                 batch_id,
@@ -295,7 +372,7 @@ pub async fn allocation_fcr_handler(
             w.weight_kg,
             ROUND(f.feed_kg / w.weight_kg, 2) AS fcr
         FROM
-            feed f
+            net_feed f
             JOIN weight w ON w.batch_id = f.batch_id
         WHERE
             f.feed_kg > 0
@@ -342,20 +419,45 @@ pub async fn batch_feed_lines_handler(
         SELECT
             i.item_code,
             i.item_name,
-            bal.qty,
+            SUM(bal.qty) - COALESCE(MAX(rt.returned_qty), 0) AS qty,
             i.unit,
-            CASE
-                WHEN LOWER(i.unit) = 'bags' THEN bal.qty * 50
-                ELSE bal.qty
-            END AS kg
+            SUM(
+                CASE
+                    WHEN LOWER(i.unit) = 'bags' THEN bal.qty * 50
+                    ELSE bal.qty
+                END
+            ) - COALESCE(MAX(rt.returned_kg), 0) AS kg,
+            COALESCE(MAX(rt.returned_qty), 0) AS returned_qty,
+            COALESCE(MAX(rt.returned_kg), 0) AS returned_kg
         FROM
             batch_allocation_lines bal
             JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
             JOIN items i ON i.item_code = sr.item_code
+            LEFT JOIN (
+                SELECT
+                    bal2.batch_id,
+                    sr2.item_code,
+                    SUM(srt.return_qty) AS returned_qty,
+                    SUM(
+                        CASE
+                            WHEN LOWER(i2.unit) = 'bags' THEN srt.return_qty * 50
+                            ELSE srt.return_qty
+                        END
+                    ) AS returned_kg
+                FROM
+                    stock_returns srt
+                    JOIN batch_allocation_lines bal2 ON bal2.allocation_line_id = srt.allocation_line_id
+                    JOIN stock_receipts sr2 ON sr2.lot_id = bal2.lot_id
+                    JOIN items i2 ON i2.item_code = sr2.item_code
+                GROUP BY
+                    bal2.batch_id, sr2.item_code
+            ) rt ON rt.batch_id = bal.batch_id AND rt.item_code = i.item_code
         WHERE
             bal.batch_id = $1
             AND i.item_category = 'feed'
             AND UPPER(i.item_name) <> 'FEED DELIVERY'
+        GROUP BY
+            i.item_code, i.item_name, i.unit
         ORDER BY
             i.item_name
         "#,
@@ -378,6 +480,12 @@ pub async fn batch_feed_lines_handler(
         let qty: Decimal = row.try_get("", "qty").map_err(decode_err("feed line qty"))?;
         let unit: Option<String> = row.try_get("", "unit").map_err(decode_err("feed line unit"))?;
         let kg: Decimal = row.try_get("", "kg").map_err(decode_err("feed line kg"))?;
+        let returned_qty: Decimal = row
+            .try_get("", "returned_qty")
+            .map_err(decode_err("feed line returned qty"))?;
+        let returned_kg: Decimal = row
+            .try_get("", "returned_kg")
+            .map_err(decode_err("feed line returned kg"))?;
 
         lines.push(BatchFeedLine {
             item_code,
@@ -385,6 +493,8 @@ pub async fn batch_feed_lines_handler(
             qty,
             unit,
             kg,
+            returned_qty,
+            returned_kg,
         });
     }
 

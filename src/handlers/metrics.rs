@@ -284,23 +284,43 @@ async fn feed_kg_by_period(
         DbBackend::Postgres,
         r#"
         SELECT
-            CASE
-                WHEN $1::text = 'month' THEN to_char(ba.allocation_date, 'YYYY-MM')
-                ELSE to_char(ba.allocation_date, 'YYYY-MM-DD')
-            END AS period_key,
-            SUM(
+            period_key,
+            SUM(kg) AS feed_kg
+        FROM (
+            SELECT
+                CASE
+                    WHEN $1::text = 'month' THEN to_char(ba.allocation_date, 'YYYY-MM')
+                    ELSE to_char(ba.allocation_date, 'YYYY-MM-DD')
+                END AS period_key,
                 CASE
                     WHEN LOWER(i.unit) = 'bags' THEN bal.qty * 50
                     ELSE bal.qty
-                END
-            ) AS feed_kg
-        FROM batch_allocation_lines bal
-            JOIN batch_allocations ba ON ba.allocation_id = bal.allocation_id
-            JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
-            JOIN items i ON i.item_code = sr.item_code
-        WHERE i.item_category = 'feed'
-            AND UPPER(i.item_name) <> 'FEED DELIVERY'
-            AND ba.allocation_date BETWEEN $2 AND $3
+                END AS kg
+            FROM batch_allocation_lines bal
+                JOIN batch_allocations ba ON ba.allocation_id = bal.allocation_id
+                JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
+                JOIN items i ON i.item_code = sr.item_code
+            WHERE i.item_category = 'feed'
+                AND UPPER(i.item_name) <> 'FEED DELIVERY'
+                AND ba.allocation_date BETWEEN $2 AND $3
+            UNION ALL
+            SELECT
+                CASE
+                    WHEN $1::text = 'month' THEN to_char(srt.return_date, 'YYYY-MM')
+                    ELSE to_char(srt.return_date, 'YYYY-MM-DD')
+                END AS period_key,
+                -(CASE
+                    WHEN LOWER(i.unit) = 'bags' THEN srt.return_qty * 50
+                    ELSE srt.return_qty
+                END) AS kg
+            FROM stock_returns srt
+                JOIN batch_allocation_lines bal ON bal.allocation_line_id = srt.allocation_line_id
+                JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
+                JOIN items i ON i.item_code = sr.item_code
+            WHERE i.item_category = 'feed'
+                AND UPPER(i.item_name) <> 'FEED DELIVERY'
+                AND srt.return_date BETWEEN $2 AND $3
+        ) merged
         GROUP BY 1
         "#,
         vec![period_type.into(), start.into(), end.into()],
