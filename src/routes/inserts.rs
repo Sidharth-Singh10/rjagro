@@ -36,6 +36,7 @@ pub fn insert_routes() -> Router<DatabaseConnection> {
         .route("/ledger_account", post(create_ledger_account))
         .route("/batch_closure_summary", post(create_batch_closure_summary))
         .route("/batch_sales", post(create_batch_sale))
+        .route("/stock_returns", post(create_stock_return))
         .route("/ledger_entry", post(create_ledger_entry))
         .route("/metrics/refresh", post(refresh_metrics_handler))
         .layer(from_fn_with_state(
@@ -55,7 +56,6 @@ pub fn insert_routes() -> Router<DatabaseConnection> {
         .route("/bird_count_history", post(create_bird_count_history))
         .route("/bird_sell_history", post(create_bird_sell_history))
         .route("/farmer_commission", post(create_farmer_commission))
-        .route("/stock_returns", post(create_stock_return))
         .route("/supplier_payment", post(create_supplier_payment))
         .route("/trader_payment", post(create_trader_payment))
         .route("/loan", post(create_loan))

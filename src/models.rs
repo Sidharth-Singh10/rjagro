@@ -348,7 +348,11 @@ pub struct CreateStockReturn {
     pub allocation_line_id: i32,
     pub batch_id: i32,
     pub return_qty: Decimal,
+    #[allow(dead_code)] // accepted for API compatibility; server prices the return
     pub unit_cost: Decimal,
+    /// Accepted for API compatibility but ignored: the server always computes
+    /// `return_qty * allocation line unit_cost`.
+    #[allow(dead_code)] // accepted for API compatibility; server computes the value
     pub return_value: Decimal,
     pub return_date: chrono::NaiveDate,
 }
@@ -697,6 +701,34 @@ pub struct BatchFeedLine {
     pub qty: Decimal,
     pub unit: Option<String>,
     pub kg: Decimal,
+    pub returned_qty: Decimal,
+    pub returned_kg: Decimal,
+}
+
+/// One allocation line that still has stock available to return.
+#[derive(Debug, Serialize, FromQueryResult)]
+pub struct ReturnableAllocationLine {
+    pub allocation_line_id: i32,
+    pub lot_id: i32,
+    pub allocated_qty: Decimal,
+    pub returned_qty: Decimal,
+    pub returnable_qty: Decimal,
+    pub unit_cost: Decimal,
+}
+
+/// Stock return enriched with the item and lot it came from.
+#[derive(Debug, Serialize, FromQueryResult)]
+pub struct StockReturnView {
+    pub return_id: i32,
+    pub allocation_line_id: i32,
+    pub batch_id: i32,
+    pub return_qty: Decimal,
+    pub unit_cost: Decimal,
+    pub return_value: Decimal,
+    pub return_date: NaiveDate,
+    pub created_at: DateTimeWithTimeZone,
+    pub item_code: String,
+    pub lot_id: i32,
 }
 
 #[derive(Debug, Deserialize)]

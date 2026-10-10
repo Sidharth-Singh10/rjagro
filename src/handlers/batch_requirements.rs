@@ -1,12 +1,12 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Extension, Path, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
 use entity::{
-    batch_allocation_lines, batch_allocations, batches, bird_count_history, items, ledger_accounts,
-    ledger_entries,
+    batch_allocation_lines, batch_allocations, batch_closure_summary, batches, bird_count_history,
+    items, ledger_accounts, ledger_entries,
     sea_orm_active_enums::{ItemCategory, RequirementStatus},
     stock_receipts, stock_returns,
 };
@@ -20,6 +20,8 @@ use sea_orm::{
 use sea_orm::{DatabaseTransaction, IntoActiveModel, TransactionTrait};
 use uuid::Uuid;
 
+use crate::handlers::batch_sales::compute_total_expenses;
+use crate::handlers::purchases::update_account_balance;
 use crate::models::{ApprovePayload, CreateStockReturn, ResponseMessage};
 
 pub async fn decline_batch_requirement_handler(
@@ -468,12 +470,15 @@ async fn approve_and_allocate(
 
 pub async fn create_stock_return(
     State(db): State<DatabaseConnection>,
+    Extension(sub): Extension<String>,
     Json(payload): Json<CreateStockReturn>,
 ) -> impl IntoResponse {
+    // Ledger entries are attributed to the authenticated user.
+    let created_by = sub.parse::<i32>().unwrap_or(1);
     // Start transaction
     match db.begin().await {
         Ok(txn) => {
-            let result = process_stock_return(payload, &txn).await;
+            let result = process_stock_return(payload, created_by, &txn).await;
 
             match result {
                 Ok(msg) => {
@@ -485,7 +490,11 @@ pub async fn create_stock_return(
                 }
                 Err(e) => {
                     eprintln!("Transaction failed: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                    (
+                        StatusCode::BAD_REQUEST,
+                        Json(ResponseMessage { message: e }),
+                    )
+                        .into_response()
                 }
             }
         }
@@ -498,6 +507,7 @@ pub async fn create_stock_return(
 
 async fn process_stock_return(
     payload: CreateStockReturn,
+    created_by: i32,
     txn: &DatabaseTransaction,
 ) -> Result<String, String> {
     // 1. Fetch the allocation line to verify and get details
@@ -507,13 +517,48 @@ async fn process_stock_return(
         .map_err(|e| format!("Failed to fetch allocation line: {}", e))?
         .ok_or_else(|| format!("Allocation line {} not found", payload.allocation_line_id))?;
 
-    // Validate return quantity doesn't exceed allocated quantity
-    if payload.return_qty > allocation_line.qty {
+    if payload.return_qty <= Decimal::ZERO {
+        return Err("Return quantity must be greater than zero".to_string());
+    }
+
+    // The return must be recorded against the batch that owns the allocation.
+    if let Some(line_batch_id) = allocation_line.batch_id {
+        if line_batch_id != payload.batch_id {
+            return Err(format!(
+                "Allocation line {} belongs to batch {}, not batch {}",
+                payload.allocation_line_id, line_batch_id, payload.batch_id
+            ));
+        }
+    }
+
+    // Validate against the *remaining* allocated quantity: earlier returns on
+    // the same allocation line count against the cap, so a line can never be
+    // returned more than it was allocated.
+    let already_returned: Decimal = stock_returns::Entity::find()
+        .filter(stock_returns::Column::AllocationLineId.eq(payload.allocation_line_id))
+        .all(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch existing returns: {}", e))?
+        .iter()
+        .map(|existing| existing.return_qty)
+        .sum();
+
+    let returnable_qty = allocation_line.qty - already_returned;
+    if payload.return_qty > returnable_qty {
         return Err(format!(
-            "Return quantity {} exceeds allocated quantity {}",
-            payload.return_qty, allocation_line.qty
+            "Return quantity {} exceeds returnable quantity {} (allocated {}, already returned {}) for allocation line {}",
+            payload.return_qty,
+            returnable_qty,
+            allocation_line.qty,
+            already_returned,
+            payload.allocation_line_id
         ));
     }
+
+    // Cost always comes from the allocation line (the lot it was allocated
+    // from), never from the client payload.
+    let unit_cost = allocation_line.unit_cost;
+    let computed_return_value = payload.return_qty * unit_cost;
 
     // 2. Fetch the allocation to get item details
     let allocation = batch_allocations::Entity::find_by_id(allocation_line.allocation_id)
@@ -536,14 +581,13 @@ async fn process_stock_return(
 
     let item_code = requirement.item_code.clone();
 
-    // 3. Insert stock return record
-    let computed_return_value = payload.return_qty * payload.unit_cost;
+    // 3. Insert stock return record (value computed server-side from the line)
     let stock_return = stock_returns::ActiveModel {
         return_id: Default::default(),
         allocation_line_id: Set(payload.allocation_line_id),
         batch_id: Set(payload.batch_id),
         return_qty: Set(payload.return_qty),
-        unit_cost: Set(payload.unit_cost),
+        unit_cost: Set(unit_cost),
         return_value: Set(computed_return_value),
         return_date: Set(payload.return_date),
         created_at: Set(chrono::Utc::now().into()),
@@ -667,7 +711,7 @@ async fn process_stock_return(
     let debit_entry = ledger_entries::ActiveModel {
         entry_id: Default::default(),
         account_id: Set(asset_account_id),
-        debit: Set(Some(payload.return_value)),
+        debit: Set(Some(computed_return_value)),
         credit: Set(None),
         txn_date: Set(chrono::Utc::now().date_naive()),
         reference_table: Set(Some("stock_returns".into())),
@@ -678,7 +722,7 @@ async fn process_stock_return(
         txn_group_id: Set(txn_group_id),
         reference_id: Set(Some(return_model.return_id)),
         created_at: Set(chrono::Utc::now().into()),
-        created_by: Set(Some(1)),
+        created_by: Set(Some(created_by)),
         ..Default::default()
     };
 
@@ -692,7 +736,7 @@ async fn process_stock_return(
         entry_id: Default::default(),
         account_id: Set(expense_account_id),
         debit: Set(None),
-        credit: Set(Some(payload.return_value)),
+        credit: Set(Some(computed_return_value)),
         txn_date: Set(chrono::Utc::now().date_naive()),
         reference_table: Set(Some("stock_returns".into())),
         narration: Set(Some(format!(
@@ -702,7 +746,7 @@ async fn process_stock_return(
         txn_group_id: Set(txn_group_id),
         reference_id: Set(Some(return_model.return_id)),
         created_at: Set(chrono::Utc::now().into()),
-        created_by: Set(Some(1)),
+        created_by: Set(Some(created_by)),
         ..Default::default()
     };
 
@@ -719,7 +763,7 @@ async fn process_stock_return(
     {
         let mut asset_active: ledger_accounts::ActiveModel = asset_account.into();
         let current_balance = asset_active.current_balance.take().unwrap_or_default();
-        asset_active.current_balance = Set(current_balance + payload.return_value);
+        asset_active.current_balance = Set(current_balance + computed_return_value);
 
         asset_active
             .update(txn)
@@ -734,7 +778,7 @@ async fn process_stock_return(
     {
         let mut expense_active: ledger_accounts::ActiveModel = expense_account.into();
         let current_balance = expense_active.current_balance.take().unwrap_or_default();
-        expense_active.current_balance = Set(current_balance - payload.return_value);
+        expense_active.current_balance = Set(current_balance - computed_return_value);
 
         expense_active
             .update(txn)
@@ -742,8 +786,201 @@ async fn process_stock_return(
             .map_err(|e| format!("Failed to update expense account balance: {}", e))?;
     }
 
+    // 11. Keep the batch closure summary in step with the return, so a return
+    // recorded after the batch closed (or after the last sale) does not leave
+    // a stale gross profit behind.
+    refresh_batch_closure_summary(payload.batch_id, txn).await?;
+
     Ok(format!(
         "Stock return {} created successfully. Inventory restored, ledger entries reversed, and movements logged.",
         return_model.return_id
+    ))
+}
+
+/// Recomputes `batch_closure_summary.gross_profit` from the source tables for
+/// the given batch, if a summary row already exists. Returns are recorded long
+/// after allocation or sale events, so the stored profit would otherwise go
+/// stale until the next sale.
+async fn refresh_batch_closure_summary(
+    batch_id: i32,
+    txn: &DatabaseTransaction,
+) -> Result<(), String> {
+    if let Some(summary) = batch_closure_summary::Entity::find()
+        .filter(batch_closure_summary::Column::BatchId.eq(batch_id))
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch batch closure summary: {}", e))?
+    {
+        let total_expenses = compute_total_expenses(txn, batch_id)
+            .await
+            .map_err(|e| format!("Failed to recompute batch expenses: {}", e))?;
+        let revenue = summary.revenue;
+        let mut active: batch_closure_summary::ActiveModel = summary.into();
+        active.gross_profit = Set(revenue - total_expenses);
+        active
+            .update(txn)
+            .await
+            .map_err(|e| format!("Failed to refresh batch closure summary: {}", e))?;
+    }
+    Ok(())
+}
+
+/// Reverses a stock return: removes the ledger entries, inventory movement and
+/// row, takes the quantity back out of inventory and the restored lot, and
+/// refreshes the batch closure summary.
+pub async fn delete_stock_return_handler(
+    State(db): State<DatabaseConnection>,
+    Path(return_id): Path<i32>,
+) -> impl IntoResponse {
+    match db.begin().await {
+        Ok(txn) => {
+            let result = process_delete_stock_return(return_id, &txn).await;
+
+            match result {
+                Ok(msg) => {
+                    if let Err(e) = txn.commit().await {
+                        eprintln!("Transaction commit failed: {}", e);
+                        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                    }
+                    (StatusCode::OK, Json(ResponseMessage { message: msg })).into_response()
+                }
+                Err(e) => {
+                    eprintln!("Transaction failed: {}", e);
+                    (
+                        StatusCode::BAD_REQUEST,
+                        Json(ResponseMessage { message: e }),
+                    )
+                        .into_response()
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to start transaction: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+async fn process_delete_stock_return(
+    return_id: i32,
+    txn: &DatabaseTransaction,
+) -> Result<String, String> {
+    // 1. Fetch the return and its allocation line
+    let stock_return = stock_returns::Entity::find_by_id(return_id)
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch stock return: {}", e))?
+        .ok_or_else(|| format!("Stock return {} not found", return_id))?;
+
+    let allocation_line =
+        batch_allocation_lines::Entity::find_by_id(stock_return.allocation_line_id)
+            .one(txn)
+            .await
+            .map_err(|e| format!("Failed to fetch allocation line: {}", e))?
+            .ok_or_else(|| {
+                format!(
+                    "Allocation line {} not found",
+                    stock_return.allocation_line_id
+                )
+            })?;
+
+    let receipt = stock_receipts::Entity::find_by_id(allocation_line.lot_id)
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch stock receipt: {}", e))?
+        .ok_or_else(|| format!("Stock receipt {} not found", allocation_line.lot_id))?;
+
+    let item_code = receipt.item_code.clone();
+
+    // 2. Reverse the ledger entries posted for this return
+    let entries = ledger_entries::Entity::find()
+        .filter(ledger_entries::Column::ReferenceTable.eq(Some("stock_returns".to_string())))
+        .filter(ledger_entries::Column::ReferenceId.eq(Some(return_id)))
+        .all(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch ledger entries: {}", e))?;
+
+    for entry in entries.iter() {
+        if let Some(debit) = entry.debit {
+            // reverse a previous debit by treating it as a credit
+            update_account_balance(txn, entry.account_id, Some(debit), false)
+                .await
+                .map_err(|_| "Failed to reverse ledger debit balance".to_string())?;
+        }
+        if let Some(credit) = entry.credit {
+            // reverse a previous credit by treating it as a debit
+            update_account_balance(txn, entry.account_id, Some(credit), true)
+                .await
+                .map_err(|_| "Failed to reverse ledger credit balance".to_string())?;
+        }
+    }
+
+    ledger_entries::Entity::delete_many()
+        .filter(ledger_entries::Column::ReferenceTable.eq(Some("stock_returns".to_string())))
+        .filter(ledger_entries::Column::ReferenceId.eq(Some(return_id)))
+        .exec(txn)
+        .await
+        .map_err(|e| format!("Failed to delete ledger entries: {}", e))?;
+
+    // 3. Take the returned quantity back out of inventory
+    if let Some(inv) = inventory::Entity::find_by_id(item_code.clone())
+        .one(txn)
+        .await
+        .map_err(|e| format!("Failed to fetch inventory: {}", e))?
+    {
+        let current = inv.current_qty;
+        if current < stock_return.return_qty {
+            return Err(format!(
+                "Inventory for {} has only {} but reversing return {} needs {}",
+                item_code, current, return_id, stock_return.return_qty
+            ));
+        }
+        let mut active_inv: inventory::ActiveModel = inv.into();
+        active_inv.current_qty = Set(current - stock_return.return_qty);
+        active_inv.last_updated = Set(chrono::Utc::now().into());
+        active_inv
+            .update(txn)
+            .await
+            .map_err(|e| format!("Failed to update inventory: {}", e))?;
+    } else {
+        return Err(format!("No inventory record found for item {}", item_code));
+    }
+
+    // 4. Remove the movement logged for this return
+    inventory_movements::Entity::delete_many()
+        .filter(inventory_movements::Column::ReferenceId.eq(Some(return_id)))
+        .filter(inventory_movements::Column::MovementType.eq(MovementType::Adjustment))
+        .filter(inventory_movements::Column::ItemCode.eq(item_code.clone()))
+        .exec(txn)
+        .await
+        .map_err(|e| format!("Failed to delete inventory movement: {}", e))?;
+
+    // 5. Take the quantity back out of the restored lot
+    let remaining_before = receipt.remaining_qty;
+    if remaining_before < stock_return.return_qty {
+        return Err(format!(
+            "Lot {} has only {} remaining but reversing return {} needs {}",
+            allocation_line.lot_id, remaining_before, return_id, stock_return.return_qty
+        ));
+    }
+    let mut receipt_active: stock_receipts::ActiveModel = receipt.into();
+    receipt_active.remaining_qty = Set(remaining_before - stock_return.return_qty);
+    receipt_active
+        .update(txn)
+        .await
+        .map_err(|e| format!("Failed to update stock receipt: {}", e))?;
+
+    // 6. Delete the return record
+    stock_returns::Entity::delete_by_id(return_id)
+        .exec(txn)
+        .await
+        .map_err(|e| format!("Failed to delete stock return: {}", e))?;
+
+    // 7. Keep the batch closure summary in step with the reversal
+    refresh_batch_closure_summary(stock_return.batch_id, txn).await?;
+
+    Ok(format!(
+        "Stock return {} reversed successfully. Inventory, lot, ledger and batch summary restored.",
+        return_id
     ))
 }

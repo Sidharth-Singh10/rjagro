@@ -10,7 +10,7 @@ use crate::{
         fetch_by_id::{
             get_accepted_allocations_handler, get_batch_by_id_handler,
             get_bird_count_history_handler, get_farmer_commission_history_by_id_handler,
-            get_sales_by_batch_id_handler, get_stock_return_unit_cost,
+            get_returnable_allocation_lines_handler, get_sales_by_batch_id_handler,
             get_stock_returns_by_batch_id_handler,
         },
         suppliers::{
@@ -35,8 +35,8 @@ pub fn fetch_by_id() -> Router<DatabaseConnection> {
             get(get_stock_returns_by_batch_id_handler),
         )
         .route(
-            "/get_stock_return_unit_cost/bid/{id}/{item_code}",
-            get(get_stock_return_unit_cost),
+            "/returnable_lines/{batch_id}/{item_code}",
+            get(get_returnable_allocation_lines_handler),
         )
         .route("/get_supplier_payables/{id}", get(get_supplier_payables))
         .route(

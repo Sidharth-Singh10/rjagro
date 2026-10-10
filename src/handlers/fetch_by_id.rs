@@ -4,9 +4,8 @@ use axum::{
     Json,
 };
 use entity::{
-    batch_allocation_lines, batch_allocations, batch_requirements, batch_sales, batches,
-    bird_count_history, farmer_commission_history, farmers, farms,
-    sea_orm_active_enums::RequirementStatus, stock_receipts, stock_returns, users,
+    batch_allocations, batch_requirements, batch_sales, batches, bird_count_history,
+    farmer_commission_history, farmers, farms, sea_orm_active_enums::RequirementStatus, users,
 };
 use reqwest::StatusCode;
 use sea_orm::EntityTrait;
@@ -14,11 +13,12 @@ use sea_orm::QueryFilter;
 use sea_orm::QueryOrder;
 use sea_orm::QuerySelect;
 use sea_orm::RelationTrait;
-use sea_orm::{prelude::Decimal, DatabaseConnection};
+use sea_orm::{DatabaseConnection, DbBackend, FromQueryResult, Statement};
 use sea_orm::{ColumnTrait, JoinType};
-use serde_json::json;
 
-use crate::models::{AllocatedRequirementDTO, BatchResponse, FarmInfo};
+use crate::models::{
+    AllocatedRequirementDTO, BatchResponse, FarmInfo, ReturnableAllocationLine, StockReturnView,
+};
 
 pub async fn get_farmer_commission_history_by_id_handler(
     State(db): State<DatabaseConnection>,
@@ -44,13 +44,35 @@ pub async fn get_farmer_commission_history_by_id_handler(
 pub async fn get_stock_returns_by_batch_id_handler(
     State(db): State<DatabaseConnection>,
     Path(batch_id): Path<i32>,
-) -> Result<Json<Vec<stock_returns::Model>>, StatusCode> {
-    match stock_returns::Entity::find()
-        .filter(stock_returns::Column::BatchId.eq(batch_id))
-        .order_by_desc(stock_returns::Column::ReturnDate)
-        .all(&db)
-        .await
-    {
+) -> Result<Json<Vec<StockReturnView>>, StatusCode> {
+    let stmt = Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        r#"
+        SELECT
+            sr.return_id,
+            sr.allocation_line_id,
+            sr.batch_id,
+            sr.return_qty,
+            sr.unit_cost,
+            sr.return_value,
+            sr.return_date,
+            sr.created_at,
+            srec.item_code,
+            bal.lot_id
+        FROM
+            stock_returns sr
+            JOIN batch_allocation_lines bal ON bal.allocation_line_id = sr.allocation_line_id
+            JOIN stock_receipts srec ON srec.lot_id = bal.lot_id
+        WHERE
+            sr.batch_id = $1
+        ORDER BY
+            sr.return_date DESC,
+            sr.return_id DESC
+        "#,
+        vec![batch_id.into()],
+    );
+
+    match StockReturnView::find_by_statement(stmt).all(&db).await {
         Ok(data) => Ok(Json(data)),
         Err(e) => {
             eprintln!(
@@ -62,33 +84,54 @@ pub async fn get_stock_returns_by_batch_id_handler(
     }
 }
 
-pub async fn get_stock_return_unit_cost(
+/// Lists the allocation lines of `batch_id` for `item_code` that still have
+/// quantity left to return, with each line's lot and per-lot unit cost. This
+/// is what the return form uses to pick a line instead of assuming the latest
+/// allocation.
+pub async fn get_returnable_allocation_lines_handler(
     State(db): State<DatabaseConnection>,
     Path((batch_id, item_code)): Path<(i32, String)>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    match batch_allocation_lines::Entity::find()
-        .join(
-            JoinType::InnerJoin,
-            batch_allocation_lines::Relation::StockReceipts.def(),
-        )
-        .filter(batch_allocation_lines::Column::BatchId.eq(batch_id))
-        .filter(stock_receipts::Column::ItemCode.eq(&item_code))
-        .order_by_desc(batch_allocation_lines::Column::AllocationLineId)
-        .select_only()
-        .column(batch_allocation_lines::Column::AllocationLineId)
-        .column(batch_allocation_lines::Column::UnitCost)
-        .into_tuple::<(i32, Decimal)>()
-        .one(&db)
+) -> Result<Json<Vec<ReturnableAllocationLine>>, StatusCode> {
+    let stmt = Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        r#"
+        SELECT
+            bal.allocation_line_id,
+            bal.lot_id,
+            bal.qty AS allocated_qty,
+            COALESCE(rt.returned_qty, 0) AS returned_qty,
+            bal.qty - COALESCE(rt.returned_qty, 0) AS returnable_qty,
+            bal.unit_cost
+        FROM
+            batch_allocation_lines bal
+            JOIN stock_receipts sr ON sr.lot_id = bal.lot_id
+            LEFT JOIN (
+                SELECT
+                    allocation_line_id,
+                    SUM(return_qty) AS returned_qty
+                FROM
+                    stock_returns
+                GROUP BY
+                    allocation_line_id
+            ) rt ON rt.allocation_line_id = bal.allocation_line_id
+        WHERE
+            bal.batch_id = $1
+            AND sr.item_code = $2
+            AND bal.qty - COALESCE(rt.returned_qty, 0) > 0
+        ORDER BY
+            bal.allocation_line_id
+        "#,
+        vec![batch_id.into(), item_code.clone().into()],
+    );
+
+    match ReturnableAllocationLine::find_by_statement(stmt)
+        .all(&db)
         .await
     {
-        Ok(Some((allocation_line_id, unit_cost))) => Ok(Json(json!({
-            "allocation_line_id": allocation_line_id,
-            "unit_cost": unit_cost
-        }))),
-        Ok(None) => Err(StatusCode::NOT_FOUND),
+        Ok(lines) => Ok(Json(lines)),
         Err(e) => {
             eprintln!(
-                "Failed to fetch allocation line for batch {} and item {}: {}",
+                "Failed to fetch returnable allocation lines for batch {} item {}: {}",
                 batch_id, item_code, e
             );
             Err(StatusCode::INTERNAL_SERVER_ERROR)

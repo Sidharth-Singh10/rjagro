@@ -961,6 +961,26 @@ LEFT JOIN (SELECT trader_id, SUM(amount) AS paid FROM trader_payments GROUP BY t
 
 **Status:** needs verification
 
+## INV-5 — Stock returns never exceed their allocation line
+
+**Statement:** For every `batch_allocation_lines` row, `SUM(stock_returns.return_qty)` is at most `qty`, and `stock_returns.batch_id` equals the line's `batch_id`.
+
+**Evidence:** `src/handlers/batch_requirements.rs` (`process_stock_return`), `src/handlers/fetch_by_id.rs` (`get_returnable_allocation_lines_handler`).
+
+**Verification SQL:**
+
+```sql
+SELECT bal.allocation_line_id,
+       bal.qty AS allocated_qty,
+       COALESCE(SUM(sr.return_qty), 0) AS returned_qty
+FROM batch_allocation_lines bal
+LEFT JOIN stock_returns sr ON sr.allocation_line_id = bal.allocation_line_id
+GROUP BY bal.allocation_line_id, bal.qty
+HAVING COALESCE(SUM(sr.return_qty), 0) > bal.qty;
+```
+
+**Status:** needs verification
+
 ## How to add an invariant
 
 1. State it in one sentence and cite the evidence (file path or commit).
