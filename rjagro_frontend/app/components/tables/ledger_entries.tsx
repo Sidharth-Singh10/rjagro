@@ -4,6 +4,7 @@ import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import Pagination from '@/app/components/ui/pagination';
 import { Inbox,  Filter, Plus, X, Save, DollarSign } from 'lucide-react';
 import { LedgerAccount, LedgerEntry, LedgerEntryPayload, NewLedgerEntry } from '@/app/types/interfaces';
+import { LEDGER_ENTRY_TYPES } from '@/app/api/ledger_entries';
 import { capitalizeWords } from '@/app/utils/helper';
 import SortableHeader from './sortable_headers/header';
 
@@ -24,6 +25,8 @@ interface LedgerEntriesTableProps {
     sortKey: string;
     sortDir: 'asc' | 'desc';
     onSortChange: (key: string) => void;
+    entryType: string;
+    onEntryTypeChange: (type: string) => void;
     onPageChange: (page: number) => void;
     showAddForm: boolean;
     newLedgerEntry: NewLedgerEntry;
@@ -47,6 +50,8 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
     sortKey,
     sortDir,
     onSortChange,
+    entryType,
+    onEntryTypeChange,
     onPageChange,
     showAddForm,
     newLedgerEntry,
@@ -66,6 +71,7 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
         return account ? { name: account.name, type: account.account_type } : { name: '-', type: '-' };
     };
     const [transactionType, setTransactionType] = useState<'debit' | 'credit' | ''>('');
+    const [showFilters, setShowFilters] = useState(false);
     const formatCurrency = (amount?: number) => {
         if (!amount || isNaN(amount)) return '-';
         return `₹${Number(amount).toFixed(2)}`;
@@ -168,12 +174,51 @@ const LedgerEntriesTable: React.FC<LedgerEntriesTableProps> = ({
                         <Plus size={18} />
                         Add Entry
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <button
+                        onClick={() => setShowFilters((open) => !open)}
+                        className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${showFilters || entryType
+                            ? 'border-green-600 text-green-600 bg-green-50'
+                            : 'text-gray-600 border-gray-300 hover:bg-gray-50'
+                            }`}
+                    >
                         <Filter size={18} />
                         Filters
+                        {entryType && (
+                            <span className="px-1.5 py-0.5 text-xs rounded-full bg-green-600 text-white">1</span>
+                        )}
                     </button>
                 </div>
             </div>
+
+            {/* Filters */}
+            {showFilters && (
+                <div className="flex items-center gap-3 px-4 py-3 border-b bg-gray-50">
+                    <label htmlFor="ledger-entry-type" className="text-sm font-medium text-gray-700">
+                        Entry Type
+                    </label>
+                    <select
+                        id="ledger-entry-type"
+                        value={entryType}
+                        onChange={(e) => onEntryTypeChange(e.target.value)}
+                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                        <option value="">All Types</option>
+                        {LEDGER_ENTRY_TYPES.map((type) => (
+                            <option key={type.value} value={type.value}>
+                                {type.label}
+                            </option>
+                        ))}
+                    </select>
+                    {entryType && (
+                        <button
+                            onClick={() => onEntryTypeChange('')}
+                            className="text-xs text-gray-500 underline hover:text-gray-700"
+                        >
+                            Clear
+                        </button>
+                    )}
+                </div>
+            )}
 
             {/* Add Ledger Entry Form */}
             {showAddForm && (

@@ -9,12 +9,29 @@ import { toast } from "react-toastify";
 
 export const LEDGER_ENTRIES_PAGE_SIZE = 25;
 
+/** Entry types the app writes into ledger_entries.reference_table. */
+export const LEDGER_ENTRY_TYPES: { value: string; label: string }[] = [
+    { value: "purchases", label: "Purchases" },
+    { value: "batch_sales", label: "Batch Sales" },
+    { value: "farmer_commission_history", label: "Farmer Commission" },
+    { value: "other_expenses", label: "Other Expenses" },
+    { value: "supplier_payments", label: "Supplier Payments" },
+    { value: "trader_payments", label: "Trader Payments" },
+    { value: "allocations", label: "Allocations" },
+    { value: "stock_returns", label: "Stock Returns" },
+    { value: "batches", label: "Batches" },
+    { value: "loans", label: "Loans" },
+    { value: "loan_payments", label: "Loan Payments" },
+];
+
 export interface LedgerEntriesPageFilters {
     accountId?: number;
     /** Inclusive ISO date, YYYY-MM-DD. */
     from?: string;
     /** Inclusive ISO date, YYYY-MM-DD. */
     to?: string;
+    /** ledger_entries.reference_table, e.g. "purchases". */
+    referenceTable?: string;
     sort?: string;
     dir?: "asc" | "desc";
 }
@@ -31,6 +48,7 @@ export const fetchLedgerEntriesPage = async (
     if (filters.accountId) params.account_id = filters.accountId;
     if (filters.from) params.from = filters.from;
     if (filters.to) params.to = filters.to;
+    if (filters.referenceTable) params.reference_table = filters.referenceTable;
     if (filters.sort) {
         params.sort = filters.sort;
         params.dir = filters.dir ?? "asc";

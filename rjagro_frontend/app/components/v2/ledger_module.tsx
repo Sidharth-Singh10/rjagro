@@ -25,15 +25,20 @@ export const LedgerModule = () => {
     const [page, setPage] = useState(1);
     const [sortKey, setSortKey] = useState('txn_date');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+    const [entryType, setEntryType] = useState('');
 
     const {
         data: entriesPage,
         isPending: isEntriesPending,
         isFetching: isEntriesFetching,
     } = useQuery({
-        queryKey: ["ledger_entries", "page", page, sortKey, sortDir],
+        queryKey: ["ledger_entries", "page", page, sortKey, sortDir, entryType],
         queryFn: () =>
-            fetchLedgerEntriesPage(page, LEDGER_ENTRIES_PAGE_SIZE, { sort: sortKey, dir: sortDir }),
+            fetchLedgerEntriesPage(page, LEDGER_ENTRIES_PAGE_SIZE, {
+                sort: sortKey,
+                dir: sortDir,
+                referenceTable: entryType || undefined,
+            }),
         placeholderData: keepPreviousData,
         staleTime: 5 * 60 * 1000,
         enabled: subTab === 'Entries',
@@ -57,6 +62,11 @@ export const LedgerModule = () => {
             setSortKey(key);
             setSortDir('asc');
         }
+        setPage(1);
+    };
+
+    const onEntryTypeChange = (type: string) => {
+        setEntryType(type);
         setPage(1);
     };
 
@@ -176,6 +186,8 @@ export const LedgerModule = () => {
                         sortKey={sortKey}
                         sortDir={sortDir}
                         onSortChange={onSortChange}
+                        entryType={entryType}
+                        onEntryTypeChange={onEntryTypeChange}
                         onPageChange={setPage}
                         showAddForm={showAddForm}
                         newLedgerEntry={newLedgerEntry}
