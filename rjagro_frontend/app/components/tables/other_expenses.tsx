@@ -5,10 +5,12 @@ import {
     OtherExpenseCategory,
     OTHER_EXPENSE_CATEGORY_LABELS,
 } from '@/app/types/interfaces';
+import { useState } from 'react';
 import TableSkeletonRows from '@/app/components/ui/table_skeleton_rows';
 import Modal from '@/app/components/ui/modal';
 import Pagination from '@/app/components/ui/pagination';
 import { Plus, X, Save, IndianRupee, Calendar, Filter, Edit } from 'lucide-react';
+import SortableHeader from './sortable_headers/header';
 
 interface OtherExpensesTableProps {
     expenses: OtherExpense[];
@@ -23,6 +25,12 @@ interface OtherExpensesTableProps {
     totalPages: number;
     totalAmount: number;
     onPageChange: (page: number) => void;
+    sortKey: string;
+    sortDir: 'asc' | 'desc';
+    onSortChange: (key: string) => void;
+    /** Inclusive month key, YYYY-MM; empty means all months. */
+    month: string;
+    onMonthChange: (month: string) => void;
     showAddForm: boolean;
     newExpense: NewOtherExpense;
     setShowAddForm: (show: boolean) => void;
@@ -118,6 +126,11 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
     totalPages,
     totalAmount,
     onPageChange,
+    sortKey,
+    sortDir,
+    onSortChange,
+    month,
+    onMonthChange,
     onEditClick,
     editingExpense,
     editForm,
@@ -125,6 +138,15 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
     onSaveEdit,
     onCancelEdit,
 }) => {
+    const [showFilters, setShowFilters] = useState(false);
+
+    // Server-side sorting: the page is already ordered by the API.
+    const requestSort = (key: string) => onSortChange(key);
+    const getSortIcon = (columnKey: string) => {
+        if (sortKey !== columnKey) return 'ArrowUpDown';
+        return sortDir === 'asc' ? 'ArrowUp' : 'ArrowDown';
+    };
+
     return (
         <div className="bg-white rounded-lg shadow">
             <div className="flex items-center justify-between p-4 border-b">
@@ -142,12 +164,45 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                         <Plus size={18} />
                         Add Expense
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <button
+                        onClick={() => setShowFilters((open) => !open)}
+                        className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${showFilters || month
+                            ? 'border-green-600 text-green-600 bg-green-50'
+                            : 'text-gray-600 border-gray-300 hover:bg-gray-50'
+                            }`}
+                    >
                         <Filter size={18} />
                         Filters
+                        {month && (
+                            <span className="px-1.5 py-0.5 text-xs rounded-full bg-green-600 text-white">1</span>
+                        )}
                     </button>
                 </div>
             </div>
+
+            {/* Filters */}
+            {showFilters && (
+                <div className="flex items-center gap-3 px-4 py-3 border-b bg-gray-50">
+                    <label htmlFor="other-expense-month" className="text-sm font-medium text-gray-700">
+                        Month
+                    </label>
+                    <input
+                        id="other-expense-month"
+                        type="month"
+                        value={month}
+                        onChange={(e) => onMonthChange(e.target.value)}
+                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    {month && (
+                        <button
+                            onClick={() => onMonthChange('')}
+                            className="text-xs text-gray-500 underline hover:text-gray-700"
+                        >
+                            Clear
+                        </button>
+                    )}
+                </div>
+            )}
 
             {showAddForm && (
                 <div className="p-4 border-b bg-gray-50">
@@ -180,12 +235,12 @@ const OtherExpensesTable: React.FC<OtherExpensesTableProps> = ({
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                         <tr>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-                            <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Created At</th>
+                            <SortableHeader columnKey="id" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>ID</SortableHeader>
+                            <SortableHeader columnKey="category" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Category</SortableHeader>
+                            <SortableHeader columnKey="amount" requestSort={requestSort} getSortIcon={getSortIcon} isSortable align="right">Amount</SortableHeader>
+                            <SortableHeader columnKey="expense_date" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Date</SortableHeader>
+                            <SortableHeader columnKey="description" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Description</SortableHeader>
+                            <SortableHeader columnKey="created_at" requestSort={requestSort} getSortIcon={getSortIcon} isSortable>Created At</SortableHeader>
                             <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>

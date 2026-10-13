@@ -1,7 +1,7 @@
 use crate::handlers::metrics::{month_end, month_start, period_key, refresh_metrics_range};
 use crate::models::{
     CreateOtherExpense, OtherExpenseCategoryTotal, OtherExpenseMonthSummary,
-    OtherExpenseSummaryQuery, PaginatedOtherExpenses, PaginationParams, UpdateOtherExpense,
+    OtherExpenseSummaryQuery, OtherExpensesQuery, PaginatedOtherExpenses, UpdateOtherExpense,
 };
 use axum::{
     extract::{Path, Query, State},
@@ -11,9 +11,11 @@ use axum::{
 use chrono::{NaiveDate, Utc};
 use entity::sea_orm_active_enums::OtherExpenseCategory;
 use entity::*;
+use sea_orm::sea_query::{NullOrdering, Order};
 use sea_orm::{
     prelude::Decimal, ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend,
-    EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, Set, Statement, TransactionTrait,
+    EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set, Statement,
+    TransactionTrait,
 };
 use tracing::error;
 use uuid::Uuid;
@@ -377,44 +379,69 @@ pub async fn get_all_other_expenses_handler(
     }
 }
 
-/// One page of expenses (newest first), plus the exact totals the table needs
-/// for its badge and footer.
+/// One page of expenses (newest first by default), plus the exact totals the
+/// table needs for its badge and footer. Supports an optional month filter and
+/// server-side sorting so both apply across the whole result set, not just the
+/// current page.
 pub async fn get_other_expenses_paginated_handler(
     State(db): State<DatabaseConnection>,
-    Query(params): Query<PaginationParams>,
+    Query(params): Query<OtherExpensesQuery>,
 ) -> Result<Json<PaginatedOtherExpenses>, StatusCode> {
     let page_size = params.page_size.unwrap_or(15).clamp(1, 100);
     let page = params.page.unwrap_or(1).max(1);
 
-    let paginator = other_expenses::Entity::find()
-        .order_by_desc(other_expenses::Column::CreatedAt)
-        .paginate(&db, page_size);
+    let mut query = other_expenses::Entity::find();
+
+    if let Some(month) = params.month.as_deref() {
+        let (Some(start), Some(end)) = (month_start(month), month_end(month)) else {
+            error!("Invalid month '{}' in other expenses page query", month);
+            return Err(StatusCode::BAD_REQUEST);
+        };
+        query = query
+            .filter(other_expenses::Column::ExpenseDate.gte(start))
+            .filter(other_expenses::Column::ExpenseDate.lte(end));
+    }
+
+    // Count + sum in one aggregate over the same filtered set as the page, so
+    // the badge and page count stay exact without downloading every row.
+    let totals = query
+        .clone()
+        .select_only()
+        .column_as(other_expenses::Column::Id.count(), "total_count")
+        .column_as(other_expenses::Column::Amount.sum(), "total_amount")
+        .into_tuple::<(i64, Option<Decimal>)>()
+        .one(&db)
+        .await
+        .map_err(|e| {
+            error!("Failed to compute other expense totals: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let (total_count, total_amount) = totals.unwrap_or((0, None));
+    let total_count = total_count.max(0) as u64;
+
+    let descending = params.dir.as_deref() != Some("asc");
+    let direction = if descending { Order::Desc } else { Order::Asc };
+
+    let query = match params.sort.as_deref().unwrap_or("created_at") {
+        "id" => query.order_by(other_expenses::Column::Id, direction),
+        "category" => query.order_by(other_expenses::Column::Category, direction),
+        "amount" => query.order_by(other_expenses::Column::Amount, direction),
+        "expense_date" => query.order_by(other_expenses::Column::ExpenseDate, direction),
+        "description" => query.order_by_with_nulls(
+            other_expenses::Column::Description,
+            direction,
+            NullOrdering::Last,
+        ),
+        _ => query.order_by(other_expenses::Column::CreatedAt, direction),
+    };
+
+    let paginator = query.paginate(&db, page_size);
 
     let items = paginator.fetch_page(page - 1).await.map_err(|e| {
         error!("Failed to fetch page {} of other expenses: {}", page, e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
-
-    // Count + sum in one aggregate so the badge and page count stay exact
-    // without downloading every row.
-    let totals = Statement::from_string(
-        DbBackend::Postgres,
-        "SELECT COUNT(*)::bigint AS total_count, COALESCE(SUM(amount), 0) AS total_amount \
-         FROM other_expenses"
-            .to_string(),
-    );
-
-    let (total_count, total_amount) = match db.query_one(totals).await {
-        Ok(Some(row)) => (
-            row.try_get::<i64>("", "total_count").unwrap_or(0).max(0) as u64,
-            row.try_get::<Decimal>("", "total_amount").unwrap_or_default(),
-        ),
-        Ok(None) => (0, Decimal::ZERO),
-        Err(e) => {
-            error!("Failed to compute other expense totals: {}", e);
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
-    };
 
     let total_pages = if total_count == 0 {
         0
@@ -428,7 +455,7 @@ pub async fn get_other_expenses_paginated_handler(
         page_size,
         total_count,
         total_pages,
-        total_amount,
+        total_amount: total_amount.unwrap_or_default(),
     }))
 }
 

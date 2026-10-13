@@ -22,10 +22,18 @@ const OtherExpensesModule = () => {
     const [loading, setLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
     const [page, setPage] = useState(1);
+    const [sortKey, setSortKey] = useState('created_at');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+    const [month, setMonth] = useState('');
 
     const { data, isPending, isFetching } = useQuery({
-        queryKey: ['other_expenses', 'page', page],
-        queryFn: () => fetchOtherExpensesPage(page, OTHER_EXPENSES_PAGE_SIZE),
+        queryKey: ['other_expenses', 'page', page, sortKey, sortDir, month],
+        queryFn: () =>
+            fetchOtherExpensesPage(page, OTHER_EXPENSES_PAGE_SIZE, {
+                month: month || undefined,
+                sort: sortKey,
+                dir: sortDir,
+            }),
         placeholderData: keepPreviousData,
         staleTime: 5 * 60 * 1000,
     });
@@ -42,6 +50,21 @@ const OtherExpensesModule = () => {
             setPage(data.total_pages);
         }
     }, [data, page]);
+
+    const onSortChange = (key: string) => {
+        if (key === sortKey) {
+            setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortKey(key);
+            setSortDir('asc');
+        }
+        setPage(1);
+    };
+
+    const onMonthChange = (value: string) => {
+        setMonth(value);
+        setPage(1);
+    };
 
     const [newExpense, setNewExpense] = useState<NewOtherExpense>({
         category: '',
@@ -124,6 +147,11 @@ const OtherExpensesModule = () => {
                     totalPages={totalPages}
                     totalAmount={totalAmount}
                     onPageChange={setPage}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSortChange={onSortChange}
+                    month={month}
+                    onMonthChange={onMonthChange}
                     showAddForm={showAddForm}
                     newExpense={newExpense}
                     setShowAddForm={setShowAddForm}

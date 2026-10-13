@@ -487,6 +487,18 @@ pub struct PaginatedOtherExpenses {
     pub total_amount: Decimal,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct OtherExpensesQuery {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    /// Inclusive month key, e.g. "2026-08". Filters on expense_date.
+    pub month: Option<String>,
+    /// id | category | amount | expense_date | description | created_at
+    pub sort: Option<String>,
+    /// "asc" | "desc"
+    pub dir: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct OtherExpenseCategoryTotal {
     pub category: OtherExpenseCategory,

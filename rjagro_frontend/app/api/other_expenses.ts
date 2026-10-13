@@ -12,13 +12,27 @@ export const OTHER_EXPENSES_PAGE_SIZE = 15;
 
 const toNumber = (value: unknown): number => Number(value ?? 0);
 
+export interface OtherExpensesPageFilters {
+    /** Inclusive month key, YYYY-MM. Filters on expense_date. */
+    month?: string;
+    /** id | category | amount | expense_date | description | created_at */
+    sort?: string;
+    dir?: "asc" | "desc";
+}
+
 export const fetchOtherExpensesPage = async (
     page: number = 1,
-    pageSize: number = OTHER_EXPENSES_PAGE_SIZE
+    pageSize: number = OTHER_EXPENSES_PAGE_SIZE,
+    filters: OtherExpensesPageFilters = {}
 ): Promise<PaginatedOtherExpenses> => {
-    const response = await api.get("/getall/other_expenses/paginated", {
-        params: { page, page_size: pageSize },
-    });
+    const params: Record<string, unknown> = { page, page_size: pageSize };
+    if (filters.month) params.month = filters.month;
+    if (filters.sort) {
+        params.sort = filters.sort;
+        params.dir = filters.dir ?? "asc";
+    }
+
+    const response = await api.get("/getall/other_expenses/paginated", { params });
     const data = response.data ?? {};
     return {
         items: (data.items ?? []).map((expense: OtherExpense) => ({
