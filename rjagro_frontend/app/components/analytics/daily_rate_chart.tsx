@@ -1,9 +1,8 @@
 'use client'
 import { memo, useMemo, useState } from 'react';
 import { CalendarRange } from 'lucide-react';
-import {
-    CartesianGrid, Line, LineChart, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from 'recharts';
+import { GraphRenderer } from '@graphysdk/react';
+import type { Data, GraphSlots, TooltipSlotProps } from '@graphysdk/react';
 import { ChartCard } from '../v2/overview/chart_card';
 import { chart } from '../v2/overview/chart_colors';
 import {
@@ -11,6 +10,8 @@ import {
 } from '@/app/utils/rate_tracker';
 import { type ChickenEvent } from '@/app/utils/event_calendar';
 import { impactColor } from './events/event_chips';
+import { graphyKit } from './graphy/price_bar_geom';
+import surface from './graphy/graphy_surface.module.css';
 
 interface Props {
     days: DailyPoint[];
@@ -37,9 +38,21 @@ const domain = (days: DailyPoint[]): [number, number] => {
     ];
 };
 
-const DailyTooltip = ({ active, payload }: any) => {
-    if (!active || !payload?.length) return null;
-    const day: DailyPoint = payload[0].payload;
+/**
+ * The hovered day, read off the tooltip's row key (`<layerId>:<pointIndex>`).
+ * Graphy hands a slot only formatted strings, so the index is what ties a row
+ * back to the observation it came from.
+ */
+const observationAt = <T,>(rows: TooltipSlotProps['content']['rows'], series: T[]): T | null => {
+    const row = rows.find(candidate => candidate.primary) ?? rows[0];
+    if (!row) return null;
+    const index = Number(row.key.slice(row.key.lastIndexOf(':') + 1));
+    return series[index] ?? null;
+};
+
+const DailyTooltip = ({ content, days }: TooltipSlotProps & { days: DailyPoint[] }) => {
+    const day = observationAt(content.rows, days);
+    if (day === null) return null;
     return (
         <div className="bg-white p-2.5 rounded-lg shadow-lg border border-gray-100 text-xs">
             <p className="font-semibold text-gray-700">{fullDate(day.date)}</p>
@@ -57,6 +70,38 @@ const LegendChip = ({ color, label }: { color: string; label: string }) => (
     </span>
 );
 
+const epochOf = (iso: string) => Date.UTC(
+    Number(iso.slice(0, 4)),
+    Number(iso.slice(5, 7)) - 1,
+    Number(iso.slice(8, 10)),
+);
+
+/** Where a date sits on the plot, 0 to 1. The x domain is exactly the series extent. */
+const fractionAt = (iso: string, firstEpoch: number, lastEpoch: number) => {
+    const span = lastEpoch - firstEpoch;
+    if (span <= 0) return 0;
+    return Math.min(1, Math.max(0, (epochOf(iso) - firstEpoch) / span));
+};
+
+/**
+ * A shaded window, spanning the full panel height between two dates, as the
+ * chart's reference areas always have. Anchored on the panel rather than on the
+ * observations inside the window: an event that falls on a day with no quote has
+ * no observation to anchor to, and a window found only by its dates is what the
+ * reader is being shown.
+ */
+const windowRegion = (start: string, end: string, firstEpoch: number, lastEpoch: number) => {
+    const from = fractionAt(start, firstEpoch, lastEpoch);
+    const to = fractionAt(end, firstEpoch, lastEpoch);
+    return {
+        anchorType: 'panel' as const,
+        x: Math.min(from, to),
+        y: 0,
+        width: Math.abs(to - from),
+        height: 1,
+    };
+};
+
 export const DailyRateChart = memo(({ days, best5, best7, events = [] }: Props) => {
     const [showEvents, setShowEvents] = useState(false);
 
@@ -64,9 +109,9 @@ export const DailyRateChart = memo(({ days, best5, best7, events = [] }: Props) 
     const chartEnd = days[days.length - 1]?.date ?? null;
 
     /**
-     * Clip every event to the chart's current slice. ReferenceArea keys on the
-     * same ISO strings the XAxis uses, and `ifOverflow="hidden"` keeps a window
-     * from stretching the domain when a caller passes a narrower slice.
+     * Clip every event to the chart's current slice. The shaded band is placed by
+     * date, so a window that starts before the series still begins at the chart's
+     * first day, exactly as the clipped Recharts reference area did.
      */
     const eventWindows = useMemo(() => {
         if (!showEvents || chartStart === null || chartEnd === null) return [];
@@ -83,6 +128,101 @@ export const DailyRateChart = memo(({ days, best5, best7, events = [] }: Props) 
                 end: event.endDate > chartEnd ? chartEnd : event.endDate,
             }));
     }, [events, showEvents, chartStart, chartEnd]);
+
+    const data = useMemo<Data>(() => ({
+        columns: [
+            { key: 'date' },
+            { key: 'rate', label: 'Daily rate', valueFormat: { type: 'currency', iso: 'inr' } },
+        ],
+        // Days without a quote stay in the table with a null rate: that gap is
+        // what breaks the line.
+        rows: days.map(day => ({ date: day.date, rate: day.rate })),
+    }), [days]);
+
+    const [domainMin, domainMax] = useMemo(() => domain(days), [days]);
+
+    const span = useMemo(() => {
+        if (chartStart === null || chartEnd === null) return null;
+        return { first: epochOf(chartStart), last: epochOf(chartEnd) };
+    }, [chartStart, chartEnd]);
+
+    const spec = useMemo(() => {
+        // The card only renders with at least one day, so the series extent exists.
+        const first = span?.first ?? 0;
+        const last = span?.last ?? 0;
+        const region = (start: string, end: string) => windowRegion(start, end, first, last);
+
+        const annotations = [
+            ...(best7 === null ? [] : [
+                graphyKit.annotation.shape({
+                    id: 'best-7',
+                    zOrder: 'background' as const,
+                    region: region(best7.start, best7.end),
+                }),
+            ]),
+            ...(best5 === null ? [] : [
+                graphyKit.annotation.shape({
+                    id: 'best-5',
+                    zOrder: 'background' as const,
+                    region: region(best5.start, best5.end),
+                }),
+            ]),
+            ...eventWindows.map(event => graphyKit.annotation.shape({
+                id: `event-${event.id}`,
+                zOrder: 'background' as const,
+                region: region(event.start, event.end),
+            })),
+        ];
+
+        return graphyKit.pipe(
+            graphyKit.createSpec({ x: 'date', y: 'rate' }),
+            graphyKit.geom.line({ id: 'daily', params: { missingValues: 'gap' } }),
+            graphyKit.scale.x.datetime(),
+            graphyKit.scale.y.continuous({ domainMin, domainMax }),
+            graphyKit.config({
+                legend: { position: 'none' },
+                tooltip: { mode: 'observation' },
+                numberFormat: { decimals: 0 },
+                axes: {
+                    x: { label: '', grid: { visible: false }, ticks: { visible: true, mode: 'auto' } },
+                    y: { label: '', position: 'left', ticks: { visible: true, mode: 'auto' } },
+                },
+            }),
+            ...annotations,
+            graphyKit.styles({
+                defaults: [
+                    graphyKit.style.graph({
+                        fill: 'transparent',
+                        strokeWidth: 0,
+                        padding: { top: 8, right: 12, bottom: 8, left: 4 },
+                    }),
+                    graphyKit.style.panelBorder({ strokeWidth: 0 }),
+                    graphyKit.style.tickLabel({ textColor: chart.tick, fontSize: 11 }),
+                    graphyKit.style.geom.line({ stroke: chart.brand, strokeWidth: 1.5 }, { layer: 'daily' }),
+                ],
+                overrides: [
+                    // Painted behind the line, in the order the previous chart stacked
+                    // them: 7-day window, then 5-day, then the event bands on top.
+                    graphyKit.style.annotation.shape(
+                        { fill: chart.violet, fillAlpha: 0.16, stroke: chart.violet, strokeWidth: 0 },
+                        { annotation: 'best-7' },
+                    ),
+                    graphyKit.style.annotation.shape(
+                        { fill: chart.amber, fillAlpha: 0.3, stroke: chart.amber, strokeWidth: 0 },
+                        { annotation: 'best-5' },
+                    ),
+                    ...eventWindows.map(event => graphyKit.style.annotation.shape(
+                        { fill: impactColor[event.impact], fillAlpha: 0.1, strokeWidth: 0 },
+                        { annotation: `event-${event.id}` },
+                    )),
+                ],
+            }),
+        );
+    }, [best5, best7, domainMin, domainMax, eventWindows, span]);
+
+    const slots = useMemo<GraphSlots>(() => ({
+        Tooltip: (props: TooltipSlotProps) => <DailyTooltip {...props} days={days} />,
+    }), [days]);
 
     const legend = (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -112,68 +252,11 @@ export const DailyRateChart = memo(({ days, best5, best7, events = [] }: Props) 
                     No rate data yet
                 </div>
             ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={days} margin={{ top: 8, right: 16, left: 4, bottom: 4 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
-                        <XAxis
-                            dataKey="date"
-                            tickFormatter={tickLabel}
-                            tick={{ fontSize: 11, fill: chart.tick }}
-                            interval={Math.max(0, Math.ceil(days.length / 9) - 1)}
-                            height={28}
-                        />
-                        <YAxis
-                            tickFormatter={(value) => `₹${value}`}
-                            tick={{ fontSize: 11, fill: chart.tick }}
-                            domain={domain(days)}
-                            width={52}
-                        />
-                        <Tooltip content={<DailyTooltip />} />
-                        {eventWindows.map((event) => (
-                            <ReferenceArea
-                                key={event.id}
-                                x1={event.start}
-                                x2={event.end}
-                                ifOverflow="hidden"
-                                fill={impactColor[event.impact]}
-                                fillOpacity={0.1}
-                                stroke="none"
-                                strokeOpacity={0}
-                            />
-                        ))}
-                        {best7 && (
-                            <ReferenceArea
-                                x1={best7.start}
-                                x2={best7.end}
-                                fill={chart.violet}
-                                fillOpacity={0.16}
-                                stroke={chart.violet}
-                                strokeOpacity={0.35}
-                            />
-                        )}
-                        {best5 && (
-                            <ReferenceArea
-                                x1={best5.start}
-                                x2={best5.end}
-                                fill={chart.amber}
-                                fillOpacity={0.3}
-                                stroke={chart.amber}
-                                strokeOpacity={0.55}
-                            />
-                        )}
-                        <Line
-                            type="monotone"
-                            dataKey="rate"
-                            name="Daily rate"
-                            stroke={chart.brand}
-                            strokeWidth={1.5}
-                            dot={false}
-                            connectNulls={false}
-                            activeDot={{ r: 4, stroke: chart.brand, strokeWidth: 2, fill: '#fff' }}
-                            isAnimationActive={false}
-                        />
-                    </LineChart>
-                </ResponsiveContainer>
+                <div className={surface.clipped} style={{ height: 300 }}>
+                    <graphyKit.GraphProvider data={data} spec={spec} formattingLocale="en-GB">
+                        <GraphRenderer animation={false} slots={slots} />
+                    </graphyKit.GraphProvider>
+                </div>
             )}
         </ChartCard>
     );
