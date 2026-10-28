@@ -2,12 +2,13 @@
 import {
     memo, useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
-import {
-    CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from 'recharts';
+import { GraphRenderer } from '@graphysdk/react';
+import type { Data, GraphSlots, TooltipSlotProps } from '@graphysdk/react';
 import { ChartCard } from '../v2/overview/chart_card';
 import { chart } from '../v2/overview/chart_colors';
 import { formatRate, type WeeklyPoint } from '@/app/utils/rate_tracker';
+import { graphyKit } from './graphy/price_bar_geom';
+import surface from './graphy/graphy_surface.module.css';
 
 type WeekRange = '26w' | '52w' | 'all';
 type AxisRange = [number, number];
@@ -28,10 +29,6 @@ const MIN_SPAN = 20;
 const ZOOM_STEP = 0.7;
 /** Gentler factor for one wheel notch. */
 const WHEEL_STEP = 1.15;
-/** Nice tick intervals in ₹; the coarsest one that still gives 4–6 labels wins. */
-const TICK_STEPS = [5, 10, 20, 25] as const;
-const MIN_TICKS = 4;
-const MAX_TICKS = 6;
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
 
@@ -74,32 +71,21 @@ const zoomDomain = (current: AxisRange, factor: number, bounds: AxisRange): Axis
 const sameDomain = (a: AxisRange, b: AxisRange) =>
     Math.abs(a[0] - b[0]) < 0.01 && Math.abs(a[1] - b[1]) < 0.01;
 
-const ticksFor = ([low, high]: AxisRange, step: number) => {
-    const ticks: number[] = [];
-    for (let value = Math.ceil(low / step) * step; value <= high + 1e-6; value += step) {
-        ticks.push(Math.round(value));
-    }
-    return ticks;
-};
-
 /**
- * Ticks are derived from the visible span rather than left to Recharts, so a
- * zoomed window still gets round numbers instead of generics of the range.
+ * The hovered week, read off the tooltip's row key (`<layerId>:<pointIndex>`).
+ * Graphy hands a slot only formatted strings, so the index is what ties a row
+ * back to the observation it came from.
  */
-const axisTicks = (domain: AxisRange): number[] => {
-    let coarsest: number[] = [];
-    for (const step of TICK_STEPS) {
-        const ticks = ticksFor(domain, step);
-        coarsest = ticks;
-        if (ticks.length >= MIN_TICKS && ticks.length <= MAX_TICKS) return ticks;
-    }
-    return coarsest.length >= 2 ? coarsest : [domain[0], domain[1]];
+const observationAt = <T,>(rows: TooltipSlotProps['content']['rows'], series: T[]): T | null => {
+    const row = rows.find(candidate => candidate.primary) ?? rows[0];
+    if (!row) return null;
+    const index = Number(row.key.slice(row.key.lastIndexOf(':') + 1));
+    return series[index] ?? null;
 };
 
-const WeeklyTooltip = ({ active, payload }: any) => {
-    if (!active || !payload?.length) return null;
-    const week: WeeklyPoint = payload[0].payload;
-    if (week.avg === null) return null;
+const WeeklyTooltip = ({ content, weeks }: TooltipSlotProps & { weeks: WeeklyPoint[] }) => {
+    const week = observationAt(content.rows, weeks);
+    if (week === null || week.avg === null) return null;
     return (
         <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-100 text-xs space-y-1">
             <p className="font-semibold text-gray-700">{week.longLabel}</p>
@@ -131,6 +117,7 @@ export const WeeklyRateChart = memo(({ weeks }: { weeks: WeeklyPoint[] }) => {
     const span = domain[1] - domain[0];
     const atMinSpan = span <= MIN_SPAN + 0.01;
     const atFullSpan = manual === null || sameDomain(manual, bounds);
+    const [domainMin, domainMax] = domain;
 
     // A manual window survives a 26W/52W/All switch, so it can end up entirely
     // outside the new slice. Say so instead of showing an unexplained empty frame.
@@ -166,7 +153,50 @@ export const WeeklyRateChart = memo(({ weeks }: { weeks: WeeklyPoint[] }) => {
         return () => node.removeEventListener('wheel', onWheel);
     }, [bounds, manual]);
 
-    const tickInterval = Math.max(0, Math.ceil(visible.length / 9) - 1);
+    const data = useMemo<Data>(() => ({
+        // A real date, so the axis spaces weeks by time. Missing weeks keep their
+        // row with a null average, which is what breaks the line.
+        columns: [
+            { key: 'week' },
+            { key: 'avg', label: 'Weekly average', valueFormat: { type: 'currency', iso: 'inr' } },
+        ],
+        rows: visible.map(week => ({ week: week.key, avg: week.avg })),
+    }), [visible]);
+
+    const spec = useMemo(() => graphyKit.pipe(
+        graphyKit.createSpec({ x: 'week', y: 'avg' }),
+        // 'gap' is the line default; stated here because interpolating across an
+        // outage is the one thing this chart must never do.
+        graphyKit.geom.line({ id: 'weekly', params: { missingValues: 'gap' } }),
+        graphyKit.scale.x.datetime(),
+        graphyKit.scale.y.continuous({ domainMin, domainMax }),
+        graphyKit.config({
+            legend: { position: 'none' },
+            tooltip: { mode: 'observation' },
+            numberFormat: { decimals: 0 },
+            axes: {
+                x: { label: '', grid: { visible: false }, ticks: { visible: true, mode: 'auto' } },
+                y: { label: '', position: 'left', ticks: { visible: true, mode: 'auto' } },
+            },
+        }),
+        graphyKit.styles({
+            defaults: [
+                graphyKit.style.graph({
+                    fill: 'transparent',
+                    strokeWidth: 0,
+                    padding: { top: 8, right: 12, bottom: 8, left: 4 },
+                }),
+                graphyKit.style.panelBorder({ strokeWidth: 0 }),
+                graphyKit.style.tickLabel({ textColor: chart.tick, fontSize: 11 }),
+                graphyKit.style.geom.line({ stroke: chart.blue, strokeWidth: 2.25 }, { layer: 'weekly' }),
+            ],
+        }),
+    ), [domainMin, domainMax]);
+
+    const slots = useMemo<GraphSlots>(() => ({
+        Tooltip: (props: TooltipSlotProps) => <WeeklyTooltip {...props} weeks={visible} />,
+    }), [visible]);
+
     const readout = `${formatRate(Math.round(domain[0]), 0)}–${formatRate(Math.round(domain[1]), 0)}/kg`;
 
     const controls = (
@@ -240,38 +270,10 @@ export const WeeklyRateChart = memo(({ weeks }: { weeks: WeeklyPoint[] }) => {
                 </div>
             ) : (
                 <>
-                    <div ref={plotRef}>
-                        <ResponsiveContainer width="100%" height={320}>
-                            <LineChart data={visible} margin={{ top: 8, right: 16, left: 4, bottom: 4 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
-                                <XAxis
-                                    dataKey="label"
-                                    tick={{ fontSize: 11, fill: chart.tick }}
-                                    interval={tickInterval}
-                                    height={30}
-                                />
-                                <YAxis
-                                    tickFormatter={(value) => `₹${value}`}
-                                    tick={{ fontSize: 11, fill: chart.tick }}
-                                    domain={domain}
-                                    ticks={axisTicks(domain)}
-                                    allowDataOverflow
-                                    width={52}
-                                />
-                                <Tooltip content={<WeeklyTooltip />} />
-                                <Line
-                                    type="monotone"
-                                    dataKey="avg"
-                                    name="Weekly average"
-                                    stroke={chart.blue}
-                                    strokeWidth={2.25}
-                                    dot={false}
-                                    connectNulls={false}
-                                    activeDot={{ r: 4, stroke: chart.blue, strokeWidth: 2, fill: '#fff' }}
-                                    isAnimationActive={false}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
+                    <div ref={plotRef} className={surface.clipped} style={{ height: 320 }}>
+                        <graphyKit.GraphProvider data={data} spec={spec} formattingLocale="en-GB">
+                            <GraphRenderer animation={false} slots={slots} />
+                        </graphyKit.GraphProvider>
                     </div>
                     {clipped && (
                         <div
