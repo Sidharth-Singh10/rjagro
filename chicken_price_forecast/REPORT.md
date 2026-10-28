@@ -623,7 +623,7 @@ chicken_price_forecast/
 ├── src/
 │   ├── cplib.py                  IO, calendar features, HAC/Wald helpers
 │   ├── effects.py                the event estimator (shared by report and backtest)
-│   ├── 01_ingest.py … 08_verify_event_dates.py
+│   ├── 01_ingest.py … 09_export_frontend.py
 ├── outputs/tables/               every table as CSV
 ├── outputs/charts/               eight figures as PNG
 ├── outputs/chicken_price_deliverables.xlsx
@@ -639,3 +639,7 @@ unmodified.
 
 To add new observations: append rows to the raw CSV, re-run. The forecast start
 date follows the last quoted day automatically.
+
+Step 09 exports the result to the web app (`rjagro_frontend/app/data/price_forecast.json`),
+so the Analytics tab shows the same numbers as this report; `npm run validate:forecast`
+checks that file's internal consistency.

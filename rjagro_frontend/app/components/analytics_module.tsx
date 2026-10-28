@@ -10,6 +10,7 @@ import { MonthlyRateChart } from './analytics/monthly_rate_chart';
 import { WeeklyRateChart } from './analytics/weekly_rate_chart';
 import { BestRangeChart } from './analytics/best_range_chart';
 import { EventImpactSection } from './analytics/event_impact_section';
+import { ForecastSection } from './analytics/forecast_section';
 import { EventsAndSeasonality } from './analytics/events/events_section';
 
 const DAY_MS = 86_400_000;
@@ -66,6 +67,8 @@ const Analysis = () => {
             </div>
 
             <EventImpactSection />
+
+            <ForecastSection />
 
             <EventsAndSeasonality />
 

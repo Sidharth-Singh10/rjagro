@@ -71,6 +71,18 @@ bash run_all.sh
 | 06 | `src/06_charts.py` | all figures |
 | 07 | `src/07_export.py` | Excel workbook + 26 consistency checks |
 | 08 | `src/08_verify_event_dates.py` | record the external check of 2027 dates |
+| 09 | `src/09_export_frontend.py` | write `rjagro_frontend/app/data/price_forecast.json` for the Analytics tab |
+
+## Frontend
+
+Step 09 writes `../rjagro_frontend/app/data/price_forecast.json` (the only file
+the web app reads) and refreshes `../rjagro_frontend/docs/event-impact-statistics.md`.
+The app never computes an event effect or a forecast itself, so the UI cannot
+drift from the report. Validate the export after any hand edit with:
+
+```bash
+cd ../rjagro_frontend && npm run validate:forecast
+```
 
 ## Updating with new observations
 

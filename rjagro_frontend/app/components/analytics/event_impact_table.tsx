@@ -1,255 +1,170 @@
 'use client'
-import { Fragment, memo, useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { formatEventRange } from '@/app/utils/event_calendar';
+import { memo, useMemo, useState } from 'react';
 import {
-    benchmarkScope, directionArrow, formatDelta, formatPValue, ordinal,
-    verdictLabel, verdictMark, verdictShortLabel,
-    type EventImpact, type ImpactVerdict,
-} from '@/app/utils/event_price_impact';
+    categoryColor, formatDate, formatInr, formatPct, reliabilityStyle,
+    type EventEstimate,
+} from '@/app/utils/price_forecast';
 
-const assumedLabel: Record<EventImpact['event']['impact'], string> = {
-    positive: 'Uptick',
-    negative: 'Downturn',
-    mixed: 'Mixed',
-    unknown: 'Unknown',
-};
-
-const assumedArrow: Record<EventImpact['event']['impact'], string> = {
+const arrow: Record<EventEstimate['hypothesis'], string> = {
     positive: '↑',
     negative: '↓',
     mixed: '~',
-    unknown: '?',
 };
 
-const verdictRank: Record<ImpactVerdict, number> = {
-    consistent: 0,
-    contradicted: 1,
-    fragile: 2,
-    notable: 3,
-    typical: 4,
-    insufficient: 5,
-    pending: 6,
+const arrowTitle: Record<EventEstimate['hypothesis'], string> = {
+    positive: 'calendar expects higher prices',
+    negative: 'calendar expects lower prices',
+    mixed: 'direction not assumed',
 };
 
-const verdictClass: Record<ImpactVerdict, string> = {
-    consistent: 'text-emerald-700',
-    contradicted: 'text-red-700',
-    fragile: 'text-amber-700',
-    notable: 'text-sky-700',
-    typical: 'text-gray-500',
-    insufficient: 'text-gray-500',
-    pending: 'text-gray-400',
-};
+const sortOptions = [
+    { key: 'pooled', label: 'pooled effect' },
+    { key: 'raw', label: 'raw effect' },
+    { key: 'occurrences', label: 'occurrences' },
+    { key: 'name', label: 'name' },
+] as const;
 
-type SortKey = 'date' | 'delta' | 'verdict';
+type SortKey = (typeof sortOptions)[number]['key'];
 
-export const EventImpactTable = memo(({ impacts }: { impacts: EventImpact[] }) => {
-    const [includePending, setIncludePending] = useState(false);
-    const [sortKey, setSortKey] = useState<SortKey>('date');
-    const [ascending, setAscending] = useState(true);
-    const [expanded, setExpanded] = useState<string | null>(null);
+export const EventImpactTable = memo(({ impacts }: { impacts: EventEstimate[] }) => {
+    const [onlyEvidence, setOnlyEvidence] = useState(false);
+    const [sortKey, setSortKey] = useState<SortKey>('pooled');
 
     const rows = useMemo(() => {
-        const base = impacts.filter((row) => includePending || row.observable);
+        const base = onlyEvidence ? impacts.filter((row) => row.occurrences > 0) : impacts;
         const sorted = [...base].sort((a, b) => {
-            if (sortKey === 'delta') {
-                const left = a.deltaPct ?? Number.POSITIVE_INFINITY;
-                const right = b.deltaPct ?? Number.POSITIVE_INFINITY;
-                return left - right;
-            }
-            if (sortKey === 'verdict') {
-                return verdictRank[a.verdict] - verdictRank[b.verdict];
-            }
-            return a.event.startDate.localeCompare(b.event.startDate);
+            if (sortKey === 'name') return a.name.localeCompare(b.name);
+            if (sortKey === 'occurrences') return b.occurrences - a.occurrences;
+            if (sortKey === 'raw') return (b.rawPct ?? -99) - (a.rawPct ?? -99);
+            return b.pooledPct - a.pooledPct;
         });
-        return ascending ? sorted : sorted.reverse();
-    }, [impacts, includePending, sortKey, ascending]);
-
-    const onSort = (key: SortKey) => {
-        if (key === sortKey) {
-            setAscending((value) => !value);
-            return;
-        }
-        setSortKey(key);
-        setAscending(true);
-    };
+        return sorted;
+    }, [impacts, onlyEvidence, sortKey]);
 
     return (
         <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <div>
-                    <h4 className="text-sm font-semibold text-gray-700">How each label was calculated</h4>
-                    <p className="mt-0.5 text-[11px] text-gray-500">
-                        Average during the event vs the equal window before it, then ranked against every other window
-                        of the same length nearby. Expand a row for the exact windows and arithmetic.
-                    </p>
+                <h4 className="text-sm font-semibold text-gray-700">Every event, with what the evidence supports</h4>
+                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 text-gray-500">
+                        <input
+                            type="checkbox"
+                            checked={onlyEvidence}
+                            onChange={(event) => setOnlyEvidence(event.target.checked)}
+                            className="h-3 w-3 rounded border-gray-300"
+                        />
+                        only events with quotes
+                    </label>
+                    <select
+                        value={sortKey}
+                        onChange={(event) => setSortKey(event.target.value as SortKey)}
+                        className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-600"
+                        aria-label="Sort events"
+                    >
+                        {sortOptions.map((option) => (
+                            <option key={option.key} value={option.key}>
+                                sort by {option.label}
+                            </option>
+                        ))}
+                    </select>
                 </div>
-                <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-gray-600">
-                    <input
-                        type="checkbox"
-                        checked={includePending}
-                        onChange={(event) => setIncludePending(event.target.checked)}
-                        className="h-3.5 w-3.5 rounded border-gray-300 text-green-600 focus:ring-green-600"
-                    />
-                    Include future events
-                </label>
             </div>
 
-            <div className="max-h-[440px] overflow-auto rounded-lg border border-gray-100">
-                <table className="w-full min-w-[780px] border-collapse text-left text-xs">
-                    <thead className="sticky top-0 z-10 bg-gray-50 text-[10px] uppercase tracking-wide text-gray-500">
-                        <tr>
-                            <th className="px-3 py-2 font-medium" aria-sort={sortKey === 'date' ? (ascending ? 'ascending' : 'descending') : 'none'}>
-                                <button type="button" onClick={() => onSort('date')} className="hover:text-gray-800">
-                                    Dates
-                                </button>
-                            </th>
-                            <th className="px-3 py-2 font-medium">Event</th>
-                            <th className="whitespace-nowrap px-3 py-2 font-medium">Assumed</th>
-                            <th className="px-3 py-2 text-right font-medium" aria-sort={sortKey === 'delta' ? (ascending ? 'ascending' : 'descending') : 'none'}>
-                                <button type="button" onClick={() => onSort('delta')} className="hover:text-gray-800">
-                                    Change
-                                </button>
-                            </th>
-                            <th className="px-3 py-2 font-medium" aria-sort={sortKey === 'verdict' ? (ascending ? 'ascending' : 'descending') : 'none'}>
-                                <button type="button" onClick={() => onSort('verdict')} className="hover:text-gray-800">
-                                    Verdict
-                                </button>
-                            </th>
-                            <th className="px-3 py-2 text-right font-medium">Pre avg</th>
-                            <th className="px-3 py-2 text-right font-medium">During avg</th>
-                            <th className="w-8 px-2 py-2" aria-label="Expand" />
+            <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                    <thead>
+                        <tr className="border-b border-gray-100 text-[10px] uppercase tracking-wide text-gray-400">
+                            <th className="py-2 pr-3 font-medium">Event</th>
+                            <th className="py-2 pr-3 font-medium">Occurrences</th>
+                            <th className="py-2 pr-3 text-right font-medium">Days</th>
+                            <th className="py-2 pr-3 text-right font-medium">Observed</th>
+                            <th className="py-2 pr-3 text-right font-medium">Baseline</th>
+                            <th className="py-2 pr-3 text-right font-medium">Raw</th>
+                            <th className="py-2 pr-3 text-right font-medium">Pooled (80%)</th>
+                            <th className="py-2 pr-1 text-right font-medium">Grade</th>
                         </tr>
                     </thead>
                     <tbody>
                         {rows.map((row) => {
-                            const open = expanded === row.id;
+                            const style = reliabilityStyle(row.reliability);
+                            const pooledTone = row.pooledPct > 0
+                                ? 'text-emerald-700'
+                                : row.pooledPct < 0
+                                    ? 'text-red-700'
+                                    : 'text-gray-500';
+
                             return (
-                                <Fragment key={row.id}>
-                                    <tr
-                                        className="border-t border-gray-100 align-top hover:bg-gray-50/60"
-                                    >
-                                        <td className="whitespace-nowrap px-3 py-2 text-gray-600">
-                                            <span className="block">{formatEventRange(row.event.startDate, row.event.endDate)}</span>
-                                            <span className="text-[10px] text-gray-400">{row.durationDays}d window {row.windowDays}d</span>
-                                        </td>
-                                        <td className="px-3 py-2 text-gray-800">{row.event.name}</td>
-                                        <td className="whitespace-nowrap px-3 py-2 text-gray-600">
-                                            {assumedLabel[row.event.impact]} {assumedArrow[row.event.impact]}
-                                        </td>
-                                        <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums font-medium text-gray-800">
-                                            {row.deltaPct === null
-                                                ? '—'
-                                                : `${directionArrow[row.direction]} ${formatDelta(row.deltaPct)}`}
-                                        </td>
-                                        <td
-                                            className={`whitespace-nowrap px-3 py-2 font-medium ${verdictClass[row.verdict]}`}
-                                            title={verdictLabel[row.verdict]}
-                                        >
-                                            <span className="block">
-                                                <span aria-hidden>{verdictMark[row.verdict]}</span> {verdictShortLabel[row.verdict]}
-                                            </span>
-                                            {row.benchmark !== null && (
-                                                <span className="block text-[10px] font-normal text-gray-400">
-                                                    {ordinal(row.benchmark.percentile)} percentile
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-gray-700">
-                                            {row.pre.average === null ? '—' : `₹${row.pre.average.toFixed(2)}`}
-                                            <span className="ml-1 text-[10px] text-gray-400">({row.pre.quotes})</span>
-                                        </td>
-                                        <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-gray-700">
-                                            {row.during.average === null ? '—' : `₹${row.during.average.toFixed(2)}`}
-                                            <span className="ml-1 text-[10px] text-gray-400">({row.during.quotes})</span>
-                                        </td>
-                                        <td className="px-2 py-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setExpanded(open ? null : row.id)}
-                                                aria-expanded={open}
-                                                aria-label={`${open ? 'Hide' : 'Show'} calculation for ${row.event.name}`}
-                                                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                                <tr key={row.id} className="border-b border-gray-50 last:border-0 align-top">
+                                    <td className="py-2 pr-3">
+                                        <div className="flex items-center gap-1.5">
+                                            <span
+                                                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                                style={{ backgroundColor: categoryColor[row.category] }}
+                                                aria-hidden
+                                            />
+                                            <span className="text-gray-700">{row.name}</span>
+                                            <span
+                                                className="text-[10px] text-gray-400"
+                                                title={arrowTitle[row.hypothesis]}
                                             >
-                                                <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {open && (
-                                        <tr key={`${row.id}-detail`} className="border-t border-gray-100 bg-gray-50/70">
-                                            <td colSpan={8} className="px-4 py-3 text-[11px] leading-relaxed text-gray-600">
-                                                <div className="sticky left-0 max-w-[600px]">
-                                                    <p>
-                                                        <span className="font-medium text-gray-700">Pre window</span>{' '}
-                                                        {formatEventRange(row.pre.from, row.pre.to)} · {row.pre.quotes} quoted day{row.pre.quotes === 1 ? '' : 's'}
-                                                        {row.pre.average !== null ? ` · average ₹${row.pre.average.toFixed(2)}` : ''}
-                                                    </p>
-                                                    <p>
-                                                        <span className="font-medium text-gray-700">During window</span>{' '}
-                                                        {formatEventRange(row.during.from, row.during.to)} · {row.during.quotes} quoted day{row.during.quotes === 1 ? '' : 's'}
-                                                        {row.during.average !== null ? ` · average ₹${row.during.average.toFixed(2)}` : ''}
-                                                    </p>
-                                                    {row.reason !== null ? (
-                                                        <p className="mt-1">{row.reason}</p>
-                                                    ) : (
-                                                        <>
-                                                            <p className="mt-1">
-                                                                <span className="font-medium text-gray-700">Raw change</span>{' '}
-                                                                ({row.during.average?.toFixed(2)} − {row.pre.average?.toFixed(2)}) ÷ {row.pre.average?.toFixed(2)} ={' '}
-                                                                {formatDelta(row.deltaPct)}.
-                                                            </p>
-                                                            <p>
-                                                                <span className="font-medium text-gray-700">Move vs the pre-window trend</span>{' '}
-                                                                {formatDelta(row.trendPct)} over {row.trendQuotes} quotes
-                                                                {row.benchmark !== null && (
-                                                                    <>
-                                                                        {' · '}ranked against {benchmarkScope(row.benchmark)}: {ordinal(row.benchmark.percentile)} percentile,
-                                                                        p = {formatPValue(row.benchmark.p)}
-                                                                    </>
-                                                                )}.
-                                                            </p>
-                                                            {row.stability !== null && (
-                                                                <p>
-                                                                    <span className="font-medium text-gray-700">Baseline shift</span>{' '}
-                                                                    starting the pre-window up to {row.stability.shifts - 1} days earlier gives{' '}
-                                                                    {formatDelta(row.stability.min)} to {formatDelta(row.stability.max)}
-                                                                    {row.stability.stable ? '' : ' — the sign depends on that choice'}.
-                                                                </p>
-                                                            )}
-                                                            {row.qValue !== null && (
-                                                                <p className="text-gray-500">
-                                                                    q = {formatPValue(row.qValue)} after Benjamini–Hochberg across the testable rows.
-                                                                </p>
-                                                            )}
-                                                            <p className="mt-1">
-                                                                Assumed {assumedLabel[row.event.impact].toLowerCase()}; {verdictLabel[row.verdict].toLowerCase()}.
-                                                            </p>
-                                                        </>
-                                                    )}
-                                                    {row.confounders.length > 0 && (
-                                                        <p className="mt-1 text-gray-500">
-                                                            <span className="font-medium text-gray-600">Also in these windows:</span>{' '}
-                                                            {row.confounders.map((item) => item.name).join(', ')} — the move may reflect these too.
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </Fragment>
+                                                {arrow[row.hypothesis]}
+                                            </span>
+                                        </div>
+                                        <p className="mt-0.5 text-[10px] text-gray-400">
+                                            {row.firstDate && row.lastDate
+                                                ? `${formatDate(row.firstDate)} → ${formatDate(row.lastDate)}`
+                                                : 'no dated occurrence'}
+                                            {row.occurrences === 0 ? ' · no quotes in the window — category prior only' : ''}
+                                        </p>
+                                    </td>
+                                    <td className="py-2 pr-3 tabular-nums text-gray-500">{row.occurrences}</td>
+                                    <td className="py-2 pr-3 text-right tabular-nums text-gray-500">{row.days}</td>
+                                    <td className="py-2 pr-3 text-right tabular-nums text-gray-700">
+                                        {row.occurrences === 0 ? '—' : formatInr(row.observedPrice)}
+                                    </td>
+                                    <td className="py-2 pr-3 text-right tabular-nums text-gray-500">
+                                        {row.occurrences === 0 ? '—' : formatInr(row.baselinePrice)}
+                                    </td>
+                                    <td className="py-2 pr-3 text-right tabular-nums text-gray-500">
+                                        {formatPct(row.rawPct, 2)}
+                                        <span className="ml-1 text-[10px] text-gray-400">
+                                            {row.rawLo95 === null ? '' : `${formatPct(row.rawLo95, 0)} to ${formatPct(row.rawHi95, 0)}`}
+                                        </span>
+                                    </td>
+                                    <td className={`py-2 pr-3 text-right tabular-nums font-medium ${pooledTone}`}>
+                                        {formatPct(row.pooledPct, 2)}
+                                        <span className="ml-1 text-[10px] font-normal text-gray-400">
+                                            {formatPct(row.pooledLo80, 1)} to {formatPct(row.pooledHi80, 1)}
+                                        </span>
+                                    </td>
+                                    <td className="py-2 text-right">
+                                        <span
+                                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] ${style.text} ${style.bg} ${style.border}`}
+                                            title={row.reliabilityLabel}
+                                        >
+                                            <span
+                                                className="h-1.5 w-1.5 rounded-full"
+                                                style={{ backgroundColor: style.dot }}
+                                            />
+                                            {row.reliability}
+                                        </span>
+                                    </td>
+                                </tr>
                             );
                         })}
                     </tbody>
                 </table>
             </div>
 
-            <p className="mt-2 text-[10px] text-gray-400">
-                Rates are ₹/kg. Only quoted days are counted; a side with fewer than four days before, or three during,
-                is reported as “not enough data”. A move is called unusual only when it beats 95% of comparable windows
-                (p ≤ 0.05); co-movement is not causation.
+            <p className="mt-3 text-[11px] leading-relaxed text-gray-400">
+                <span className="text-gray-500">Raw</span> compares the event window with a matched 14-day window
+                either side, 95% interval from a block bootstrap.{' '}
+                <span className="text-gray-500">Pooled</span> shrinks that toward the category mean so a single
+                observed day cannot masquerade as a measured effect; it is the number the forecast applies. An
+                event with 0 occurrences shows the category prior only and is graded E.
             </p>
         </div>
     );
 });
+
 EventImpactTable.displayName = 'EventImpactTable';
