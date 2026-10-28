@@ -5,7 +5,7 @@ import { ChartCard } from '../v2/overview/chart_card';
 import { chart } from '../v2/overview/chart_colors';
 import type { DailyPoint } from '@/app/utils/rate_tracker';
 import {
-    formatDelta, shortEventName, verdictLabel, verdictMark,
+    formatDelta, formatPValue, ordinal, shortEventName, verdictLabel, verdictMark,
     type EventImpact, type ImpactVerdict,
 } from '@/app/utils/event_price_impact';
 
@@ -24,11 +24,13 @@ const Y_TICKS = [50, 75, 100, 125, 150];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export const verdictColor: Record<ImpactVerdict, string> = {
-    aligned: chart.green,
-    opposed: chart.red,
-    inconclusive: chart.amber,
-    insufficient: chart.slate,
-    pending: chart.slate,
+    consistent: chart.green,
+    contradicted: chart.red,
+    fragile: chart.amber,
+    notable: chart.blue,
+    typical: chart.slate,
+    insufficient: '#cbd5e1',
+    pending: '#e2e8f0',
 };
 
 const epochOf = (iso: string) => Date.UTC(
@@ -170,10 +172,11 @@ export const EventImpactChart = memo(({
         <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <LegendChip color={chart.brand} label="Daily rate" />
-                <LegendChip color={chart.green} label="Matched" />
-                <LegendChip color={chart.red} label="Opposite" />
-                <LegendChip color={chart.amber} label="Inconclusive" />
-                <LegendChip color={chart.slate} label="No data" dashed />
+                <LegendChip color={chart.green} label="With hypothesis" />
+                <LegendChip color={chart.red} label="Against" />
+                <LegendChip color={chart.amber} label="Baseline-sensitive" />
+                <LegendChip color={chart.slate} label="Typical" />
+                <LegendChip color="#cbd5e1" label="No data" dashed />
             </div>
             <div className="flex items-center rounded-lg border border-gray-200 bg-white">
                 <button
@@ -428,6 +431,11 @@ export const EventImpactChart = memo(({
                                         <p className="mt-1 text-gray-600">
                                             Assumed {active.event.impact} · actual {formatDelta(active.deltaPct)}
                                         </p>
+                                        {active.benchmark !== null && (
+                                            <p className="text-gray-500">
+                                                {formatDelta(active.trendPct)} vs trend · {ordinal(active.benchmark.percentile)} pct · p {formatPValue(active.benchmark.p)}
+                                            </p>
+                                        )}
                                         <p className="text-gray-500">
                                             Pre ₹{active.pre.average} ({active.pre.quotes} quotes) → during ₹{active.during.average} ({active.during.quotes} quotes)
                                         </p>

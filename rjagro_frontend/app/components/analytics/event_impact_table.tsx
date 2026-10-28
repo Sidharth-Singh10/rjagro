@@ -3,7 +3,8 @@ import { Fragment, memo, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { formatEventRange } from '@/app/utils/event_calendar';
 import {
-    directionArrow, formatDelta, verdictLabel, verdictMark,
+    benchmarkScope, directionArrow, formatDelta, formatPValue, ordinal,
+    verdictLabel, verdictMark, verdictShortLabel,
     type EventImpact, type ImpactVerdict,
 } from '@/app/utils/event_price_impact';
 
@@ -22,17 +23,21 @@ const assumedArrow: Record<EventImpact['event']['impact'], string> = {
 };
 
 const verdictRank: Record<ImpactVerdict, number> = {
-    aligned: 0,
-    opposed: 1,
-    inconclusive: 2,
-    insufficient: 3,
-    pending: 4,
+    consistent: 0,
+    contradicted: 1,
+    fragile: 2,
+    notable: 3,
+    typical: 4,
+    insufficient: 5,
+    pending: 6,
 };
 
 const verdictClass: Record<ImpactVerdict, string> = {
-    aligned: 'text-emerald-700',
-    opposed: 'text-red-700',
-    inconclusive: 'text-amber-700',
+    consistent: 'text-emerald-700',
+    contradicted: 'text-red-700',
+    fragile: 'text-amber-700',
+    notable: 'text-sky-700',
+    typical: 'text-gray-500',
     insufficient: 'text-gray-500',
     pending: 'text-gray-400',
 };
@@ -76,8 +81,8 @@ export const EventImpactTable = memo(({ impacts }: { impacts: EventImpact[] }) =
                 <div>
                     <h4 className="text-sm font-semibold text-gray-700">How each label was calculated</h4>
                     <p className="mt-0.5 text-[11px] text-gray-500">
-                        Average during the event vs the equal window before it. Expand a row for the exact windows,
-                        quotes and arithmetic.
+                        Average during the event vs the equal window before it, then ranked against every other window
+                        of the same length nearby. Expand a row for the exact windows and arithmetic.
                     </p>
                 </div>
                 <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-gray-600">
@@ -92,7 +97,7 @@ export const EventImpactTable = memo(({ impacts }: { impacts: EventImpact[] }) =
             </div>
 
             <div className="max-h-[440px] overflow-auto rounded-lg border border-gray-100">
-                <table className="w-full min-w-[760px] border-collapse text-left text-xs">
+                <table className="w-full min-w-[780px] border-collapse text-left text-xs">
                     <thead className="sticky top-0 z-10 bg-gray-50 text-[10px] uppercase tracking-wide text-gray-500">
                         <tr>
                             <th className="px-3 py-2 font-medium" aria-sort={sortKey === 'date' ? (ascending ? 'ascending' : 'descending') : 'none'}>
@@ -101,7 +106,7 @@ export const EventImpactTable = memo(({ impacts }: { impacts: EventImpact[] }) =
                                 </button>
                             </th>
                             <th className="px-3 py-2 font-medium">Event</th>
-                            <th className="px-3 py-2 font-medium">Assumed</th>
+                            <th className="whitespace-nowrap px-3 py-2 font-medium">Assumed</th>
                             <th className="px-3 py-2 text-right font-medium" aria-sort={sortKey === 'delta' ? (ascending ? 'ascending' : 'descending') : 'none'}>
                                 <button type="button" onClick={() => onSort('delta')} className="hover:text-gray-800">
                                     Change
@@ -138,8 +143,18 @@ export const EventImpactTable = memo(({ impacts }: { impacts: EventImpact[] }) =
                                                 ? '—'
                                                 : `${directionArrow[row.direction]} ${formatDelta(row.deltaPct)}`}
                                         </td>
-                                        <td className={`whitespace-nowrap px-3 py-2 font-medium ${verdictClass[row.verdict]}`}>
-                                            <span aria-hidden>{verdictMark[row.verdict]}</span> {verdictLabel[row.verdict]}
+                                        <td
+                                            className={`whitespace-nowrap px-3 py-2 font-medium ${verdictClass[row.verdict]}`}
+                                            title={verdictLabel[row.verdict]}
+                                        >
+                                            <span className="block">
+                                                <span aria-hidden>{verdictMark[row.verdict]}</span> {verdictShortLabel[row.verdict]}
+                                            </span>
+                                            {row.benchmark !== null && (
+                                                <span className="block text-[10px] font-normal text-gray-400">
+                                                    {ordinal(row.benchmark.percentile)} percentile
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-gray-700">
                                             {row.pre.average === null ? '—' : `₹${row.pre.average.toFixed(2)}`}
@@ -164,33 +179,60 @@ export const EventImpactTable = memo(({ impacts }: { impacts: EventImpact[] }) =
                                     {open && (
                                         <tr key={`${row.id}-detail`} className="border-t border-gray-100 bg-gray-50/70">
                                             <td colSpan={8} className="px-4 py-3 text-[11px] leading-relaxed text-gray-600">
-                                                <div className="sticky left-0 max-w-[560px]">
-                                                <p>
-                                                    <span className="font-medium text-gray-700">Pre window</span>{' '}
-                                                    {formatEventRange(row.pre.from, row.pre.to)} · {row.pre.quotes} quoted day{row.pre.quotes === 1 ? '' : 's'}
-                                                    {row.pre.average !== null ? ` · average ₹${row.pre.average.toFixed(2)}` : ''}
-                                                </p>
-                                                <p>
-                                                    <span className="font-medium text-gray-700">During window</span>{' '}
-                                                    {formatEventRange(row.during.from, row.during.to)} · {row.during.quotes} quoted day{row.during.quotes === 1 ? '' : 's'}
-                                                    {row.during.average !== null ? ` · average ₹${row.during.average.toFixed(2)}` : ''}
-                                                </p>
-                                                <p className="mt-1">
-                                                    {row.reason ?? (
+                                                <div className="sticky left-0 max-w-[600px]">
+                                                    <p>
+                                                        <span className="font-medium text-gray-700">Pre window</span>{' '}
+                                                        {formatEventRange(row.pre.from, row.pre.to)} · {row.pre.quotes} quoted day{row.pre.quotes === 1 ? '' : 's'}
+                                                        {row.pre.average !== null ? ` · average ₹${row.pre.average.toFixed(2)}` : ''}
+                                                    </p>
+                                                    <p>
+                                                        <span className="font-medium text-gray-700">During window</span>{' '}
+                                                        {formatEventRange(row.during.from, row.during.to)} · {row.during.quotes} quoted day{row.during.quotes === 1 ? '' : 's'}
+                                                        {row.during.average !== null ? ` · average ₹${row.during.average.toFixed(2)}` : ''}
+                                                    </p>
+                                                    {row.reason !== null ? (
+                                                        <p className="mt-1">{row.reason}</p>
+                                                    ) : (
                                                         <>
-                                                            <span className="font-medium text-gray-700">Calculation</span>{' '}
-                                                            ({row.during.average?.toFixed(2)} − {row.pre.average?.toFixed(2)}) ÷ {row.pre.average?.toFixed(2)} ={' '}
-                                                            {formatDelta(row.deltaPct)}. Assumed {assumedLabel[row.event.impact].toLowerCase()}, actual{' '}
-                                                            {row.direction === 'flat' ? 'flat' : row.direction}; {verdictLabel[row.verdict].toLowerCase()}.
+                                                            <p className="mt-1">
+                                                                <span className="font-medium text-gray-700">Raw change</span>{' '}
+                                                                ({row.during.average?.toFixed(2)} − {row.pre.average?.toFixed(2)}) ÷ {row.pre.average?.toFixed(2)} ={' '}
+                                                                {formatDelta(row.deltaPct)}.
+                                                            </p>
+                                                            <p>
+                                                                <span className="font-medium text-gray-700">Move vs the pre-window trend</span>{' '}
+                                                                {formatDelta(row.trendPct)} over {row.trendQuotes} quotes
+                                                                {row.benchmark !== null && (
+                                                                    <>
+                                                                        {' · '}ranked against {benchmarkScope(row.benchmark)}: {ordinal(row.benchmark.percentile)} percentile,
+                                                                        p = {formatPValue(row.benchmark.p)}
+                                                                    </>
+                                                                )}.
+                                                            </p>
+                                                            {row.stability !== null && (
+                                                                <p>
+                                                                    <span className="font-medium text-gray-700">Baseline shift</span>{' '}
+                                                                    starting the pre-window up to {row.stability.shifts - 1} days earlier gives{' '}
+                                                                    {formatDelta(row.stability.min)} to {formatDelta(row.stability.max)}
+                                                                    {row.stability.stable ? '' : ' — the sign depends on that choice'}.
+                                                                </p>
+                                                            )}
+                                                            {row.qValue !== null && (
+                                                                <p className="text-gray-500">
+                                                                    q = {formatPValue(row.qValue)} after Benjamini–Hochberg across the testable rows.
+                                                                </p>
+                                                            )}
+                                                            <p className="mt-1">
+                                                                Assumed {assumedLabel[row.event.impact].toLowerCase()}; {verdictLabel[row.verdict].toLowerCase()}.
+                                                            </p>
                                                         </>
                                                     )}
-                                                </p>
-                                                {row.confounders.length > 0 && (
-                                                    <p className="mt-1 text-gray-500">
-                                                        <span className="font-medium text-gray-600">Also in these windows:</span>{' '}
-                                                        {row.confounders.map((item) => item.name).join(', ')} — the move may reflect these too.
-                                                    </p>
-                                                )}
+                                                    {row.confounders.length > 0 && (
+                                                        <p className="mt-1 text-gray-500">
+                                                            <span className="font-medium text-gray-600">Also in these windows:</span>{' '}
+                                                            {row.confounders.map((item) => item.name).join(', ')} — the move may reflect these too.
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -203,8 +245,9 @@ export const EventImpactTable = memo(({ impacts }: { impacts: EventImpact[] }) =
             </div>
 
             <p className="mt-2 text-[10px] text-gray-400">
-                Rates are ₹/kg. Only quoted days are averaged; a side with fewer than three quotes is reported as
-                “not enough quotes” rather than given a number. Co-movement is not causation.
+                Rates are ₹/kg. Only quoted days are counted; a side with fewer than four days before, or three during,
+                is reported as “not enough data”. A move is called unusual only when it beats 95% of comparable windows
+                (p ≤ 0.05); co-movement is not causation.
             </p>
         </div>
     );
