@@ -19,6 +19,17 @@ export const impactColor: Record<PriceImpact, string> = {
     unknown: chart.slate,
 };
 
+/** One-word form for chips, legends and toolbars, where space is tight. */
+export const impactShortLabel: Record<PriceImpact, string> = {
+    positive: 'Uptick',
+    negative: 'Downturn',
+    mixed: 'Mixed',
+    unknown: 'Unknown',
+};
+
+/** Stable render order for legends, lists and sorted columns. */
+export const impactOrder: PriceImpact[] = ['positive', 'negative', 'mixed', 'unknown'];
+
 export const ImpactIcon = ({ impact, size = 13 }: { impact: PriceImpact; size?: number }) => {
     if (impact === 'positive') return <TrendingUp size={size} aria-hidden />;
     if (impact === 'negative') return <TrendingDown size={size} aria-hidden />;
@@ -69,12 +80,21 @@ export const ConfidenceChip = memo(({ confidence }: { confidence: ChickenEvent['
 ));
 ConfidenceChip.displayName = 'ConfidenceChip';
 
+/**
+ * Compact key for the section header. Impact is always glyph + word, never
+ * colour on its own.
+ */
 export const ImpactLegend = memo(() => (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500">
-        {(['positive', 'negative', 'mixed', 'unknown'] as PriceImpact[]).map((impact) => (
+    <div
+        className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500"
+        aria-label="Expected price direction (research hypothesis): uptick, downturn, mixed, unknown"
+    >
+        {impactOrder.map((impact) => (
             <span key={impact} className="inline-flex items-center gap-1">
-                <ImpactIcon impact={impact} size={12} />
-                {impactLabel[impact]}
+                <span style={{ color: impactColor[impact] }} aria-hidden>
+                    <ImpactIcon impact={impact} size={12} />
+                </span>
+                {impactShortLabel[impact]}
             </span>
         ))}
     </div>
