@@ -1,0 +1,17 @@
+/*
+ * Panel clipping for Graphy's unit-space geom layers.
+ *
+ * Every geom layer is painted into a nested `<svg viewBox="0 0 1 1"
+ * preserveAspectRatio="none">` that sizes itself to the plot panel but leaves
+ * `overflow` visible. With a pinned Y domain (`scale.y.continuous({ domainMin,
+ * domainMax })`) — which these rate charts use for their zoom — a point outside
+ * the window is drawn above or below the panel, over the axis labels and the
+ * card footer. The engine has no clip option (only `UnitBoxSvg` clips, and it is
+ * not the painter for a line or a bar), so the panel box clips its own layers
+ * here. This mirrors the Recharts plot-area clip the charts had before.
+ *
+ * Scoped to a wrapper class so nothing else on the page is affected.
+ */
+.clipped svg[viewBox='0 0 1 1'] {
+    overflow: hidden;
+}

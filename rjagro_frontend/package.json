@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.43.0",
+    "@graphysdk/react": "1.9.0-beta.1793101835437",
     "@tanstack/react-query": "^5.85.3",
     "@tanstack/react-query-devtools": "^5.85.3",
     "axios": "^1.11.0",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@graphysdk/viz-engine": "1.9.0-beta.1793101835437",
     "@tailwindcss/postcss": "^4",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",

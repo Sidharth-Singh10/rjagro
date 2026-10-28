@@ -2,12 +2,13 @@
 import {
     memo, useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
-import {
-    Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from 'recharts';
+import { GraphRenderer } from '@graphysdk/react';
+import type { Data, GraphSlots, TooltipSlotProps } from '@graphysdk/react';
 import { ChartCard } from '../v2/overview/chart_card';
 import { chart } from '../v2/overview/chart_colors';
 import { formatRate, type BucketStat } from '@/app/utils/rate_tracker';
+import { graphyKit } from './graphy/price_bar_geom';
+import surface from './graphy/graphy_surface.module.css';
 
 type AxisRange = [number, number];
 
@@ -21,10 +22,6 @@ const MIN_SPAN = 20;
 const ZOOM_STEP = 0.7;
 /** Gentler factor for one wheel notch. */
 const WHEEL_STEP = 1.15;
-/** Nice tick intervals in ₹; the smallest that still gives 4–6 labels wins. */
-const TICK_STEPS = [5, 10, 15, 20, 25] as const;
-const MIN_TICKS = 4;
-const MAX_TICKS = 6;
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
 
@@ -60,31 +57,21 @@ const zoomDomain = (current: AxisRange, factor: number, bounds: AxisRange): Axis
 const sameDomain = (a: AxisRange, b: AxisRange) =>
     Math.abs(a[0] - b[0]) < 0.01 && Math.abs(a[1] - b[1]) < 0.01;
 
-const ticksFor = ([low, high]: AxisRange, step: number) => {
-    const ticks: number[] = [];
-    for (let value = Math.ceil(low / step) * step; value <= high + 1e-6; value += step) {
-        ticks.push(Math.round(value));
-    }
-    return ticks;
-};
-
 /**
- * Ticks are derived from the visible span rather than left to Recharts, so a
- * zoomed window still gets round numbers instead of generics of the range.
+ * The hovered month, read off the tooltip's row key (`<layerId>:<pointIndex>`).
+ * Graphy hands a slot only formatted strings, so the index is what ties a row
+ * back to the aggregate it came from.
  */
-const axisTicks = (domain: AxisRange): number[] => {
-    let coarsest: number[] = [];
-    for (const step of TICK_STEPS) {
-        const ticks = ticksFor(domain, step);
-        coarsest = ticks;
-        if (ticks.length >= MIN_TICKS && ticks.length <= MAX_TICKS) return ticks;
-    }
-    return coarsest.length >= 2 ? coarsest : [domain[0], domain[1]];
+const observationAt = <T,>(rows: TooltipSlotProps['content']['rows'], series: T[]): T | null => {
+    const row = rows.find(candidate => candidate.primary) ?? rows[0];
+    if (!row) return null;
+    const index = Number(row.key.slice(row.key.lastIndexOf(':') + 1));
+    return series[index] ?? null;
 };
 
-const MonthlyTooltip = ({ active, payload }: any) => {
-    if (!active || !payload?.length) return null;
-    const month: BucketStat = payload[0].payload;
+const MonthlyTooltip = ({ content, months }: TooltipSlotProps & { months: BucketStat[] }) => {
+    const month = observationAt(content.rows, months);
+    if (month === null) return null;
     return (
         <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-100 text-xs space-y-1">
             <p className="font-semibold text-gray-700">{month.longLabel}</p>
@@ -116,6 +103,7 @@ export const MonthlyRateChart = memo(({ months }: { months: BucketStat[] }) => {
     const span = domain[1] - domain[0];
     const atMinSpan = span <= MIN_SPAN + 0.01;
     const isDefault = sameDomain(domain, bounds);
+    const [domainMin, domainMax] = domain;
 
     const applyZoom = useCallback((factor: number) => {
         setVisible(current => zoomDomain(current ?? bounds, factor, bounds));
@@ -144,6 +132,57 @@ export const MonthlyRateChart = memo(({ months }: { months: BucketStat[] }) => {
         node.addEventListener('wheel', onWheel, { passive: false });
         return () => node.removeEventListener('wheel', onWheel);
     }, [bounds, visible]);
+
+    const data = useMemo<Data>(() => ({
+        columns: [
+            { key: 'label', valueFormat: { type: 'text' } },
+            { key: 'avg', label: 'Average', valueFormat: { type: 'currency', iso: 'inr' } },
+            { key: 'min', label: 'Low', valueFormat: { type: 'currency', iso: 'inr' } },
+            { key: 'max', label: 'High', valueFormat: { type: 'currency', iso: 'inr' } },
+        ],
+        rows: months.map(month => ({
+            label: month.label,
+            avg: month.avg,
+            min: month.min,
+            max: month.max,
+        })),
+    }), [months]);
+
+    // Rebuilt only when the window moves: the bar baseline and the pinned domain
+    // have to describe the same slice of the axis, so they change together.
+    const spec = useMemo(() => graphyKit.pipe(
+        graphyKit.createSpec({ x: 'label', y: 'avg' }),
+        graphyKit.geom.priceBar({ id: 'bars', params: { base: domainMin, radius: 4 } }),
+        graphyKit.geom.line({ id: 'high', aes: { y: 'max' }, interactive: false }),
+        graphyKit.geom.line({ id: 'low', aes: { y: 'min' }, interactive: false }),
+        graphyKit.scale.x.discrete(),
+        // Pinned rather than left to the data: the floor is the bar baseline, so
+        // the window is what the reader sees, not the data's exact extent.
+        graphyKit.scale.y.continuous({ domainMin, domainMax }),
+        graphyKit.config({
+            legend: { position: 'none' },
+            tooltip: { mode: 'band' },
+            numberFormat: { decimals: 0 },
+            axes: {
+                x: { label: '', grid: { visible: false }, ticks: { visible: true, mode: 'auto' } },
+                y: { label: '', position: 'left', ticks: { visible: true, mode: 'auto' } },
+            },
+        }),
+        graphyKit.styles({
+            defaults: [
+                graphyKit.style.graph({ fill: 'transparent', strokeWidth: 0, padding: { top: 8, right: 12, bottom: 8, left: 4 } }),
+                graphyKit.style.panelBorder({ strokeWidth: 0 }),
+                graphyKit.style.tickLabel({ textColor: chart.tick, fontSize: 11 }),
+                graphyKit.style.geom({ fill: chart.brand }, { layer: 'bars' }),
+                graphyKit.style.geom.line({ stroke: chart.slate, strokeWidth: 1.5, dashArray: [4, 3] }, { layer: 'high' }),
+                graphyKit.style.geom.line({ stroke: chart.slate, strokeWidth: 1.5, dashArray: [4, 3] }, { layer: 'low' }),
+            ],
+        }),
+    ), [domainMin, domainMax]);
+
+    const slots = useMemo<GraphSlots>(() => ({
+        Tooltip: (props: TooltipSlotProps) => <MonthlyTooltip {...props} months={months} />,
+    }), [months]);
 
     const legend = (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -209,59 +248,10 @@ export const MonthlyRateChart = memo(({ months }: { months: BucketStat[] }) => {
                     No rate data yet
                 </div>
             ) : (
-                <div ref={plotRef}>
-                    <ResponsiveContainer width="100%" height={320}>
-                        <ComposedChart data={months} margin={{ top: 8, right: 16, left: 4, bottom: 4 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
-                            <XAxis
-                                dataKey="label"
-                                tick={{ fontSize: 11, fill: chart.tick }}
-                                interval={0}
-                                angle={-40}
-                                textAnchor="end"
-                                height={48}
-                            />
-                            <YAxis
-                                tickFormatter={(value) => `₹${value}`}
-                                tick={{ fontSize: 11, fill: chart.tick }}
-                                domain={domain}
-                                ticks={axisTicks(domain)}
-                                allowDataOverflow
-                                width={52}
-                            />
-                            <Tooltip content={<MonthlyTooltip />} cursor={{ fill: 'rgba(52,113,74,0.06)' }} />
-                            <Line
-                                type="monotone"
-                                dataKey="max"
-                                name="High"
-                                stroke={chart.slate}
-                                strokeWidth={1.5}
-                                strokeDasharray="4 3"
-                                dot={false}
-                                activeDot={false}
-                                isAnimationActive={false}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="min"
-                                name="Low"
-                                stroke={chart.slate}
-                                strokeWidth={1.5}
-                                strokeDasharray="4 3"
-                                dot={false}
-                                activeDot={false}
-                                isAnimationActive={false}
-                            />
-                            <Bar
-                                dataKey="avg"
-                                name="Average"
-                                fill={chart.brand}
-                                radius={[4, 4, 0, 0]}
-                                maxBarSize={38}
-                                isAnimationActive={false}
-                            />
-                        </ComposedChart>
-                    </ResponsiveContainer>
+                <div ref={plotRef} className={surface.clipped} style={{ height: 320 }}>
+                    <graphyKit.GraphProvider data={data} spec={spec}>
+                        <GraphRenderer animation={false} slots={slots} />
+                    </graphyKit.GraphProvider>
                 </div>
             )}
         </ChartCard>
