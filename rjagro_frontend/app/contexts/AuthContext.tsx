@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { User, AuthContextType } from '../types/auth';
 import { useRouter } from 'next/navigation';
+import { DEV_USER, devToken, isDevAuthBypass } from '../utils/dev_auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -17,6 +18,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      // Dev preview: treat the visitor as an Admin so dashboard guards pass
+      // without a token. Off in production builds; see utils/dev_auth.ts.
+      if (isDevAuthBypass()) {
+        setUser(DEV_USER);
+        setToken(devToken());
+        setLoading(false);
+        return;
+      }
+
       try {
         const getCookie = (name: string) => {
           const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
