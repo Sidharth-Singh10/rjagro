@@ -10,6 +10,8 @@ import { MonthlyRateChart } from './analytics/monthly_rate_chart';
 import { WeeklyRateChart } from './analytics/weekly_rate_chart';
 import { BestRangeChart } from './analytics/best_range_chart';
 import { DailyRateChart } from './analytics/daily_rate_chart';
+import { EventsAndSeasonality } from './analytics/events/events_section';
+import { eventCalendar } from '@/app/utils/event_calendar';
 
 const DAY_MS = 86_400_000;
 
@@ -65,7 +67,9 @@ const Analysis = () => {
                 <BestRangeChart windows={best7} days={7} color={chart.violet} />
             </div>
 
-            <DailyRateChart days={days} best5={best5[0] ?? null} best7={best7[0] ?? null} />
+            <DailyRateChart days={days} best5={best5[0] ?? null} best7={best7[0] ?? null} events={eventCalendar} />
+
+            <EventsAndSeasonality />
 
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-xs text-gray-500 space-y-1.5">
                 <p className="font-semibold text-gray-700 text-sm">How these numbers are built</p>

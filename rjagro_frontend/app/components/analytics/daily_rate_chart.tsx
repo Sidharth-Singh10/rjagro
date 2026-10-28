@@ -1,5 +1,6 @@
 'use client'
-import { memo } from 'react';
+import { memo, useMemo, useState } from 'react';
+import { CalendarRange } from 'lucide-react';
 import {
     CartesianGrid, Line, LineChart, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
@@ -8,11 +9,15 @@ import { chart } from '../v2/overview/chart_colors';
 import {
     formatRate, type BestWindow, type DailyPoint,
 } from '@/app/utils/rate_tracker';
+import { type ChickenEvent } from '@/app/utils/event_calendar';
+import { impactColor } from './events/event_chips';
 
 interface Props {
     days: DailyPoint[];
     best5: BestWindow | null;
     best7: BestWindow | null;
+    /** Optional event calendar overlay; the price series is never modified by it. */
+    events?: ChickenEvent[];
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -52,11 +57,51 @@ const LegendChip = ({ color, label }: { color: string; label: string }) => (
     </span>
 );
 
-export const DailyRateChart = memo(({ days, best5, best7 }: Props) => {
+export const DailyRateChart = memo(({ days, best5, best7, events = [] }: Props) => {
+    const [showEvents, setShowEvents] = useState(false);
+
+    const chartStart = days[0]?.date ?? null;
+    const chartEnd = days[days.length - 1]?.date ?? null;
+
+    /**
+     * Clip every event to the chart's current slice. ReferenceArea keys on the
+     * same ISO strings the XAxis uses, and `ifOverflow="hidden"` keeps a window
+     * from stretching the domain when a caller passes a narrower slice.
+     */
+    const eventWindows = useMemo(() => {
+        if (!showEvents || chartStart === null || chartEnd === null) return [];
+        return events
+            // Wedding muhurats are the most numerous category and their
+            // clusters would blanket the chart; the Events section covers them.
+            .filter((event) => event.category !== 'wedding')
+            .filter((event) => event.endDate >= chartStart && event.startDate <= chartEnd)
+            .map((event) => ({
+                id: event.id,
+                name: event.name,
+                impact: event.impact,
+                start: event.startDate < chartStart ? chartStart : event.startDate,
+                end: event.endDate > chartEnd ? chartEnd : event.endDate,
+            }));
+    }, [events, showEvents, chartStart, chartEnd]);
+
     const legend = (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <LegendChip color={chart.amber} label="Best 5-day" />
             <LegendChip color={chart.violet} label="Best 7-day" />
+            {showEvents && <LegendChip color={chart.slate} label="Event windows by impact" />}
+            <button
+                type="button"
+                aria-pressed={showEvents}
+                onClick={() => setShowEvents((value) => !value)}
+                className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors
+                    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600
+                    ${showEvents
+                        ? 'border-emerald-700/30 bg-emerald-50 text-emerald-800'
+                        : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400 hover:bg-gray-50'}`}
+            >
+                <CalendarRange size={12} aria-hidden />
+                Events {showEvents ? 'on' : 'off'}
+            </button>
         </div>
     );
 
@@ -84,6 +129,18 @@ export const DailyRateChart = memo(({ days, best5, best7 }: Props) => {
                             width={52}
                         />
                         <Tooltip content={<DailyTooltip />} />
+                        {eventWindows.map((event) => (
+                            <ReferenceArea
+                                key={event.id}
+                                x1={event.start}
+                                x2={event.end}
+                                ifOverflow="hidden"
+                                fill={impactColor[event.impact]}
+                                fillOpacity={0.1}
+                                stroke="none"
+                                strokeOpacity={0}
+                            />
+                        ))}
                         {best7 && (
                             <ReferenceArea
                                 x1={best7.start}
