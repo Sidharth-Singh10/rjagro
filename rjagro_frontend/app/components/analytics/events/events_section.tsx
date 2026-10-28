@@ -19,7 +19,7 @@ const FILTER_PANEL_ID = 'event-filter-panel';
 export const EventsAndSeasonality = () => {
     const [filters, setFilters] = useState<EventFilters>(defaultEventFilters);
     const [selected, setSelected] = useState<ChickenEvent | null>(null);
-    const [view, setView] = useState<EventView>('timeline');
+    const [view, setView] = useState<EventView>('list');
     const [density, setDensity] = useState<EventDensity>('comfortable');
     const [zoomIndex, setZoomIndex] = useState(0);
     const [filtersOpen, setFiltersOpen] = useState(false);
