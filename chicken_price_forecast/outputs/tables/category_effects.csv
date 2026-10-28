@@ -1,0 +1,6 @@
+category,n_occurrences,n_events,raw_pooled_pct,raw_pooled_se_pct,pooled_effect_pct,pooled_se_pct,pooled_ci80_lo_pct,pooled_ci80_hi_pct,pooled_ci95_lo_pct,pooled_ci95_hi_pct
+wedding,12,1,4.89,1.85,4.01,1.68,1.79,6.27,0.64,7.49
+islamic,3,3,4.63,7.25,1.06,3.50,-3.37,5.70,-5.64,8.24
+festival,4,6,-1.80,3.86,-0.94,2.78,-4.40,2.65,-6.18,4.61
+observance,11,8,-1.61,2.10,-1.27,1.86,-3.59,1.11,-4.80,2.39
+fair,1,1,-9.45,5.65,-3.26,3.27,-7.22,0.88,-9.25,3.14

@@ -1,0 +1,7 @@
+# local environment
+.venv/
+__pycache__/
+*.pyc
+
+# generated every run, but reproducible; keep the tree clean of editor noise
+.DS_Store

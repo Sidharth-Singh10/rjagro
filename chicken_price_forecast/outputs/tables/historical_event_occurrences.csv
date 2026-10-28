@@ -1,0 +1,75 @@
+definition_id,event,category,year,start_date,end_date,core_observed_days,matched_days,observed_core_price_inr,matched_baseline_price_inr,effect_lead_pct,effect_recovery_pct,lead_observed_days,recovery_observed_days,influence_observed_days,date_confidence,overlaps_with,effect_core_pct,effect_influence_pct
+chaitra-navratri,Chaitra Navratri,observance,2025,2025-04-01,2025-04-06,6,6,88.94,98.86,,-1.89,0,2,8,confirmed,,-10.04,-8.06
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2025,2025-04-14,2025-04-21,8,8,114.29,101.48,-5.40,20.22,1,1,10,confirmed,,12.62,11.40
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2025,2025-04-25,2025-04-30,6,6,119.64,98.86,23.89,20.37,2,2,10,confirmed,,21.02,21.46
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2025,2025-05-01,2025-05-28,28,10,111.82,94.61,26.83,8.86,1,1,30,confirmed,,18.19,18.14
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2025,2025-06-02,2025-06-08,7,16,85.82,81.67,14.47,-2.05,2,2,11,confirmed,"eid-ul-adha, nirjala-ekadashi",5.08,5.38
+eid-ul-adha,Eid-ul-Adha (Bakrid) and preceding days,islamic,2025,2025-06-05,2025-06-07,3,18,84.00,82.62,6.51,-0.76,2,2,7,confirmed,"lagan-weddings, nirjala-ekadashi",1.66,2.32
+nirjala-ekadashi,Nirjala Ekadashi,observance,2025,2025-06-06,2025-06-06,1,18,84.00,82.45,4.89,0.66,2,2,5,confirmed,"eid-ul-adha, lagan-weddings",1.87,2.58
+muharram,Muharram / Ashura,islamic,2025,2025-07-06,2025-07-06,1,26,78.00,75.00,6.67,0.00,1,2,4,confirmed,,4.00,2.63
+raksha-bandhan,Raksha Bandhan,festival,2025,2025-08-09,2025-08-09,1,17,85.00,69.33,22.61,24.67,2,2,5,confirmed,,22.61,23.43
+janmashtami,Krishna Janmashtami,observance,2025,2025-08-15,2025-08-16,1,13,73.00,75.48,,5.15,0,2,3,confirmed,,-3.29,2.26
+hartalika-teej,Hartalika Teej,observance,2025,2025-08-26,2025-08-26,0,9,,94.00,,,0,0,0,confirmed,,,
+pitru-paksha,Pitru Paksha (Shraddh),observance,2025,2025-09-08,2025-09-21,8,7,110.41,99.69,22.38,-6.71,1,1,10,confirmed,,10.75,9.96
+sharad-navratri,Sharadiya Navratri,observance,2025,2025-09-22,2025-10-01,3,13,95.82,91.81,4.57,,1,0,4,confirmed,,4.37,4.42
+dussehra,Vijayadashami (Dussehra),festival,2025,2025-10-02,2025-10-02,0,11,,88.36,24.50,5.81,1,2,3,confirmed,,,11.70
+karwa-chauth,Karwa Chauth,observance,2025,2025-10-10,2025-10-10,1,11,80.00,90.58,-2.85,-8.96,1,2,4,confirmed,,-11.68,-8.17
+diwali-window,Diwali to Bhai Dooj festival window,festival,2025,2025-10-18,2025-10-23,2,13,84.95,90.80,-5.88,-0.88,2,1,5,confirmed,deepotsav,-6.45,-5.13
+deepotsav,Ayodhya Deepotsav,fair,2025,2025-10-19,2025-10-19,1,15,82.00,90.56,-8.34,,1,0,2,estimated,diwali-window,-9.45,-8.90
+chhath,Chhath Puja,festival,2025,2025-10-25,2025-10-28,0,8,,88.11,2.14,13.49,1,1,2,confirmed,,,7.67
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2025,2025-11-02,2025-11-30,26,12,109.01,99.67,,8.35,0,1,27,confirmed,,9.36,9.33
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2025,2025-12-04,2025-12-06,3,14,106.00,97.10,10.71,8.14,2,1,6,confirmed,,9.16,9.50
+christmas-new-year,Christmas and New Year holidays,festival,2025,2025-12-24,2026-01-01,9,23,99.51,100.85,-3.82,5.11,1,1,11,confirmed,,-1.33,-1.00
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2026,2026-02-05,2026-02-26,17,7,102.19,103.25,-5.09,-1.21,1,1,19,confirmed,maha-shivaratri,-1.03,-1.26
+maha-shivaratri,Maha Shivaratri,observance,2026,2026-02-15,2026-02-15,1,5,102.00,101.78,3.65,-0.28,2,2,5,confirmed,lagan-weddings,0.22,1.37
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2026,2026-03-02,2026-03-12,8,6,106.84,108.07,-2.84,0.86,1,1,10,confirmed,holi,-1.14,-1.12
+holi,Holi and Holika Dahan,festival,2026,2026-03-03,2026-03-04,1,7,102.00,108.20,-3.42,-1.11,2,1,4,confirmed,lagan-weddings,-5.73,-3.44
+chaitra-navratri,Chaitra Navratri,observance,2026,2026-03-19,2026-03-26,0,14,,105.79,5.87,,1,0,1,confirmed,eid-ul-fitr,,5.87
+eid-ul-fitr,Eid-ul-Fitr (Ramzan Id),islamic,2026,2026-03-19,2026-03-21,0,10,,104.94,6.73,,2,0,2,confirmed,chaitra-navratri,,6.73
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2026,2026-04-15,2026-04-29,10,9,109.16,109.37,17.03,,1,0,11,confirmed,,-0.20,1.26
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2026,2026-05-01,2026-05-14,11,4,120.26,104.67,,12.74,0,1,12,confirmed,,14.90,14.72
+eid-ul-adha,Eid-ul-Adha (Bakrid) and preceding days,islamic,2026,2026-05-26,2026-05-28,0,8,,105.56,-7.16,,1,0,1,confirmed,,,-7.16
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2026,2026-06-21,2026-06-29,7,6,111.62,112.99,,4.43,0,1,8,confirmed,"muharram, nirjala-ekadashi",-1.21,-0.52
+nirjala-ekadashi,Nirjala Ekadashi,observance,2026,2026-06-25,2026-06-25,1,5,116.00,109.84,,4.67,0,2,3,confirmed,lagan-weddings,5.61,4.98
+muharram,Muharram / Ashura,islamic,2026,2026-06-26,2026-06-26,1,5,118.00,109.84,5.61,1.05,1,2,4,confirmed,lagan-weddings,7.43,3.75
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2026,2026-07-01,2026-07-11,6,11,132.16,118.85,-0.71,,1,0,7,confirmed,,11.20,9.42
+raksha-bandhan,Raksha Bandhan,festival,2026,2026-08-28,2026-08-28,0,23,,90.63,2.61,21.37,1,1,2,confirmed,,,11.60
+janmashtami,Krishna Janmashtami,observance,2026,2026-09-04,2026-09-04,1,19,90.00,96.95,-0.53,-4.10,2,2,5,confirmed,,-7.17,-3.32
+hartalika-teej,Hartalika Teej,observance,2026,2026-09-14,2026-09-14,1,17,108.00,104.99,-4.75,2.87,1,1,3,confirmed,,2.87,0.26
+pitru-paksha,Pitru Paksha (Shraddh),observance,2026,2026-09-27,2026-10-10,6,12,107.36,108.38,,-5.88,0,1,7,confirmed,,-0.94,-1.66
+sharad-navratri,Sharadiya Navratri,observance,2026,2026-10-11,2026-10-19,4,3,105.70,104.71,,,0,1,5,confirmed,,,
+dussehra,Vijayadashami (Dussehra),festival,2026,2026-10-20,2026-10-20,1,1,112.00,95.00,,,2,2,5,confirmed,,,
+karwa-chauth,Karwa Chauth,observance,2026,2026-10-29,2026-10-29,0,3,,104.71,,,0,0,0,confirmed,,,
+diwali-window,Diwali to Bhai Dooj festival window,festival,2026,2026-11-06,2026-11-11,0,3,,104.71,,,0,0,0,confirmed,deepotsav,,
+deepotsav,Ayodhya Deepotsav,fair,2026,2026-11-07,2026-11-07,0,2,,100.35,,,0,0,0,estimated,diwali-window,,
+chhath,Chhath Puja,festival,2026,2026-11-13,2026-11-16,0,0,,,,,0,0,0,confirmed,,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2026,2026-11-21,2026-11-26,0,0,,,,,0,0,0,confirmed,,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2026,2026-12-02,2026-12-12,0,0,,,,,0,0,0,confirmed,,,
+christmas-new-year,Christmas and New Year holidays,festival,2026,2026-12-24,2027-01-01,0,0,,,,,0,0,0,estimated,,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2027,2027-01-15,2027-01-31,0,0,,,,,0,0,0,estimated,,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2027,2027-02-02,2027-02-28,0,0,,,,,0,0,0,estimated,,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2027,2027-03-01,2027-03-14,0,0,,,,,0,0,0,estimated,"eid-ul-fitr, maha-shivaratri",,
+maha-shivaratri,Maha Shivaratri,observance,2027,2027-03-06,2027-03-06,0,0,,,,,0,0,0,estimated,lagan-weddings,,
+eid-ul-fitr,Eid-ul-Fitr (Ramzan Id),islamic,2027,2027-03-08,2027-03-10,0,0,,,,,0,0,0,tentative,lagan-weddings,,
+holi,Holi and Holika Dahan,festival,2027,2027-03-21,2027-03-22,0,0,,,,,0,0,0,estimated,,,
+chaitra-navratri,Chaitra Navratri,observance,2027,2027-04-07,2027-04-15,0,0,,,,,0,0,0,estimated,,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2027,2027-04-18,2027-04-28,0,0,,,,,0,0,0,estimated,,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2027,2027-05-04,2027-05-31,0,0,,,,,0,0,0,estimated,eid-ul-adha,,
+eid-ul-adha,Eid-ul-Adha (Bakrid) and preceding days,islamic,2027,2027-05-15,2027-05-17,0,0,,,,,0,0,0,tentative,lagan-weddings,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2027,2027-06-01,2027-06-28,0,0,,,,,0,0,0,estimated,"muharram, nirjala-ekadashi",,
+nirjala-ekadashi,Nirjala Ekadashi,observance,2027,2027-06-14,2027-06-14,0,0,,,,,0,0,0,estimated,lagan-weddings,,
+muharram,Muharram / Ashura,islamic,2027,2027-06-16,2027-06-16,0,0,,,,,0,0,0,tentative,lagan-weddings,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2027,2027-07-01,2027-07-12,0,0,,,,,0,0,0,estimated,,,
+raksha-bandhan,Raksha Bandhan,festival,2027,2027-08-17,2027-08-17,0,0,,,,,0,0,0,estimated,,,
+janmashtami,Krishna Janmashtami,observance,2027,2027-08-25,2027-08-25,0,0,,,,,0,0,0,estimated,,,
+hartalika-teej,Hartalika Teej,observance,2027,2027-09-03,2027-09-03,0,0,,,,,0,0,0,estimated,,,
+pitru-paksha,Pitru Paksha (Shraddh),observance,2027,2027-09-16,2027-09-29,0,0,,,,,0,0,0,estimated,,,
+sharad-navratri,Sharadiya Navratri,observance,2027,2027-09-30,2027-10-08,0,0,,,,,0,0,0,estimated,,,
+dussehra,Vijayadashami (Dussehra),festival,2027,2027-10-09,2027-10-09,0,0,,,,,0,0,0,estimated,,,
+karwa-chauth,Karwa Chauth,observance,2027,2027-10-18,2027-10-18,0,0,,,,,0,0,0,estimated,,,
+diwali-window,Diwali to Bhai Dooj festival window,festival,2027,2027-10-27,2027-10-31,0,0,,,,,0,0,0,estimated,deepotsav,,
+deepotsav,Ayodhya Deepotsav,fair,2027,2027-10-28,2027-10-28,0,0,,,,,0,0,0,estimated,diwali-window,,
+chhath,Chhath Puja,festival,2027,2027-11-02,2027-11-05,0,0,,,,,0,0,0,estimated,,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2027,2027-11-10,2027-11-29,0,0,,,,,0,0,0,estimated,,,
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,2027,2027-12-02,2027-12-14,0,0,,,,,0,0,0,estimated,,,
+christmas-new-year,Christmas and New Year holidays,festival,2027,2027-12-24,2027-12-31,0,0,,,,,0,0,0,estimated,,,

@@ -1,0 +1,26 @@
+definition_id,calendar_start,calendar_end,calendar_date_confidence,external_check,external_source,verification_status
+chaitra-navratri,2027-04-07,2027-04-15,estimated,,,not independently re-checked; use supplied calendar label
+chhath,2027-11-02,2027-11-05,estimated,,,not independently re-checked; use supplied calendar label
+christmas-new-year,2027-12-24,2027-12-31,estimated,,,not independently re-checked; use supplied calendar label
+deepotsav,2027-10-28,2027-10-28,estimated,,,not independently re-checked; use supplied calendar label
+diwali-window,2027-10-27,2027-10-31,estimated,Diwali: Fri 29 Oct 2027 (Uttar Pradesh),https://www.officeholidays.com/holidays/india/diwali,independently confirmed
+dussehra,2027-10-09,2027-10-09,estimated,,,not independently re-checked; use supplied calendar label
+eid-ul-adha,2027-05-15,2027-05-17,tentative,Bakrid: Mon 17 May 2027,https://www.officeholidays.com/countries/india/2027,independently confirmed
+eid-ul-fitr,2027-03-08,2027-03-10,tentative,Idul Fitr: Tue 09 Mar 2027,https://www.officeholidays.com/countries/india/2027,independently confirmed
+hartalika-teej,2027-09-03,2027-09-03,estimated,,,not independently re-checked; use supplied calendar label
+holi,2027-03-21,2027-03-22,estimated,"Holika Dahan Sun 21 Mar, Holi Mon 22 Mar 2027",https://www.officeholidays.com/countries/india/2027,independently confirmed
+janmashtami,2027-08-25,2027-08-25,estimated,,,not independently re-checked; use supplied calendar label
+karwa-chauth,2027-10-18,2027-10-18,estimated,,,not independently re-checked; use supplied calendar label
+lagan-weddings,2027-01-15,2027-01-31,estimated,,,not independently re-checked; use supplied calendar label
+magh-mela,2027-01-15,2027-03-06,estimated,,,not independently re-checked; use supplied calendar label
+maha-shivaratri,2027-03-06,2027-03-06,estimated,Maha Shivratri: Sat 06 Mar 2027,https://www.officeholidays.com/countries/india/2027,independently confirmed
+monsoon,2027-06-01,2027-09-30,estimated,,,not independently re-checked; use supplied calendar label
+muharram,2027-06-16,2027-06-16,tentative,Ashura (10 Muharram): Wed 16 Jun 2027,https://www.officeholidays.com/countries/india/2027,independently confirmed
+nirjala-ekadashi,2027-06-14,2027-06-14,estimated,,,not independently re-checked; use supplied calendar label
+pitru-paksha,2027-09-16,2027-09-29,estimated,,,not independently re-checked; use supplied calendar label
+raksha-bandhan,2027-08-17,2027-08-17,estimated,,,not independently re-checked; use supplied calendar label
+ramadan,2027-02-09,2027-03-09,tentative,,,not independently re-checked; use supplied calendar label
+sawan,2027-07-19,2027-08-17,estimated,,,not independently re-checked; use supplied calendar label
+sharad-navratri,2027-09-30,2027-10-08,estimated,,,not independently re-checked; use supplied calendar label
+summer-heat,2027-04-15,2027-06-30,estimated,,,not independently re-checked; use supplied calendar label
+winter-fog,2027-12-15,2027-12-31,estimated,,,not independently re-checked; use supplied calendar label

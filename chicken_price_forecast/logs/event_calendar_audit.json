@@ -1,0 +1,40 @@
+{
+  "definitions": 26,
+  "occurrences": 91,
+  "occurrence_years": [
+    2025,
+    2026,
+    2027
+  ],
+  "window_rules": "<=7d: lead 2 / recovery 2; 8-31d: 1 / 1; >31d: 0 / 0",
+  "definitions_with_no_observed_core_days": [
+    "chhath",
+    "eid-ul-fitr"
+  ],
+  "definitions_with_single_occurrence_evidence": [
+    "deepotsav",
+    "christmas-new-year",
+    "diwali-window",
+    "dussehra",
+    "holi",
+    "raksha-bandhan",
+    "eid-ul-adha",
+    "chaitra-navratri",
+    "hartalika-teej",
+    "karwa-chauth",
+    "maha-shivaratri",
+    "magh-mela",
+    "ramadan",
+    "heatwave-2025",
+    "winter-fog"
+  ],
+  "total_core_observed_days": 727,
+  "observed_days": 409,
+  "date_confidence_counts": {
+    "confirmed": 47,
+    "estimated": 40,
+    "tentative": 4
+  },
+  "share_observed_days_in_any_core": 0.8998,
+  "share_observed_days_in_any_influence_window": 0.9389
+}

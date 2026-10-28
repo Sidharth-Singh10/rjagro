@@ -1,0 +1,132 @@
+[
+  {
+    "check": "daily forecast covers every calendar day 2026-10-24 .. 2027-12-31",
+    "passed": true,
+    "detail": "434 rows, expected 434"
+  },
+  {
+    "check": "forecast starts the day after the last observation",
+    "passed": true,
+    "detail": "2026-10-24 vs last observation 2026-10-23"
+  },
+  {
+    "check": "no duplicate dates in the daily forecast",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "check": "forecast = baseline x (1 + event impact%)",
+    "passed": true,
+    "detail": "max abs diff 0.093 INR"
+  },
+  {
+    "check": "event impact in INR equals forecast minus baseline",
+    "passed": true,
+    "detail": "max abs diff 0.100"
+  },
+  {
+    "check": "80% interval contains the central forecast",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "check": "95% interval contains the 80% interval",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "check": "all prices positive",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "check": "interval width increases with horizon",
+    "passed": true,
+    "detail": "2.88 at end vs 1.32 at start"
+  },
+  {
+    "check": "daily event impact equals the product of the fitted event effects",
+    "passed": true,
+    "detail": "0 mismatches"
+  },
+  {
+    "check": "event impact is zero on days with no active event",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "check": "every event with a discrete core window in the forecast period appears in event_forecasts",
+    "passed": true,
+    "detail": "19 event types"
+  },
+  {
+    "check": "all future event dates lie inside the forecast window",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "check": "absolute impact = observed - baseline",
+    "passed": true,
+    "detail": "max 0.0100"
+  },
+  {
+    "check": "raw effect % = (observed / baseline - 1) x 100",
+    "passed": true,
+    "detail": "max 0.0103"
+  },
+  {
+    "check": "80% interval is inside the 95% interval (events with an estimate)",
+    "passed": true,
+    "detail": "16 events; 3 use the category prior only"
+  },
+  {
+    "check": "events with no observed price carry a flagged prior-only estimate",
+    "passed": true,
+    "detail": "chhath, dussehra, eid-ul-fitr"
+  },
+  {
+    "check": "occurrence table has one row per discrete occurrence",
+    "passed": true,
+    "detail": "74 rows"
+  },
+  {
+    "check": "backtest never evaluates a date before its forecast origin",
+    "passed": true,
+    "detail": "min horizon 1 days"
+  },
+  {
+    "check": "backtest origins start once a full annual cycle is available",
+    "passed": true,
+    "detail": "2026-04-01"
+  },
+  {
+    "check": "backtest only scores days with an observed price",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "check": "models were fitted on data up to the origin only",
+    "passed": true,
+    "detail": "281 training observations at first origin"
+  },
+  {
+    "check": "daily forecast row count matches run log",
+    "passed": true,
+    "detail": "434"
+  },
+  {
+    "check": "last-day forecast matches run log",
+    "passed": true,
+    "detail": "111.9"
+  },
+  {
+    "check": "event coverage table records every definition",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "check": "raw data preserved and unmodified",
+    "passed": true,
+    "detail": "csv bytes 9254, 409 observations"
+  }
+]
