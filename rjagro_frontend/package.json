@@ -9,7 +9,8 @@
     "lint": "next lint",
     "parse:rates": "node scripts/parse_rate_tracker.mjs",
     "build:events": "node scripts/build_event_calendar.mjs",
-    "validate:events": "node scripts/validate_event_calendar.mjs"
+    "validate:events": "node scripts/validate_event_calendar.mjs",
+    "check:impact": "node --no-warnings --experimental-strip-types --experimental-loader ./scripts/json_module_loader.mjs scripts/check_event_impact.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.43.0",

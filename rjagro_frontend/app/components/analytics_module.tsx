@@ -3,22 +3,20 @@ import { useMemo } from 'react';
 import { Info } from 'lucide-react';
 import { chart } from './v2/overview/chart_colors';
 import {
-    bestWindows, dailySeries, formatRate, monthlySeries, rateKpis, ratePoints, rateUnit, weeklySeries,
+    bestWindows, formatRate, monthlySeries, rateKpis, ratePoints, rateUnit, weeklySeries,
 } from '@/app/utils/rate_tracker';
 import { RateKpis } from './analytics/rate_kpis';
 import { MonthlyRateChart } from './analytics/monthly_rate_chart';
 import { WeeklyRateChart } from './analytics/weekly_rate_chart';
 import { BestRangeChart } from './analytics/best_range_chart';
-import { DailyRateChart } from './analytics/daily_rate_chart';
+import { EventImpactSection } from './analytics/event_impact_section';
 import { EventsAndSeasonality } from './analytics/events/events_section';
-import { eventCalendar } from '@/app/utils/event_calendar';
 
 const DAY_MS = 86_400_000;
 
 const Analysis = () => {
     const months = useMemo(() => monthlySeries(ratePoints), []);
     const weeks = useMemo(() => weeklySeries(ratePoints), []);
-    const days = useMemo(() => dailySeries(ratePoints), []);
     const kpis = useMemo(() => rateKpis(ratePoints), []);
     const best5 = useMemo(() => bestWindows(ratePoints, 5), []);
     const best7 = useMemo(() => bestWindows(ratePoints, 7), []);
@@ -67,7 +65,7 @@ const Analysis = () => {
                 <BestRangeChart windows={best7} days={7} color={chart.violet} />
             </div>
 
-            <DailyRateChart days={days} best5={best5[0] ?? null} best7={best7[0] ?? null} events={eventCalendar} />
+            <EventImpactSection />
 
             <EventsAndSeasonality />
 
