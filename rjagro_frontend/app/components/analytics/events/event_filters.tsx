@@ -185,7 +185,7 @@ export const EventFiltersBar = memo(({
                         onChange={(event) => onChange({ ...filters, sourceDepth: event.target.value as SourceDepth | 'all' })}
                         className={selectClass}
                     >
-                        <option value="all">Any source depth</option>
+                        <option value="all">Any verification</option>
                         <option value="multi">2+ sources</option>
                         <option value="single">Single source</option>
                     </select>
