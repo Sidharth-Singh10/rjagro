@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "parse:rates": "node scripts/parse_rate_tracker.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.43.0",

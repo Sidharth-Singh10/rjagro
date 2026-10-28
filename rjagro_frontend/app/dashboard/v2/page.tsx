@@ -8,6 +8,7 @@ import { useAuth } from '@/app/hooks/useAuth';
 
 const SECTION_TITLES: Record<string, string> = {
     Overview: 'Overview',
+    Analytics: 'Rate Analytics',
     Ledger: 'Finance & Ledger',
     Inventory: 'Inventory',
     Purchases: 'Purchases',
@@ -31,6 +32,7 @@ const ModuleLoading = () => (
 
 // Each module is code-split: only the chunk for the active section loads.
 const OverviewModule = dynamic(() => import('@/app/components/v2/overview_module'), { loading: ModuleLoading, ssr: false });
+const AnalyticsModule = dynamic(() => import('@/app/components/analytics_module'), { loading: ModuleLoading, ssr: false });
 const LedgerModule = dynamic(() => import('@/app/components/v2/ledger_module').then(m => m.LedgerModule), { loading: ModuleLoading, ssr: false });
 const PurchasesModule = dynamic(() => import('@/app/components/v2/purchases_module'), { loading: ModuleLoading, ssr: false });
 const InventoryModule = dynamic(() => import('@/app/components/v2/inventory_module'), { loading: ModuleLoading, ssr: false });
@@ -44,6 +46,7 @@ const OtherExpensesModule = dynamic(() => import('@/app/components/v2/other_expe
 
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
     Overview: OverviewModule,
+    Analytics: AnalyticsModule,
     Ledger: LedgerModule,
     Purchases: PurchasesModule,
     Inventory: InventoryModule,
@@ -60,6 +63,7 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
 // so switching tabs is instant.
 const moduleImporters = [
     () => import('@/app/components/v2/overview_module'),
+    () => import('@/app/components/analytics_module'),
     () => import('@/app/components/v2/ledger_module'),
     () => import('@/app/components/v2/purchases_module'),
     () => import('@/app/components/v2/inventory_module'),

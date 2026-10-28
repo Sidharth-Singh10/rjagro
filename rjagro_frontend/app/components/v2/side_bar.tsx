@@ -3,6 +3,7 @@ import React, { useState, useCallback, memo } from 'react';
 import {
     Banknote,
     Bird,
+    ChartNoAxesColumn,
     ClipboardCheck,
     Package,
     Receipt,
@@ -30,6 +31,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { id: 'Overview', label: 'Overview', icon: null },
+    { id: 'Analytics', label: 'Analytics', icon: ChartNoAxesColumn },
     { id: 'Ledger', label: 'Finance & Ledger', icon: LedgerIcon },
     { id: 'Inventory', label: 'Inventory', icon: Package },
     { id: 'Purchases', label: 'Purchases', icon: ShoppingCartIcon },
