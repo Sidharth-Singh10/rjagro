@@ -1,5 +1,7 @@
 'use client'
-import { memo, useMemo, useState } from 'react';
+import {
+    memo, useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
 import {
     CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
@@ -8,6 +10,7 @@ import { chart } from '../v2/overview/chart_colors';
 import { formatRate, type WeeklyPoint } from '@/app/utils/rate_tracker';
 
 type WeekRange = '26w' | '52w' | 'all';
+type AxisRange = [number, number];
 
 const RANGE_OPTIONS: { key: WeekRange; label: string; weeks: number }[] = [
     { key: '26w', label: '26W', weeks: 26 },
@@ -15,13 +18,82 @@ const RANGE_OPTIONS: { key: WeekRange; label: string; weeks: number }[] = [
     { key: 'all', label: 'All', weeks: Number.POSITIVE_INFINITY },
 ];
 
-const domain = (weeks: WeeklyPoint[]): [number, number] => {
-    const values = weeks.map(week => week.avg).filter((value): value is number => value !== null);
+/** Headroom in ₹ left above the high and below the low before snapping the auto domain. */
+const DOMAIN_PAD = 3;
+/** The auto domain snaps outward to multiples of this, so the series fills the frame. */
+const DOMAIN_STEP = 5;
+/** Narrowest window, so zooming can never collapse into a degenerate axis or overlapping labels. */
+const MIN_SPAN = 20;
+/** Scale factor per zoom-in click; zooming out multiplies by its inverse. */
+const ZOOM_STEP = 0.7;
+/** Gentler factor for one wheel notch. */
+const WHEEL_STEP = 1.15;
+/** Nice tick intervals in ₹; the coarsest one that still gives 4–6 labels wins. */
+const TICK_STEPS = [5, 10, 20, 25] as const;
+const MIN_TICKS = 4;
+const MAX_TICKS = 6;
+
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
+const ratesOf = (weeks: WeeklyPoint[]) =>
+    weeks.map(week => week.avg).filter((value): value is number => value !== null);
+
+/**
+ * Tight default scale for the selected date slice: the real min of the weekly
+ * averages to the real max, padded by a few rupees, snapped to a 5-unit step and
+ * never narrower than MIN_SPAN so a flat or short slice still gets readable ticks.
+ */
+const autoDomain = (weeks: WeeklyPoint[]): AxisRange => {
+    const values = ratesOf(weeks);
     if (values.length === 0) return [0, 100];
-    return [
-        Math.floor((Math.min(...values) - 5) / 10) * 10,
-        Math.ceil((Math.max(...values) + 5) / 10) * 10,
-    ];
+
+    let low = Math.floor((Math.min(...values) - DOMAIN_PAD) / DOMAIN_STEP) * DOMAIN_STEP;
+    let high = Math.ceil((Math.max(...values) + DOMAIN_PAD) / DOMAIN_STEP) * DOMAIN_STEP;
+    if (high - low < MIN_SPAN) {
+        const centre = (low + high) / 2;
+        low = Math.floor((centre - MIN_SPAN / 2) / DOMAIN_STEP) * DOMAIN_STEP;
+        high = low + MIN_SPAN;
+    }
+    return [low, high];
+};
+
+/**
+ * Widen or narrow `current` around its own centre, then slide it back inside
+ * the auto bounds. Clamping in one place gives both guarantees: the centre of the
+ * visible price stays put, the window never leaves the slice's real extent when
+ * zooming out, and it never shrinks below MIN_SPAN.
+ */
+const zoomDomain = (current: AxisRange, factor: number, bounds: AxisRange): AxisRange => {
+    const boundsSpan = bounds[1] - bounds[0];
+    const span = Math.max(MIN_SPAN, Math.min(boundsSpan, (current[1] - current[0]) * factor));
+    const centre = (current[0] + current[1]) / 2;
+    const low = Math.min(Math.max(centre - span / 2, bounds[0]), bounds[1] - span);
+    return [round2(low), round2(low + span)];
+};
+
+const sameDomain = (a: AxisRange, b: AxisRange) =>
+    Math.abs(a[0] - b[0]) < 0.01 && Math.abs(a[1] - b[1]) < 0.01;
+
+const ticksFor = ([low, high]: AxisRange, step: number) => {
+    const ticks: number[] = [];
+    for (let value = Math.ceil(low / step) * step; value <= high + 1e-6; value += step) {
+        ticks.push(Math.round(value));
+    }
+    return ticks;
+};
+
+/**
+ * Ticks are derived from the visible span rather than left to Recharts, so a
+ * zoomed window still gets round numbers instead of generics of the range.
+ */
+const axisTicks = (domain: AxisRange): number[] => {
+    let coarsest: number[] = [];
+    for (const step of TICK_STEPS) {
+        const ticks = ticksFor(domain, step);
+        coarsest = ticks;
+        if (ticks.length >= MIN_TICKS && ticks.length <= MAX_TICKS) return ticks;
+    }
+    return coarsest.length >= 2 ? coarsest : [domain[0], domain[1]];
 };
 
 const WeeklyTooltip = ({ active, payload }: any) => {
@@ -40,31 +112,123 @@ const WeeklyTooltip = ({ active, payload }: any) => {
     );
 };
 
+const buttonBox = 'px-2.5 py-1 font-medium tabular-nums transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
+
 export const WeeklyRateChart = memo(({ weeks }: { weeks: WeeklyPoint[] }) => {
     const [range, setRange] = useState<WeekRange>('52w');
+    /** null = Auto: the domain follows the selected slice. A tuple = Manual: the user's own window. */
+    const [manual, setManual] = useState<AxisRange | null>(null);
 
     const visible = useMemo(() => {
         const option = RANGE_OPTIONS.find(item => item.key === range) ?? RANGE_OPTIONS[2];
         return Number.isFinite(option.weeks) ? weeks.slice(-option.weeks) : weeks;
     }, [weeks, range]);
 
+    const values = useMemo(() => ratesOf(visible), [visible]);
+    const bounds = useMemo(() => autoDomain(visible), [visible]);
+
+    const domain = manual ?? bounds;
+    const span = domain[1] - domain[0];
+    const atMinSpan = span <= MIN_SPAN + 0.01;
+    const atFullSpan = manual === null || sameDomain(manual, bounds);
+
+    // A manual window survives a 26W/52W/All switch, so it can end up entirely
+    // outside the new slice. Say so instead of showing an unexplained empty frame.
+    const clipped = manual !== null
+        && values.length > 0
+        && !values.some(value => value >= domain[0] && value <= domain[1]);
+
+    const applyZoom = useCallback((factor: number) => {
+        setManual(current => zoomDomain(current ?? bounds, factor, bounds));
+    }, [bounds]);
+
+    const resetZoom = useCallback(() => setManual(null), []);
+
+    // React attaches onWheel passively at the root, so preventDefault() there is a
+    // no-op plus a console warning. A native listener on the plot wrapper can both
+    // stop the page from scrolling and zoom. At a limit we let the page scroll.
+    const plotRef = useRef<HTMLDivElement | null>(null);
+    useEffect(() => {
+        const node = plotRef.current;
+        if (!node) return;
+
+        const onWheel = (event: WheelEvent) => {
+            if (event.deltaY === 0) return;
+            const current = manual ?? bounds;
+            const factor = event.deltaY < 0 ? 1 / WHEEL_STEP : WHEEL_STEP;
+            const next = zoomDomain(current, factor, bounds);
+            if (sameDomain(next, current)) return;
+            event.preventDefault();
+            setManual(next);
+        };
+
+        node.addEventListener('wheel', onWheel, { passive: false });
+        return () => node.removeEventListener('wheel', onWheel);
+    }, [bounds, manual]);
+
     const tickInterval = Math.max(0, Math.ceil(visible.length / 9) - 1);
+    const readout = `${formatRate(Math.round(domain[0]), 0)}–${formatRate(Math.round(domain[1]), 0)}/kg`;
 
     const controls = (
-        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
-            {RANGE_OPTIONS.map(option => (
+        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
+            <span className="text-[11px] text-gray-400 tabular-nums" title="Visible rate range">
+                {readout}
+            </span>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
                 <button
-                    key={option.key}
-                    onClick={() => setRange(option.key)}
-                    className={`px-2.5 py-1 font-medium transition-colors ${
-                        range === option.key
-                            ? 'bg-gray-800 text-white'
-                            : 'bg-white text-gray-500 hover:bg-gray-50'
+                    type="button"
+                    onClick={() => applyZoom(1 / ZOOM_STEP)}
+                    disabled={atFullSpan}
+                    aria-label="Zoom out Y axis"
+                    title="Zoom out (wider ₹ range)"
+                    className={`${buttonBox} bg-white text-gray-500 hover:bg-gray-50`}
+                >
+                    −
+                </button>
+                <button
+                    type="button"
+                    onClick={() => applyZoom(ZOOM_STEP)}
+                    disabled={atMinSpan}
+                    aria-label="Zoom in Y axis"
+                    title="Zoom in (narrower ₹ range)"
+                    className={`${buttonBox} bg-white text-gray-500 hover:bg-gray-50`}
+                >
+                    +
+                </button>
+                <button
+                    type="button"
+                    onClick={resetZoom}
+                    disabled={atFullSpan}
+                    aria-label="Reset Y axis zoom"
+                    title={clipped ? 'Show every point in this period' : 'Reset to the default ₹ range'}
+                    className={`${buttonBox} ${
+                        clipped
+                            ? 'bg-amber-600 text-white hover:bg-amber-700'
+                            : atFullSpan
+                                ? 'bg-white text-gray-400'
+                                : 'bg-gray-800 text-white hover:bg-gray-700'
                     }`}
                 >
-                    {option.label}
+                    Reset
                 </button>
-            ))}
+            </div>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+                {RANGE_OPTIONS.map(option => (
+                    <button
+                        key={option.key}
+                        type="button"
+                        onClick={() => setRange(option.key)}
+                        aria-pressed={range === option.key}
+                        className={`px-2.5 py-1 font-medium transition-colors ${
+                            range === option.key
+                                ? 'bg-gray-800 text-white'
+                                : 'bg-white text-gray-500 hover:bg-gray-50'
+                        }`}
+                    >
+                        {option.label}
+                    </button>
+                ))}
+            </div>
         </div>
     );
 
@@ -76,35 +240,56 @@ export const WeeklyRateChart = memo(({ weeks }: { weeks: WeeklyPoint[] }) => {
                 </div>
             ) : (
                 <>
-                    <ResponsiveContainer width="100%" height={320}>
-                        <LineChart data={visible} margin={{ top: 8, right: 16, left: 4, bottom: 4 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
-                            <XAxis
-                                dataKey="label"
-                                tick={{ fontSize: 11, fill: chart.tick }}
-                                interval={tickInterval}
-                                height={30}
-                            />
-                            <YAxis
-                                tickFormatter={(value) => `₹${value}`}
-                                tick={{ fontSize: 11, fill: chart.tick }}
-                                domain={domain(visible)}
-                                width={52}
-                            />
-                            <Tooltip content={<WeeklyTooltip />} />
-                            <Line
-                                type="monotone"
-                                dataKey="avg"
-                                name="Weekly average"
-                                stroke={chart.blue}
-                                strokeWidth={2.25}
-                                dot={false}
-                                connectNulls={false}
-                                activeDot={{ r: 4, stroke: chart.blue, strokeWidth: 2, fill: '#fff' }}
-                                isAnimationActive={false}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
+                    <div ref={plotRef}>
+                        <ResponsiveContainer width="100%" height={320}>
+                            <LineChart data={visible} margin={{ top: 8, right: 16, left: 4, bottom: 4 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                                <XAxis
+                                    dataKey="label"
+                                    tick={{ fontSize: 11, fill: chart.tick }}
+                                    interval={tickInterval}
+                                    height={30}
+                                />
+                                <YAxis
+                                    tickFormatter={(value) => `₹${value}`}
+                                    tick={{ fontSize: 11, fill: chart.tick }}
+                                    domain={domain}
+                                    ticks={axisTicks(domain)}
+                                    allowDataOverflow
+                                    width={52}
+                                />
+                                <Tooltip content={<WeeklyTooltip />} />
+                                <Line
+                                    type="monotone"
+                                    dataKey="avg"
+                                    name="Weekly average"
+                                    stroke={chart.blue}
+                                    strokeWidth={2.25}
+                                    dot={false}
+                                    connectNulls={false}
+                                    activeDot={{ r: 4, stroke: chart.blue, strokeWidth: 2, fill: '#fff' }}
+                                    isAnimationActive={false}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                    {clipped && (
+                        <div
+                            role="status"
+                            className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800"
+                        >
+                            <span>
+                                {`Zoomed to ${readout}, but this period's averages sit at ${formatRate(Math.round(Math.min(...values)), 0)}–${formatRate(Math.round(Math.max(...values)), 0)}/kg — every point is off screen.`}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={resetZoom}
+                                className="font-semibold underline underline-offset-2 hover:text-amber-900"
+                            >
+                                Reset zoom
+                            </button>
+                        </div>
+                    )}
                     <p className="mt-3 text-[11px] text-gray-400">
                         Gaps are days with no quote — the line breaks rather than interpolating across an outage.
                     </p>
