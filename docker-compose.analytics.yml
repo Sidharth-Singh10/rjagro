@@ -5,10 +5,19 @@
 #
 #   docker compose -f docker-compose.analytics.yml up -d --build
 #
-# DATABASE_URL must point at the same Postgres the API uses.
+# DATABASE_URL must be reachable *from inside the container*. The repo's .env is
+# written for local processes (localhost:5432, through the rjdb tunnel), which
+# inside a container points at the container itself. Use one of:
+#   - the Neon URL from Secrets.toml
+#   - postgresql://user:pass@host.docker.internal:5432/rjagro  (Docker Desktop)
+#   - postgresql://user:pass@<vps-private-ip>:5432/rjagro      (on the server)
 
 services:
   analytics-worker:
+    # Published by .github/workflows/analytics-worker.yml. On a server that has
+    # no source checkout, `docker compose pull` fetches this tag; locally,
+    # `docker compose up --build` builds it from the package.
+    image: sidharthsingh7/rjagro_analytics_worker:latest
     build:
       context: ./chicken_price_forecast
       dockerfile: Dockerfile.worker

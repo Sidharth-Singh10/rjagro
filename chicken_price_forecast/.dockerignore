@@ -1,0 +1,18 @@
+# Keep the build context to what the image actually needs.
+# Without this, `docker build` uploads the 400 MB virtualenv and every output
+# on each build.
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+outputs/
+logs/
+tests/
+legacy/
+data/processed/
+data/raw/*.csv
+.env
+.env.*
+*.xlsx
+*.png
+*.svg

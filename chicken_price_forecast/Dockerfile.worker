@@ -1,13 +1,33 @@
-# Worker image: the pipeline plus its dependencies, nothing else.
+# Analytics worker: the pipeline, its runtime dependencies, and nothing else.
+#
+#   docker build -t rjagro_analytics_worker .
+#   docker run -d --restart unless-stopped \
+#     -e DATABASE_URL=postgresql://... rjagro_analytics_worker
+#
+# It is a database client: no volumes, no ports, no state on disk.
 FROM python:3.12-slim
 
-WORKDIR /app
-ENV PYTHONPATH=/app PIP_NO_CACHE_DIR=1
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+WORKDIR /app
+
+# dependencies first so the layer caches across code changes
+COPY requirements-worker.txt ./
+RUN pip install --no-cache-dir -r requirements-worker.txt
 
 COPY cp_pipeline ./cp_pipeline
-COPY data/raw ./data/raw
+# the event calendar is read from disk; prices come from Postgres
+COPY data/raw/up_chicken_events.json ./data/raw/up_chicken_events.json
+
+# the pipeline writes nothing to disk, so it does not need to be root
+RUN useradd --create-home --uid 10001 worker && chown -R worker:worker /app
+USER worker
+
+# a container that cannot reach the database is not "running", it is stuck
+HEALTHCHECK --interval=60s --timeout=10s --start-period=20s --retries=3 \
+    CMD python -c "import os, psycopg; psycopg.connect(os.environ['DATABASE_URL'], connect_timeout=8).close()"
 
 CMD ["python", "-m", "cp_pipeline.cli", "worker"]

@@ -110,8 +110,36 @@ It claims at most one run at a time (`FOR UPDATE SKIP LOCKED` plus an advisory
 lock), records failures with their traceback instead of dying, and keeps the
 last 50 successful payloads.
 
-As a sidecar next to the API, `docker-compose.analytics.yml` mounts the same
-`DATABASE_URL` and restarts on failure.
+### Worker image (CI → Docker Hub → VPS)
+
+`.github/workflows/analytics-worker.yml` builds `Dockerfile.worker` on every push
+that touches `chicken_price_forecast/**` and pushes
+`sidharthsingh7/rjagro_analytics_worker:latest` (plus a `sha-…` tag) to Docker Hub.
+It needs the same secrets the backend workflow uses: `DOCKERHUB_USERNAME`,
+`DOCKERHUB_TOKEN`.
+
+On the VPS, where there is no source checkout:
+
+```bash
+docker pull sidharthsingh7/rjagro_analytics_worker:latest
+docker stop analytics-worker 2>/dev/null; docker rm analytics-worker 2>/dev/null
+docker run -d --restart unless-stopped --name analytics-worker \
+  -e DATABASE_URL=postgresql://USER:PASS@HOST:5432/rjagro \
+  sidharthsingh7/rjagro_analytics_worker:latest
+docker logs -f analytics-worker      # "worker up · poll 2s"
+```
+
+Locally, `docker compose -f docker-compose.analytics.yml up -d --build` builds the
+same image from this package.
+
+The image is a database client: no ports, no volumes, no state on disk. It carries
+the pipeline and `data/raw/up_chicken_events.json` (the calendar is read from
+disk, prices come from Postgres), runs as a non-root user, and has a healthcheck
+that fails when the database is unreachable.
+
+`DATABASE_URL` must be reachable **from inside the container** — the repo `.env`
+points at `localhost:5432` through the rjdb tunnel, which inside a container is
+the container itself.
 
 ## Where the app's numbers come from
 
