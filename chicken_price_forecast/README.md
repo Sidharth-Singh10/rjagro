@@ -24,6 +24,12 @@ into `data/raw/`. Their SHA-256 hashes are in `logs/inputs.sha256`.
 
 Regenerate it with step 11; the counts on the cards come from the run logs.
 
+A designed, editable version of the same map lives in Paper
+(`RJ Agro — Price Pipeline`); its export is committed at
+`outputs/charts/09_pipeline_map_paper.png`. The generated one stays the
+reference because it re-renders with the data; the Paper artboard is for
+presenting.
+
 ## Outputs
 
 ```
