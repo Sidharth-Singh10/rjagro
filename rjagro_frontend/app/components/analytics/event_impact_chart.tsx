@@ -1,6 +1,6 @@
 'use client'
 import { memo, useMemo } from 'react';
-import { categoryColor, formatPct, type EventEstimate } from '@/app/utils/price_forecast';
+import { categoryColor, formatPct, type EventEstimate } from '@/app/utils/analytics';
 
 const ROW = 26;
 const TOP = 26;
@@ -85,7 +85,7 @@ export const EventImpactChart = memo(({ impacts }: { impacts: EventEstimate[] })
                     return (
                         <g key={row.id}>
                             <title>
-                                {`${row.name}: ${formatPct(row.pooledPct)} (80% ${formatPct(row.pooledLo80)} to ${formatPct(row.pooledHi80)}), ${row.occurrences} occurrences, ${row.days} observed days, grade ${row.reliability}`}
+                                {`${row.name}: ${formatPct(row.pooledPct)} (80% ${formatPct(row.pooledLo80)} to ${formatPct(row.pooledHi80)}), ${row.occurrences} occurrences, ${row.observedDays} observed days, grade ${row.reliability}`}
                             </title>
                             <circle cx={LEFT - 12} cy={cy} r={3.2} fill={categoryColor[row.category]} />
                             <text x={LEFT - 20} y={cy + 3} textAnchor="end" fontSize={9.5} fill="#4b5563">

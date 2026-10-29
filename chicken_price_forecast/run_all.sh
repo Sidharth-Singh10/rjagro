@@ -1,21 +1,34 @@
 #!/usr/bin/env bash
-# Rebuild every table, chart and check from the two raw inputs.
+# Rebuild every artefact from the price file and the event calendar.
+#
+#   bash run_all.sh              uses data/raw/<current CSV>
+#   PRICES=... bash run_all.sh   any other export of the tracker
+#   DB=1 bash run_all.sh         read chicken_prices from Postgres instead
+#
+# Writes tables + report + payload under outputs/, refreshes REPORT.md, and
+# exports the web app's bundled payload.
 set -euo pipefail
 cd "$(dirname "$0")"
 
 PY=.venv/bin/python
-if [ ! -x "$PY" ]; then
-  echo "No virtualenv found. Create it with:" >&2
-  echo "  uv venv .venv --python 3.12 && uv pip install --python .venv/bin/python -r requirements.txt" >&2
-  exit 1
-fi
+[ -x "$PY" ] || { echo "no .venv; see README" >&2; exit 1; }
 
-export PYTHONPATH=src
+PRICES="${PRICES:-data/raw/RATE TRACKER - Chicken Rate Updated 29⁄10.csv}"
+export PYTHONPATH=.
 sha256sum data/raw/* > logs/inputs.sha256
 
-for step in 01_ingest 02_events 03_baseline 04_event_impacts 05_forecast \
-            06_charts 07_export 08_verify_event_dates 09_export_frontend 10_report 11_pipeline_map; do
-  echo "== $step =="
-  "$PY" -W ignore "src/${step}.py"
-done
+if [ "${DB:-0}" = "1" ]; then
+  "$PY" -W ignore -m cp_pipeline.cli run --db --out outputs
+else
+  "$PY" -W ignore -m cp_pipeline.cli run --prices "$PRICES" --out outputs
+fi
+
+cp outputs/report.md REPORT.md
+
+"$PY" -W ignore -m cp_pipeline.cli export \
+  --prices "$PRICES" \
+  --payload-out ../rjagro_frontend/app/data/price_forecast.json \
+  --report-out ../rjagro_frontend/docs/event-impact-statistics.md \
+  --quiet
+
 echo "done"

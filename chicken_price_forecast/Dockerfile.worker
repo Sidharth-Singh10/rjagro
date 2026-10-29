@@ -1,0 +1,13 @@
+# Worker image: the pipeline plus its dependencies, nothing else.
+FROM python:3.12-slim
+
+WORKDIR /app
+ENV PYTHONPATH=/app PIP_NO_CACHE_DIR=1
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY cp_pipeline ./cp_pipeline
+COPY data/raw ./data/raw
+
+CMD ["python", "-m", "cp_pipeline.cli", "worker"]

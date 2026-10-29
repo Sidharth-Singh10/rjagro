@@ -15,6 +15,7 @@ use crate::auth::login::login_handler;
 use crate::auth::trader_login::{trader_login_handler, trader_register_handler};
 use crate::handlers::visibility::get_visibility_handler;
 use crate::routes::admin::admin::admin;
+use crate::routes::analytics::analytics_routes;
 use crate::routes::audit_app::audit_routes;
 use crate::routes::deletes::delete_routes;
 use crate::routes::fetch_by_id::fetch_by_id;
@@ -125,6 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/trader", trader_app_routes())
         .nest("/supervisor", supervisor_app_routes())
         .nest("/ledger", ledger_routes())
+        .nest("/analytics", analytics_routes())
         .merge(audit_routes())
         .route("/visibility", get(get_visibility_handler))
         // .route("/generate", post(generate))

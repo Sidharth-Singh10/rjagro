@@ -1,146 +1,140 @@
-# Wholesale chicken price analysis and daily forecast — Uttar Pradesh
+# Wholesale chicken price — pipeline
 
-Statistical analysis of daily wholesale chicken prices for Uttar Pradesh and a
-daily forecast from **24 October 2026 to 31 December 2027**, with the festival,
-religious, wedding and seasonal events in the supplied calendar estimated as
-measurable price associations.
+Turns a daily price series and an event calendar into the numbers, the written
+conclusions and the forecast the Analytics tab shows.
 
-Everything here is generated from two inputs and can be regenerated end to end.
+Two rules shape the design:
 
-## Inputs (never modified)
+1. **One implementation.** The app never computes a statistic. It renders the
+   payload this pipeline writes.
+2. **Three seams.** Where data comes from, what the forecast equation is, and how
+   the conclusions are worded are independent. Changing one must not touch the
+   others.
 
-| file | role |
-|---|---|
-| `data/raw/RATE TRACKER - Chicken Rate Updated 29⁄10.csv` | current daily wholesale price tracker, INR per kg, 1 Apr 2025 – 28 Oct 2026 (425 quoted days; 169 blank) |
-| `data/raw/up_chicken_events.json` | 26 event definitions, 91 dated occurrences, 2025–2027, with sources |
-
-The originals live in the repository root (`RATE TRACKER - Chicken Rate.csv`,
-`rjagro_frontend/data/up_chicken_events.json`) and were copied byte for byte
-into `data/raw/`. Their SHA-256 hashes are in `logs/inputs.sha256`.
-
-## Pipeline map
-
-![How the forecast numbers are produced](outputs/charts/08_pipeline_map.png)
-
-Regenerate it with step 11; the counts on the cards come from the run logs.
-
-A designed, editable version of the same map lives in Paper
-(`RJ Agro — Price Pipeline`); its export is committed at
-`outputs/charts/09_pipeline_map_paper.png`. The generated one stays the
-reference because it re-renders with the data; the Paper artboard is for
-presenting.
-
-## Outputs
-
-```
-outputs/
-  chicken_price_deliverables.xlsx     all tables in one workbook
-  tables/
-    data_quality_monthly.csv          observations per month
-    baseline_summary.csv              level, volatility, stationarity, seasonality tests
-    baseline_weekday.csv              day-of-week profile
-    baseline_monthly_profile.csv      month-of-year profile
-    baseline_coefficients.csv         calendar regression coefficients
-    baseline_model_selection.csv      Fourier / trend specification search
-    event_coverage.csv                evidence available per event
-    event_overlap_pairs.csv           how much events share days
-    event_date_verification.csv       external spot-check of 2027 dates
-    historical_event_occurrences.csv  one row per occurrence
-    historical_event_impact.csv       one row per event
-    category_effects.csv              pooled effect by category
-    halo_pooling.csv                  lead-in / recovery patterns
-    model_backtest_summary.csv        accuracy of every candidate model
-    model_backtest_by_horizon.csv     accuracy by horizon bucket
-    model_backtest_events_vs_nonevent.csv
-    trend_instability.csv             why a free trend is rejected
-    drift_sensitivity.csv             long-horizon drift scenarios
-    daily_forecast.csv                434 rows, one per day
-    event_forecasts.csv               one row per future event occurrence
-  charts/                             eight PNG figures
-logs/                                 JSON run logs and consistency checks
-data/processed/                       cleaned daily series, event days, backtest predictions
-src/                                  pipeline code
-```
-
-## Reproduce
+## Quick start
 
 ```bash
-cd chicken_price_forecast
-uv venv .venv --python 3.12
-uv pip install --python .venv/bin/python -r requirements.txt
-bash run_all.sh
+uv venv .venv --python 3.12 && uv pip install --python .venv/bin/python -r requirements.txt
+
+PYTHONPATH=. .venv/bin/python -m cp_pipeline.cli run \
+    --prices "data/raw/RATE TRACKER - Chicken Rate Updated 29⁄10.csv" \
+    --out outputs                       # tables + report + payload
+
+bash run_all.sh                          # the same, plus REPORT.md and the app export
+PYTHONPATH=. .venv/bin/python tests/test_pipeline.py
 ```
 
-`run_all.sh` executes the eleven steps in order. Total runtime is about half a minute.
+`run` prints the headline, the model and the first conclusions, and writes
+`outputs/tables/*.csv`, `outputs/report.md` and `outputs/payload.json`.
 
-| step | script | what it does |
-|---|---|---|
-| 01 | `src/01_ingest.py` | parse, validate, audit missingness |
-| 02 | `src/02_events.py` | flatten the calendar, add windows, count evidence, find overlaps |
-| 03 | `src/03_baseline.py` | describe the normal price series and test seasonality |
-| 04 | `src/04_event_impacts.py` | matched-window event study + empirical-Bayes pooling |
-| 05 | `src/05_forecast.py` | rolling-origin backtest, model selection, final forecast |
-| 06 | `src/06_charts.py` | all figures |
-| 07 | `src/07_export.py` | Excel workbook + 26 consistency checks |
-| 08 | `src/08_verify_event_dates.py` | record the external check of 2027 dates |
-| 09 | `src/09_export_frontend.py` | write `rjagro_frontend/app/data/price_forecast.json` for the Analytics tab |
-| 10 | `src/10_report.py` | render `REPORT.md` from the generated artefacts |
-| 11 | `src/11_pipeline_map.py` | draw `outputs/charts/08_pipeline_map.{png,svg}` |
+## Layout
 
-## Frontend
+```
+cp_pipeline/
+  config.py        every knob, with today's values as defaults (fingerprinted per run)
+  prices.py        PriceSource: CsvSource | DatabaseSource | MemorySource, plus the audit
+  calendar.py      event definitions → occurrences → lead/core/recovery windows
+  design.py        fourier, weekday, trend, HAC regression, baseline diagnostics
+  events.py        matched-window study, block bootstrap, pooling, shrinkage
+  models.py        ForecastModel protocol + registry (the equation lives here)
+  backtest.py      rolling origins, metrics, selection, interval calibration
+  forecast.py      assembles baseline / event-adjusted / intervals from one fit
+  facts.py         every number the narrative may use — the contract
+  conclusions.py   facts → sentences (the only module that writes prose)
+  report.py        facts + conclusions → markdown
+  runner.py        stage order, hashing, payload assembly
+  cli.py           run | export | worker | import-csv
+tests/test_pipeline.py   golden, model-swap, fact-reference tests
+legacy/            the pre-package scripts; kept for the long-form report and figures
+```
 
-Step 09 writes `../rjagro_frontend/app/data/price_forecast.json` (the only file
-the web app reads) and refreshes `../rjagro_frontend/docs/event-impact-statistics.md`.
-The app never computes an event effect or a forecast itself, so the UI cannot
-drift from the report. Validate the export after any hand edit with:
+## The three seams
+
+**Data.** Implement `PriceSource` (one method: `load() -> Series`) and nothing
+downstream changes. The CLI already ships CSV, Postgres and in-memory sources.
+
+**The equation.** Add a class with a `key` and a `predict()` and register it:
+
+```python
+# cp_pipeline/models.py
+class DampedTrend:
+    key = "damped"
+    def predict(self, train, future, *, train_offsets, future_offsets, cfg):
+        return ...
+
+models.register(DampedTrend())
+```
+
+Then list it in `Config.candidates` (or `analytics_settings`). The backtest
+scores it, the selector may choose it, facts and the narrative pick it up. No
+other file changes — `tests/test_pipeline.py::test_model_swap` proves it.
+
+**The words.** `facts.py` emits numbers only; `conclusions.py` turns them into
+sentences; the report and the UI render those sentences verbatim. No component
+and no template may contain a statistic of its own.
+
+## The app loop
+
+```
+prices edited in /analytics  →  PUT /analytics/prices/{date}
+   → row + audit row committed
+   → one queued analytics_run (edits coalesce; partial unique index)
+   → worker claims it, runs the stages, writes payload + report_md
+   → UI polls /analytics/status, then refetches /analytics/forecast
+```
+
+Nothing is committed, rebuilt or restarted. A run takes about 10 s.
+
+### Database
+
+Apply once: `psql "$DATABASE_URL" -f analytics_schema_additions.sql`
+(tables: `chicken_prices`, `chicken_price_audit`, `analytics_runs`,
+`analytics_settings`; documented in `database/history/2026-10-29-analytics.md`).
+
+Seed from the current sheet:
 
 ```bash
-cd ../rjagro_frontend && npm run validate:forecast
+PYTHONPATH=. .venv/bin/python -m cp_pipeline.cli import-csv \
+    --prices "data/raw/RATE TRACKER - Chicken Rate Updated 29⁄10.csv"
 ```
 
-## Updating with new observations
+### Worker
 
-1. Drop the new extract into `data/raw/` and point `PRICE_CSV` in
-   `src/cplib.py` at it. The file must keep the `D-Mon-YYYY,price` layout; leave
-   the price cell blank when no quote was recorded — blanks are treated as
-   missing, never as zero. The forecast start date follows the last quoted day
-   automatically, and every table, chart, the report and the web app's JSON are
-   regenerated from it.
-2. If a new event year is needed, add occurrences to
-   `data/raw/up_chicken_events.json` (`definitions` + `occurrences`) and set
-   `date_confidence`.
-3. Run `bash run_all.sh`. The forecast start date is taken from the last
-   quoted day automatically (`cp.FORECAST_START` is defined relative to the
-   data, and `05_forecast.py` writes one row per calendar day to 2027-12-31).
+The worker is a database client; run it wherever the pipeline can run.
 
-Nothing is hard-coded to a particular end date except the 2027-12-31 horizon.
+```bash
+PYTHONPATH=. .venv/bin/python -m cp_pipeline.cli worker --poll 2
+```
 
-## Design decisions worth knowing
+It claims at most one run at a time (`FOR UPDATE SKIP LOCKED` plus an advisory
+lock), records failures with their traceback instead of dying, and keeps the
+last 50 successful payloads.
 
-* **Prices are INR per kg of live weight.** The CSV header says only
-  "CHICKEN SOLD RATE"; the unit was established from the business database
-  (`batch_sales.rate` for `DC101 DESI CHICKEN`, where `value = rate × weight_kg`
-  and rate is 104–123 in Sep 2026) and from the level of the series. See
-  `REPORT.md` §2.
-* **Missing days are not interpolated.** They are documented, and every model
-  fits only on observed days. Only the ETS benchmarks bridge gaps, because the
-  algorithm needs an equally spaced series; that is stated where it matters.
-* **Event effects are identified from local matched windows**, not from a
-  global trend line, because the trend itself is not identified on 18 months of
-  data. See `REPORT.md` §5.
-* **Thin evidence is pooled, not dressed up.** Events with one or two observed
-  days are shrunk toward their category mean and carry a reliability grade of
-  D or E.
-* **No trend is extrapolated into 2027.** The sample contains 1.5 annual
-  cycles; fitting a trend plus annual harmonics produces absurd
-  extrapolations (`outputs/tables/trend_instability.csv` shows a 90-day
-  forecast of INR 2,619 from one origin). The forecast anchors the level to the
-  last three observations and extrapolates only the seasonal shape. A drift
-  sensitivity table is provided instead.
+As a sidecar next to the API, `docker-compose.analytics.yml` mounts the same
+`DATABASE_URL` and restarts on failure.
 
-## Caveats
+## Where the app's numbers come from
 
-The forecast is a statistical extrapolation of one price series, not a market
-model. It cannot see feed costs, chick placement, disease, transport, weather
-shocks, imports or policy. Prediction intervals widen to roughly ±45% at 95%
-by December 2027 and should be read before the central line.
+`NEXT_PUBLIC_ANALYTICS_SOURCE`:
+
+- `api` — the latest succeeded run from `/analytics/forecast`, with the price
+  calendar reading `/analytics/prices`.
+- unset or `json` — the bundled `app/data/price_forecast.json`, which
+  `run_all.sh` refreshes. The tab works offline and cannot be blanked by a
+  backend outage.
+
+## Updating the numbers
+
+- **From the app:** edit the day in the Price history calendar, Save & recompute.
+- **From a sheet:** drop the new export in `data/raw/`, point `PRICES=` at it,
+  run `bash run_all.sh`, and `import-csv` if the database is the source.
+- **Model or wording change:** edit `models.py` / `conclusions.py`, run the
+  tests, then `run_all.sh`. The payload schema is unchanged, so the UI needs no
+  change.
+
+## What is legacy
+
+`legacy/` holds the numbered scripts that produced the long-form `REPORT.md`,
+the PNG figures and the Excel workbook before the package existed. They still
+work against their own tables; the packaged pipeline supersedes them for the
+app and for every number that ships.

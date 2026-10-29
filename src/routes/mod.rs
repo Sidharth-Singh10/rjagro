@@ -1,4 +1,5 @@
 pub mod admin;
+pub mod analytics;
 pub mod audit_app;
 pub mod deletes;
 pub mod fetch_all;

@@ -2,6 +2,8 @@
 
 pub mod prelude;
 
+pub mod analytics_runs;
+pub mod analytics_settings;
 pub mod app_supervisors;
 pub mod app_traders;
 pub mod audit_log;
@@ -13,6 +15,8 @@ pub mod batch_sales;
 pub mod batches;
 pub mod bird_count_history;
 pub mod bird_sell_history;
+pub mod chicken_price_audit;
+pub mod chicken_prices;
 pub mod farmer_commission_history;
 pub mod farmers;
 pub mod farms;
