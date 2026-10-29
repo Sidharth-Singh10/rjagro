@@ -5,23 +5,23 @@ christmas-new-year,Christmas and New Year holidays,festival,positive,medium,annu
 diwali-window,Diwali to Bhai Dooj festival window,festival,positive,high,annual-single,False,3,1,2,17,5,2025-10-18,2027-10-31,11.8,single occurrence
 dussehra,Vijayadashami (Dussehra),festival,positive,medium,annual-single,False,3,1,1,3,8,2025-10-02,2027-10-09,33.3,single occurrence
 holi,Holi and Holika Dahan,festival,positive,medium,annual-single,False,2,1,1,4,4,2026-03-03,2027-03-22,25.0,single occurrence
-raksha-bandhan,Raksha Bandhan,festival,positive,low,annual-single,False,3,1,1,3,7,2025-08-09,2027-08-17,33.3,single occurrence
-eid-ul-adha,Eid-ul-Adha (Bakrid) and preceding days,islamic,positive,medium,annual-single,False,3,1,3,9,8,2025-06-05,2027-05-17,33.3,single occurrence
+raksha-bandhan,Raksha Bandhan,festival,positive,low,annual-single,False,3,2,2,3,8,2025-08-09,2027-08-17,66.7,two occurrences
+eid-ul-adha,Eid-ul-Adha (Bakrid) and preceding days,islamic,positive,medium,annual-single,False,3,2,4,9,10,2025-06-05,2027-05-17,44.4,two occurrences
 eid-ul-fitr,Eid-ul-Fitr (Ramzan Id),islamic,positive,medium,annual-single,False,2,0,0,6,2,2026-03-19,2027-03-10,0.0,none
-muharram,Muharram / Ashura,islamic,mixed,low,annual-single,False,3,2,2,3,8,2025-07-06,2027-06-16,66.7,two occurrences
+muharram,Muharram / Ashura,islamic,mixed,low,annual-single,False,3,2,2,3,9,2025-07-06,2027-06-16,66.7,two occurrences
 chaitra-navratri,Chaitra Navratri,observance,negative,medium,annual-single,False,3,1,6,23,9,2025-04-01,2027-04-15,26.1,single occurrence
-hartalika-teej,Hartalika Teej,observance,negative,low,annual-single,False,3,1,1,3,3,2025-08-26,2027-09-03,33.3,single occurrence
+hartalika-teej,Hartalika Teej,observance,negative,low,annual-single,False,3,1,1,3,4,2025-08-26,2027-09-03,33.3,single occurrence
 janmashtami,Krishna Janmashtami,observance,negative,medium,annual-single,False,3,2,2,4,8,2025-08-15,2027-08-25,50.0,two occurrences
-karwa-chauth,Karwa Chauth,observance,positive,low,annual-single,False,3,1,1,3,4,2025-10-10,2027-10-18,33.3,single occurrence
+karwa-chauth,Karwa Chauth,observance,positive,low,annual-single,False,3,1,1,3,6,2025-10-10,2027-10-18,33.3,single occurrence
 maha-shivaratri,Maha Shivaratri,observance,negative,medium,annual-single,False,2,1,1,2,5,2026-02-15,2027-03-06,50.0,single occurrence
-nirjala-ekadashi,Nirjala Ekadashi,observance,negative,low,annual-single,False,3,2,2,3,8,2025-06-06,2027-06-14,66.7,two occurrences
+nirjala-ekadashi,Nirjala Ekadashi,observance,negative,low,annual-single,False,3,2,2,3,9,2025-06-06,2027-06-14,66.7,two occurrences
 pitru-paksha,Pitru Paksha (Shraddh),observance,negative,high,annual-single,False,3,2,14,42,17,2025-09-08,2027-09-29,33.3,two occurrences
 sharad-navratri,Sharadiya Navratri,observance,negative,high,annual-single,False,3,2,7,28,9,2025-09-22,2027-10-08,25.0,two occurrences
-lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,positive,medium,annual-multiple,False,23,12,137,350,161,2025-04-14,2027-12-14,39.1,moderate
+lagan-weddings,Wedding season (Lagan) muhurat cluster,wedding,positive,medium,annual-multiple,False,23,12,139,350,163,2025-04-14,2027-12-14,39.7,moderate
 magh-mela,"Magh Mela, Prayagraj",fair,mixed,low,annual-single,True,2,1,21,84,21,2026-01-14,2027-03-06,25.0,single occurrence
 ramadan,Ramadan (Ramzan),islamic,mixed,low,annual-single,True,2,1,21,58,22,2026-02-19,2027-03-09,36.2,single occurrence
-sawan,Sawan (Shravana) month,observance,negative,high,annual-single,True,3,2,55,91,58,2025-07-10,2027-08-17,60.4,two occurrences
+sawan,Sawan (Shravana) month,observance,negative,high,annual-single,True,3,2,56,91,59,2025-07-10,2027-08-17,61.5,two occurrences
 heatwave-2025,"2025 heat wave (reported, subcontinent-wide)",seasonal,mixed,low,one-off,True,1,1,119,122,119,2025-04-01,2025-07-31,97.5,single occurrence
-monsoon,Southwest monsoon season,seasonal,mixed,low,annual-single,True,3,2,166,366,166,2025-06-01,2027-09-30,45.4,two occurrences
-summer-heat,Pre-monsoon summer heat season,seasonal,mixed,medium,annual-single,True,3,2,117,231,117,2025-04-15,2027-06-30,50.6,two occurrences
+monsoon,Southwest monsoon season,seasonal,mixed,low,annual-single,True,3,2,174,366,174,2025-06-01,2027-09-30,47.5,two occurrences
+summer-heat,Pre-monsoon summer heat season,seasonal,mixed,medium,annual-single,True,3,2,122,231,122,2025-04-15,2027-06-30,52.8,two occurrences
 winter-fog,Winter fog and cold-wave transport disruption,seasonal,mixed,medium,annual-single,True,3,1,37,113,37,2025-12-15,2027-12-31,32.7,single occurrence

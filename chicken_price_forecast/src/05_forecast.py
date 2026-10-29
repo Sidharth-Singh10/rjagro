@@ -379,8 +379,15 @@ for _, r in et.occurrences.iterrows():
     sub_infl = daily[daily.date.isin(infl)]
     before = daily[daily.date == core[0] - pd.Timedelta(days=1)]
     after = daily[daily.date == core[-1] + pd.Timedelta(days=1)]
-    d_eff = delta_shrunk.get(r.definition_id, 0.0)
-    se_eff = event_se.get(r.definition_id, np.nan)
+    # effect on these dates sums every discrete event that is active, so an
+    # overlapping row reports the combined shift and its combined interval
+    day_offsets, day_ses = [], []
+    for d in core:
+        ids = core_windows.get(d, [])
+        day_offsets.append(sum(delta_shrunk.get(k, 0.0) for k in ids))
+        day_ses.append(float(np.sqrt(sum(event_se.get(k, 0.0) ** 2 for k in ids))))
+    d_eff = float(np.mean(day_offsets)) if day_offsets else 0.0
+    se_eff = float(np.mean(day_ses)) if day_ses else np.nan
     peak_idx, trough_idx = sub["forecast_inr"].idxmax(), sub["forecast_inr"].idxmin()
 
     rows.append({

@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { EventImpactChart } from './event_impact_chart';
 import { EventImpactTable } from './event_impact_table';
 import {
-    eventEstimates, formatPct, reliabilityCounts, reliabilityStyle,
+    eventEstimates, forecastMeta, formatPct, reliabilityCounts, reliabilityStyle,
 } from '@/app/utils/price_forecast';
 
 const Chip = ({ color, children }: { color: string; children: React.ReactNode }) => (
@@ -87,7 +87,7 @@ export const EventImpactSection = () => {
                     <p>
                         <span className="font-medium text-gray-700">Pooling.</span> Each event estimate is
                         precision-weighted against a pooled category effect, itself shrunk toward zero:
-                        event ~ N(category, 2.2%²), category ~ N(0, 4%²). That two-level prior is what stops a
+                        event ~ N(category, {forecastMeta.tauWithin}%²), category ~ N(0, 4%²). That two-level prior is what stops a
                         one-day reading from being reported as a recurring percentage — and what keeps the
                         well-evidenced wedding effect nearly intact while pulling a single-day festival toward its
                         category.

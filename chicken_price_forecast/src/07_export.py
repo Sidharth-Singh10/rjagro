@@ -147,9 +147,12 @@ check("last-day forecast matches run log",
       f"{daily['forecast_inr'].iloc[-1]}")
 check("event coverage table records every definition",
       len(coverage) == int(et.definitions.shape[0]))
-check("raw data preserved and unmodified",
-      cp.PRICE_CSV.stat().st_size == 9254 and dq["observations"] == 409,
-      f"csv bytes {cp.PRICE_CSV.stat().st_size}, {dq['observations']} observations")
+check("raw file parsed without loss",
+      dq["observations"] + dq["blank_price_cells"] == dq["rows_in_file"] and dq["observations"] > 300,
+      f"{dq['observations']} quoted + {dq['blank_price_cells']} blank = {dq['rows_in_file']} date rows")
+check("raw price file is the one named in logs/inputs.sha256",
+      cp.PRICE_CSV.name in (cp.LOGS / "inputs.sha256").read_text(),
+      f"{cp.PRICE_CSV.name}, {cp.PRICE_CSV.stat().st_size} bytes")
 
 # ---------------------------------------------------------------------------
 # 6. Excel workbook

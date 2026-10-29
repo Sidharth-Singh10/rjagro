@@ -2,12 +2,12 @@
   {
     "check": "daily forecast covers every calendar day 2026-10-24 .. 2027-12-31",
     "passed": true,
-    "detail": "434 rows, expected 434"
+    "detail": "429 rows, expected 429"
   },
   {
     "check": "forecast starts the day after the last observation",
     "passed": true,
-    "detail": "2026-10-24 vs last observation 2026-10-23"
+    "detail": "2026-10-29 vs last observation 2026-10-28"
   },
   {
     "check": "no duplicate dates in the daily forecast",
@@ -17,7 +17,7 @@
   {
     "check": "forecast = baseline x (1 + event impact%)",
     "passed": true,
-    "detail": "max abs diff 0.093 INR"
+    "detail": "max abs diff 0.098 INR"
   },
   {
     "check": "event impact in INR equals forecast minus baseline",
@@ -42,7 +42,7 @@
   {
     "check": "interval width increases with horizon",
     "passed": true,
-    "detail": "2.88 at end vs 1.32 at start"
+    "detail": "2.84 at end vs 1.46 at start"
   },
   {
     "check": "daily event impact equals the product of the fitted event effects",
@@ -72,17 +72,17 @@
   {
     "check": "raw effect % = (observed / baseline - 1) x 100",
     "passed": true,
-    "detail": "max 0.0103"
+    "detail": "max 0.0073"
   },
   {
     "check": "80% interval is inside the 95% interval (events with an estimate)",
     "passed": true,
-    "detail": "16 events; 3 use the category prior only"
+    "detail": "17 events; 2 use the category prior only"
   },
   {
     "check": "events with no observed price carry a flagged prior-only estimate",
     "passed": true,
-    "detail": "chhath, dussehra, eid-ul-fitr"
+    "detail": "chhath, eid-ul-fitr"
   },
   {
     "check": "occurrence table has one row per discrete occurrence",
@@ -112,12 +112,12 @@
   {
     "check": "daily forecast row count matches run log",
     "passed": true,
-    "detail": "434"
+    "detail": "429"
   },
   {
     "check": "last-day forecast matches run log",
     "passed": true,
-    "detail": "111.9"
+    "detail": "99.8"
   },
   {
     "check": "event coverage table records every definition",
@@ -125,8 +125,13 @@
     "detail": ""
   },
   {
-    "check": "raw data preserved and unmodified",
+    "check": "raw file parsed without loss",
     "passed": true,
-    "detail": "csv bytes 9254, 409 observations"
+    "detail": "425 quoted + 169 blank = 594 date rows"
+  },
+  {
+    "check": "raw price file is the one named in logs/inputs.sha256",
+    "passed": true,
+    "detail": "RATE TRACKER - Chicken Rate Updated 29\u204410.csv, 9293 bytes"
   }
 ]

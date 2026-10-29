@@ -14,7 +14,7 @@ export PYTHONPATH=src
 sha256sum data/raw/* > logs/inputs.sha256
 
 for step in 01_ingest 02_events 03_baseline 04_event_impacts 05_forecast \
-            06_charts 07_export 08_verify_event_dates 09_export_frontend; do
+            06_charts 07_export 08_verify_event_dates 09_export_frontend 10_report; do
   echo "== $step =="
   "$PY" -W ignore "src/${step}.py"
 done

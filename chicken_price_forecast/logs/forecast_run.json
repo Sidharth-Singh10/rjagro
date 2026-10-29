@@ -39,43 +39,43 @@
     },
     {
       "origin": "2026-06-01",
-      "train_observations": 317,
+      "train_observations": 320,
       "events_estimable": 15,
       "events_total": 19
     },
     {
       "origin": "2026-06-15",
-      "train_observations": 322,
+      "train_observations": 326,
       "events_estimable": 15,
       "events_total": 19
     },
     {
       "origin": "2026-07-01",
-      "train_observations": 331,
+      "train_observations": 336,
       "events_estimable": 15,
       "events_total": 19
     },
     {
       "origin": "2026-07-15",
-      "train_observations": 339,
+      "train_observations": 345,
       "events_estimable": 15,
       "events_total": 19
     },
     {
       "origin": "2026-08-01",
-      "train_observations": 352,
+      "train_observations": 359,
       "events_estimable": 15,
       "events_total": 19
     },
     {
       "origin": "2026-08-15",
-      "train_observations": 364,
+      "train_observations": 371,
       "events_estimable": 15,
       "events_total": 19
     },
     {
       "origin": "2026-09-01",
-      "train_observations": 376,
+      "train_observations": 385,
       "events_estimable": 15,
       "events_total": 19
     }
@@ -93,106 +93,106 @@
   ],
   "selection_metric": "weighted sMAPE over 1-28 day horizons",
   "ranking_smape_1_28": {
-    "seasonal_anchor_events": 10.314,
-    "seasonal_anchor": 11.016,
-    "ets_weekly": 11.027,
-    "ets_damped": 11.183,
-    "naive": 11.183,
-    "ma7": 11.2,
-    "snaive7": 11.773,
-    "seasonal_flat_events": 16.402,
-    "seasonal_flat": 17.798
+    "seasonal_anchor_events": 11.118,
+    "ets_weekly": 11.58,
+    "ma7": 11.738,
+    "ets_damped": 11.767,
+    "naive": 11.767,
+    "seasonal_anchor": 11.84,
+    "snaive7": 12.325,
+    "seasonal_flat_events": 16.364,
+    "seasonal_flat": 17.761
   },
   "ranking_smape_29_90": {
-    "ets_damped": 16.126,
-    "ets_weekly": 15.958,
-    "ma7": 14.482,
-    "naive": 16.126,
-    "seasonal_anchor": 15.959,
-    "seasonal_anchor_events": 15.318,
-    "seasonal_flat": 20.636,
-    "seasonal_flat_events": 19.831,
-    "snaive7": 16.126
+    "ets_damped": 16.006,
+    "ets_weekly": 15.76,
+    "ma7": 13.954,
+    "naive": 16.006,
+    "seasonal_anchor": 16.332,
+    "seasonal_anchor_events": 15.731,
+    "seasonal_flat": 20.124,
+    "seasonal_flat_events": 19.199,
+    "snaive7": 16.006
   },
   "best_benchmark": "seasonal_anchor_events",
   "event_model_used": "seasonal_anchor_events",
-  "backtest_rows": 5229,
+  "backtest_rows": 5868,
   "error_scaling": {
     "anchor_sigma": {
-      "1": 0.1221,
-      "7": 0.085,
-      "14": 0.1554,
-      "28": 0.186,
-      "56": 0.1603,
-      "90": 0.1675
+      "1": 0.1302,
+      "7": 0.0994,
+      "14": 0.1657,
+      "28": 0.1931,
+      "56": 0.163,
+      "90": 0.174
     },
-    "sigma0": 0.07078590504942647,
-    "power": 0.21983751939506857,
-    "sigma_at_h30": 0.14951110858926736,
-    "sigma_at_h90": 0.19035426626802646,
-    "sigma_at_h434": 0.26900849128261084,
-    "sigma_yoy_365d": 0.23681434775656032,
-    "n_yoy_pairs": 99
+    "sigma0": 0.08748023136234993,
+    "power": 0.17444424978569895,
+    "sigma_at_h30": 0.15833802811314587,
+    "sigma_at_h90": 0.19178573065313267,
+    "sigma_at_h434": 0.26557646820806396,
+    "sigma_yoy_365d": 0.24355169622241588,
+    "n_yoy_pairs": 107
   },
   "final": {
-    "start": "2026-10-24",
+    "start": "2026-10-29",
     "end": "2027-12-31",
-    "days": 434,
-    "mean_inr": 108.4,
-    "last_inr": 111.9,
+    "days": 429,
+    "mean_inr": 97.3,
+    "last_inr": 99.8,
     "last_pi95": [
-      65.9,
-      190.1
+      59.2,
+      168.2
     ]
   },
   "drift_sensitivity": [
     {
       "annual_drift_pct": 0.0,
       "target_date": "2027-06-30",
-      "baseline_inr": 100.7,
-      "event_adjusted_inr": 100.7
+      "baseline_inr": 90.1,
+      "event_adjusted_inr": 90.1
     },
     {
       "annual_drift_pct": 0.0,
       "target_date": "2027-12-31",
-      "baseline_inr": 113.2,
-      "event_adjusted_inr": 111.9
+      "baseline_inr": 100.5,
+      "event_adjusted_inr": 99.8
     },
     {
       "annual_drift_pct": 6.0,
       "target_date": "2027-06-30",
-      "baseline_inr": 104.8,
-      "event_adjusted_inr": 104.8
+      "baseline_inr": 93.7,
+      "event_adjusted_inr": 93.7
     },
     {
       "annual_drift_pct": 6.0,
       "target_date": "2027-12-31",
-      "baseline_inr": 121.3,
-      "event_adjusted_inr": 120.0
+      "baseline_inr": 107.6,
+      "event_adjusted_inr": 106.9
     },
     {
       "annual_drift_pct": 12.0,
       "target_date": "2027-06-30",
-      "baseline_inr": 108.8,
-      "event_adjusted_inr": 108.8
+      "baseline_inr": 97.3,
+      "event_adjusted_inr": 97.3
     },
     {
       "annual_drift_pct": 12.0,
       "target_date": "2027-12-31",
-      "baseline_inr": 129.5,
-      "event_adjusted_inr": 128.1
-    },
-    {
-      "annual_drift_pct": 20.0,
-      "target_date": "2027-06-30",
-      "baseline_inr": 114.0,
+      "baseline_inr": 114.8,
       "event_adjusted_inr": 114.0
     },
     {
       "annual_drift_pct": 20.0,
+      "target_date": "2027-06-30",
+      "baseline_inr": 101.9,
+      "event_adjusted_inr": 101.9
+    },
+    {
+      "annual_drift_pct": 20.0,
       "target_date": "2027-12-31",
-      "baseline_inr": 140.6,
-      "event_adjusted_inr": 139.0
+      "baseline_inr": 124.5,
+      "event_adjusted_inr": 123.7
     }
   ]
 }

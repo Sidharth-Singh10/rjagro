@@ -141,6 +141,7 @@ payload = {
         "forecastStart": daily["date"].min().date().isoformat(),
         "forecastEnd": daily["date"].max().date().isoformat(),
         "model": "seasonal anchor (one annual harmonic + weekday) + empirical-Bayes event offsets",
+        "tauWithin": round(float(np.sqrt(json.loads((cp.LOGS / "event_effects.json").read_text())["tau2_core"])) * 100, 1),
         "intervalMeaning": "80% and 95% prediction intervals for an individual daily price; "
                            "the 95% band widens to about 45% of the central value by December 2027",
         "backtest": {

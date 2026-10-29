@@ -17,8 +17,6 @@
     "diwali-window",
     "dussehra",
     "holi",
-    "raksha-bandhan",
-    "eid-ul-adha",
     "chaitra-navratri",
     "hartalika-teej",
     "karwa-chauth",
@@ -28,13 +26,13 @@
     "heatwave-2025",
     "winter-fog"
   ],
-  "total_core_observed_days": 727,
-  "observed_days": 409,
+  "total_core_observed_days": 745,
+  "observed_days": 425,
   "date_confidence_counts": {
     "confirmed": 47,
     "estimated": 40,
     "tentative": 4
   },
-  "share_observed_days_in_any_core": 0.8998,
-  "share_observed_days_in_any_influence_window": 0.9389
+  "share_observed_days_in_any_core": 0.8918,
+  "share_observed_days_in_any_influence_window": 0.9341
 }

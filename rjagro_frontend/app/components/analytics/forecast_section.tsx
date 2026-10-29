@@ -123,14 +123,14 @@ export const ForecastSection = memo(() => {
                 />
                 <Kpi
                     label="Seasonal peak"
-                    value={formatInr(peak.forecast)}
-                    hint={formatDate(peak.date)}
+                    value={formatInr(peak.baseline)}
+                    hint={`${formatDate(peak.date)}, before event effects`}
                     tone="text-gray-800"
                 />
                 <Kpi
                     label="Seasonal trough"
-                    value={formatInr(trough.forecast)}
-                    hint={formatDate(trough.date)}
+                    value={formatInr(trough.baseline)}
+                    hint={`${formatDate(trough.date)}, before event effects`}
                     tone="text-gray-800"
                 />
                 <Kpi

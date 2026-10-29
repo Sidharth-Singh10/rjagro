@@ -27,15 +27,20 @@ LOGS = ROOT / "logs"
 for _p in (PROC, TABLES, CHARTS, LOGS):
     _p.mkdir(parents=True, exist_ok=True)
 
-PRICE_CSV = RAW / "RATE TRACKER - Chicken Rate.csv"
+# The tracker is supplied as a full replacement each time it is updated. The
+# previous extract is kept alongside it for the audit trail, but only the
+# current one is read. To switch files, change this one line.
+PRICE_CSV = RAW / "RATE TRACKER - Chicken Rate Updated 29⁄10.csv"
 EVENT_JSON = RAW / "up_chicken_events.json"
 
 MARKET = "Uttar Pradesh (statewide wholesale)"
 UNIT = "INR per kg live weight"
 PRODUCT = "Chicken, wholesale sold rate"
 
-# Forecast window
-FORECAST_START = pd.Timestamp("2026-10-24")   # first day after last observation
+# Forecast window. FORECAST_START is derived from the data at the bottom of
+# this module (first day after the last quoted day); the literal here is only a
+# placeholder so the name exists while the rest of the module is defined.
+FORECAST_START = pd.Timestamp("2026-10-24")
 FORECAST_END = pd.Timestamp("2027-12-31")
 
 # Annual cycle length used for Fourier terms
@@ -355,3 +360,14 @@ def joint_wald(res, R: np.ndarray) -> dict:
     from scipy import stats
     df = int(np.linalg.matrix_rank(M))
     return {"chi2": round(stat, 3), "df": df, "p": float(stats.chi2.sf(stat, df))}
+
+
+# --------------------------------------------------------------------------
+# Derived horizon (must be last: it depends on load_prices)
+# --------------------------------------------------------------------------
+_last_observed = observed_prices().index.max()
+FORECAST_START = _last_observed + pd.Timedelta(days=1)
+if FORECAST_START >= FORECAST_END:      # pragma: no cover - guard for future updates
+    raise ValueError(
+        f"last observation {_last_observed.date()} leaves no horizon before {FORECAST_END.date()}"
+    )

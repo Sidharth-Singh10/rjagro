@@ -23,6 +23,8 @@ export interface ForecastMeta {
     forecastStart: string;
     forecastEnd: string;
     model: string;
+    /** Between-event sd of the empirical-Bayes prior, in log per cent. */
+    tauWithin: number;
     intervalMeaning: string;
     backtest: {
         models: number;
@@ -307,8 +309,10 @@ export const monthlyForecast = (): Array<{ key: string; label: string; forecast:
 export const forecastSummary = () => {
     const first = dailyForecast[0];
     const last = dailyForecast[dailyForecast.length - 1];
-    const peak = dailyForecast.reduce((best, row) => (row.forecast > best.forecast ? row : best), first);
-    const trough = dailyForecast.reduce((best, row) => (row.forecast < best.forecast ? row : best), first);
+    // seasonal extremes come from the baseline: the event-adjusted path can dip
+    // on a single festival day without saying anything about the season
+    const peak = dailyForecast.reduce((best, row) => (row.baseline > best.baseline ? row : best), first);
+    const trough = dailyForecast.reduce((best, row) => (row.baseline < best.baseline ? row : best), first);
     const eventDays = dailyForecast.filter((row) => row.impactPct !== 0).length;
     return { first, last, peak, trough, eventDays, days: dailyForecast.length };
 };

@@ -11,7 +11,7 @@ Everything here is generated from two inputs and can be regenerated end to end.
 
 | file | role |
 |---|---|
-| `data/raw/RATE TRACKER - Chicken Rate.csv` | daily wholesale price tracker, INR per kg, 1 Apr 2025 – 23 Oct 2026 (409 quoted days) |
+| `data/raw/RATE TRACKER - Chicken Rate Updated 29⁄10.csv` | current daily wholesale price tracker, INR per kg, 1 Apr 2025 – 28 Oct 2026 (425 quoted days; 169 blank) |
 | `data/raw/up_chicken_events.json` | 26 event definitions, 91 dated occurrences, 2025–2027, with sources |
 
 The originals live in the repository root (`RATE TRACKER - Chicken Rate.csv`,
@@ -59,7 +59,7 @@ uv pip install --python .venv/bin/python -r requirements.txt
 bash run_all.sh
 ```
 
-`run_all.sh` executes the eight steps in order. Total runtime is under a minute.
+`run_all.sh` executes the ten steps in order. Total runtime is about half a minute.
 
 | step | script | what it does |
 |---|---|---|
@@ -72,6 +72,7 @@ bash run_all.sh
 | 07 | `src/07_export.py` | Excel workbook + 26 consistency checks |
 | 08 | `src/08_verify_event_dates.py` | record the external check of 2027 dates |
 | 09 | `src/09_export_frontend.py` | write `rjagro_frontend/app/data/price_forecast.json` for the Analytics tab |
+| 10 | `src/10_report.py` | render `REPORT.md` from the generated artefacts |
 
 ## Frontend
 
@@ -86,9 +87,12 @@ cd ../rjagro_frontend && npm run validate:forecast
 
 ## Updating with new observations
 
-1. Append new rows to `data/raw/RATE TRACKER - Chicken Rate.csv` in the same
-   format (`D-Mon-YYYY,price`). Leave the price cell blank when no quote was
-   recorded — blanks are treated as missing, not as zero.
+1. Drop the new extract into `data/raw/` and point `PRICE_CSV` in
+   `src/cplib.py` at it. The file must keep the `D-Mon-YYYY,price` layout; leave
+   the price cell blank when no quote was recorded — blanks are treated as
+   missing, never as zero. The forecast start date follows the last quoted day
+   automatically, and every table, chart, the report and the web app's JSON are
+   regenerated from it.
 2. If a new event year is needed, add occurrences to
    `data/raw/up_chicken_events.json` (`definitions` + `occurrences`) and set
    `date_confidence`.
