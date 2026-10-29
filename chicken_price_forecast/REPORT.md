@@ -551,12 +551,14 @@ chicken_price_forecast/
 ├── src/
 │   ├── cplib.py                  IO, calendar features, HAC/Wald helpers
 │   ├── effects.py                the event estimator (shared by report and backtest)
-│   ├── 01_ingest.py … 10_report.py
+│   ├── 01_ingest.py … 11_pipeline_map.py
 ├── outputs/tables/               every table as CSV
 ├── outputs/charts/               eight figures as PNG
 ├── outputs/chicken_price_deliverables.xlsx
 └── logs/                         JSON run logs, data-quality audit, consistency checks
 ```
+
+![Pipeline map](outputs/charts/08_pipeline_map.png)
 
 Full rebuild: `bash run_all.sh` (about half a minute). This report is rendered by
 `src/10_report.py`, so every figure above is read from a generated artefact

@@ -18,6 +18,12 @@ The originals live in the repository root (`RATE TRACKER - Chicken Rate.csv`,
 `rjagro_frontend/data/up_chicken_events.json`) and were copied byte for byte
 into `data/raw/`. Their SHA-256 hashes are in `logs/inputs.sha256`.
 
+## Pipeline map
+
+![How the forecast numbers are produced](outputs/charts/08_pipeline_map.png)
+
+Regenerate it with step 11; the counts on the cards come from the run logs.
+
 ## Outputs
 
 ```
@@ -59,7 +65,7 @@ uv pip install --python .venv/bin/python -r requirements.txt
 bash run_all.sh
 ```
 
-`run_all.sh` executes the ten steps in order. Total runtime is about half a minute.
+`run_all.sh` executes the eleven steps in order. Total runtime is about half a minute.
 
 | step | script | what it does |
 |---|---|---|
@@ -73,6 +79,7 @@ bash run_all.sh
 | 08 | `src/08_verify_event_dates.py` | record the external check of 2027 dates |
 | 09 | `src/09_export_frontend.py` | write `rjagro_frontend/app/data/price_forecast.json` for the Analytics tab |
 | 10 | `src/10_report.py` | render `REPORT.md` from the generated artefacts |
+| 11 | `src/11_pipeline_map.py` | draw `outputs/charts/08_pipeline_map.{png,svg}` |
 
 ## Frontend
 
