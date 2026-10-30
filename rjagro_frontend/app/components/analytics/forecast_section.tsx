@@ -78,8 +78,10 @@ const Kpi = ({ label, value, hint }: { label: string; value: string; hint?: stri
     </div>
 );
 
-const ForecastTooltip = ({ active, payload }: any) => {
+const ForecastTooltip = ({ active, payload, analytics }: any) => {
     if (!active || !payload?.length) return null;
+    // `payload` here is recharts' array of series for the hovered point; the
+    // analytics payload has to be handed in explicitly.
     const row = payload[0]?.payload as Point | undefined;
     if (!row) return null;
     return (
@@ -93,7 +95,7 @@ const ForecastTooltip = ({ active, payload }: any) => {
                     <p className="text-gray-400">95% band {formatInr(row.band95?.[0] ?? null)} – {formatInr(row.band95?.[1] ?? null)}</p>
                     {row.active?.length > 0 && (
                         <p className="pt-1 text-gray-500">
-                            Events: {row.active.map((id) => eventName(row as any, id)).join(', ')}
+                            Events: {row.active.map((id) => eventName(analytics, id)).join(', ')}
                         </p>
                     )}
                 </div>
@@ -181,7 +183,7 @@ export const ForecastSection = memo(() => {
                                 tickFormatter={(value: number) => `₹${value}`}
                                 width={52}
                             />
-                            <Tooltip content={<ForecastTooltip />} />
+                            <Tooltip content={<ForecastTooltip analytics={payload} />} />
                             <Area dataKey="band95" type="linear" stroke="none" fill={chart.rose} fillOpacity={0.09}
                                   isAnimationActive={false} activeDot={false} connectNulls={false} />
                             <Area dataKey="band80" type="linear" stroke="none" fill={chart.rose} fillOpacity={0.17}

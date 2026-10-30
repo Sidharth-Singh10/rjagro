@@ -314,5 +314,5 @@ export const categoryColor: Record<string, string> = {
     seasonal: '#3d7ea6',
 };
 
-export const eventName = (payload: AnalyticsPayload, id: string): string =>
-    payload.events.items.find((e) => e.id === id)?.name ?? id;
+export const eventName = (payload: AnalyticsPayload | undefined, id: string): string =>
+    payload?.events?.items?.find((e) => e.id === id)?.name ?? id;
