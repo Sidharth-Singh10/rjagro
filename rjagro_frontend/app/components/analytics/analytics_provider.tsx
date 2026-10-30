@@ -3,7 +3,7 @@ import { createContext, useContext, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ratePoints } from '@/app/utils/rate_tracker';
 import {
-    analyticsIsLive, bundledPayload, fetchPayload, fetchPrices, formatDate,
+    analyticsIsLive, bundledPayload, fetchPayload, fetchPrices, formatDate, isPayload,
     type AnalyticsPayload,
 } from '@/app/utils/analytics';
 
@@ -32,7 +32,14 @@ export const AnalyticsProvider = ({ children }: { children: React.ReactNode }) =
         refetchOnWindowFocus: true,
     });
 
-    const payload = (analyticsIsLive ? query.data : bundledPayload) ?? bundledPayload;
+    // never hand a component something it cannot render: an older run or a
+    // stale bundle falls back to the bundled export, and if that is also
+    // unusable the page says so instead of throwing
+    const candidate = analyticsIsLive ? query.data : bundledPayload;
+    const payload = isPayload(candidate) ? candidate : bundledPayload;
+    const payloadProblem = !isPayload(payload)
+        ? 'This build shipped a price_forecast.json the app cannot read. Run the pipeline and redeploy.'
+        : null;
 
     const prices = useQuery({
         queryKey: ['analytics', 'all-prices'],
@@ -55,7 +62,7 @@ export const AnalyticsProvider = ({ children }: { children: React.ReactNode }) =
         live: analyticsIsLive,
         refetch: () => { void query.refetch(); },
         isLoading: analyticsIsLive && query.isLoading,
-        error: (query.error as Error) ?? null,
+        error: (query.error as Error) ?? (payloadProblem ? new Error(payloadProblem) : null),
     }), [payload, points, query.isLoading, query.error, query.refetch]);
 
     return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -149,6 +149,19 @@ export interface AnalyticsPayload {
 
 export const bundledPayload = bundled as unknown as AnalyticsPayload;
 
+/**
+ * A payload the app can render. Guards against two things that have bitten
+ * before: an API run written by an older pipeline, and a bundled export that
+ * shipped before the current schema.
+ */
+export const isPayload = (value: any): value is AnalyticsPayload =>
+    !!value
+    && value.schema === 2
+    && Array.isArray(value?.forecast?.daily)
+    && !!value?.forecast?.daily?.length
+    && Array.isArray(value?.events?.items)
+    && Array.isArray(value?.conclusions);
+
 export const analyticsSource =
     process.env.NEXT_PUBLIC_ANALYTICS_SOURCE === 'api' ? 'api' : 'json';
 
@@ -158,9 +171,9 @@ export const analyticsIsLive = analyticsSource === 'api';
 export async function fetchPayload(): Promise<AnalyticsPayload> {
     if (!analyticsIsLive) return bundledPayload;
     const { data } = await api.get('/analytics/forecast');
-    const payload = (data?.payload ?? data) as AnalyticsPayload;
-    if (!payload || !Array.isArray(payload.forecast?.daily)) {
-        throw new Error('analytics payload missing or malformed');
+    const payload = data?.payload ?? data;
+    if (!isPayload(payload)) {
+        throw new Error(`analytics payload is not schema 2 (got ${payload?.schema ?? 'none'})`);
     }
     return payload;
 }

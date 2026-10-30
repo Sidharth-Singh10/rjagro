@@ -12,6 +12,7 @@ import { ForecastSection } from './analytics/forecast_section';
 import { EventsAndSeasonality } from './analytics/events/events_section';
 import { PricesCalendar } from './analytics/prices_calendar';
 import { AnalyticsProvider, Provenance, useAnalytics } from './analytics/analytics_provider';
+import { isPayload } from '@/app/utils/analytics';
 
 const DAY_MS = 86_400_000;
 
@@ -23,6 +24,25 @@ const AnalysisBody = () => {
     const kpis = useMemo(() => rateKpis(points), [points]);
     const best5 = useMemo(() => bestWindows(points, 5), [points]);
     const best7 = useMemo(() => bestWindows(points, 7), [points]);
+
+    // Rendered after the hooks so the hook order never changes. A stale or
+    // older payload gets an explanation instead of a white screen.
+    if (!isPayload(payload)) {
+        return (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+                <p className="text-sm font-semibold text-amber-900">
+                    The Analytics tab cannot read its data.
+                </p>
+                <p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-amber-800">
+                    The payload this build shipped was written by an older version of the pipeline
+                    (schema {(payload as { schema?: number }).schema ?? 'unknown'}) and has no event or
+                    conclusion block. Regenerate it with <code className="rounded bg-amber-100 px-1">bash run_all.sh</code>,
+                    commit the refreshed <code className="rounded bg-amber-100 px-1">app/data/price_forecast.json</code>,
+                    and redeploy.
+                </p>
+            </div>
+        );
+    }
 
     const short = (iso: string) =>
         new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-IN', {
