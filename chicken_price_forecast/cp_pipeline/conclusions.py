@@ -130,13 +130,19 @@ def build(facts: dict) -> list[dict]:
         })
 
     # ---- 7. how thin the evidence is --------------------------------------
-    thin = sum(1 for e in items if e["observedDays"] <= 2)
+    # "few observed days" can mean two very different things: the event only
+    # lasts a day or two, or the data around it is missing. Say which.
+    thin = [e for e in items if e["observedDays"] <= 2]
+    if d["missingDays"] == 0:
+        gap_text = "the price series itself has no gaps"
+    else:
+        gap_text = f"{d['missingDays']} of {d['spanDays']} calendar days have no quote"
     out.append({
         "id": "evidence-depth",
         "kind": "caveat",
-        "text": (f"{thin} of {len(items)} events have at most two quoted days inside their window, "
-                 f"and {d['missingDays']} of {d['spanDays']} calendar days have no quote at all. "
-                 "Event conclusions are therefore associations in a thin sample, not causal effects."),
+        "text": (f"{len(thin)} of {len(items)} events last two days or less, so each estimate rests on "
+                 f"that many observations; {gap_text}. Event conclusions are associations in a thin "
+                 "sample, not causal effects."),
         "refs": ["events.items", "data.missingDays"],
     })
 

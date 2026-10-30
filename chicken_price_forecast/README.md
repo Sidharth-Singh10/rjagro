@@ -17,7 +17,7 @@ Two rules shape the design:
 uv venv .venv --python 3.12 && uv pip install --python .venv/bin/python -r requirements.txt
 
 PYTHONPATH=. .venv/bin/python -m cp_pipeline.cli run \
-    --prices "data/raw/RATE TRACKER - Chicken Rate Updated 29⁄10.csv" \
+    --prices "data/raw/30⁄10 RATE TRACKER - Chicken Rate.csv" \
     --out outputs                       # tables + report + payload
 
 bash run_all.sh                          # the same, plus REPORT.md and the app export
@@ -95,7 +95,7 @@ Seed from the current sheet:
 
 ```bash
 PYTHONPATH=. .venv/bin/python -m cp_pipeline.cli import-csv \
-    --prices "data/raw/RATE TRACKER - Chicken Rate Updated 29⁄10.csv"
+    --prices "data/raw/30⁄10 RATE TRACKER - Chicken Rate.csv"
 ```
 
 ### Worker

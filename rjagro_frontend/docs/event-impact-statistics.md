@@ -1,29 +1,29 @@
 # Wholesale chicken price — run report
 
-Generated 2026-10-29 12:13 UTC from data through **2026-10-28**
-(425 quoted days). Model `anchor_events`; run `export`;
-dataset `e83e13f42d52eaa4`.
+Generated 2026-10-30 05:08 UTC from data through **2026-10-28**
+(576 quoted days). Model `anchor_events`; run `export`;
+dataset `8e9baf4593b20b87`.
 
 ## What this run says
 
-- **event strength.** 5 of 19 events separate from zero at the 80% level. Above baseline: Raksha Bandhan (+6.8%), Wedding season (Lagan) muhurat cluster (+5.4%). Below baseline: Chaitra Navratri (−6.5%), Karwa Chauth (−6.8%), Ayodhya Deepotsav (−6.8%).
-- **strongest event.** Wedding season (Lagan) muhurat cluster is the only grade-A effect: +5.4% (80% interval +3.0% to +8.0%, 12 occurrences, 139 quoted days).
-- **festival pool.** Pooled festival windows sit at +0.8% (95% interval −4.9% to +6.8%), too imprecise to confirm or reject the direction the calendar expects.
-- **forecast path.** The path runs from ₹89.0 on 2026-10-29 to ₹99.8 on 2027-12-31, with the seasonal shape peaking at ₹105.6 around 2027-02-11 and bottoming at ₹84.4 around 2027-08-14.
-- **forecast interval.** The 95% interval at the end of the horizon is ₹59.2 to ₹168.2 — a band about 109% as wide as the central value. That width is the honest summary of what this history supports; the level is one draw from it, the shape is the part worth trusting.
-- **validation.** The selected model (anchor_events) scores 14.2% sMAPE overall, 12.0% at 8–28 days and 15.7% at 29–90 days. ma7_events scores 12.8% overall, so no single model dominates.
-- **evidence depth.** 13 of 19 events have at most two quoted days inside their window, and 151 of 576 calendar days have no quote at all. Event conclusions are therefore associations in a thin sample, not causal effects.
+- **event strength.** 8 of 19 events separate from zero at the 80% level. Above baseline: Vijayadashami (Dussehra) (+7.9%), Wedding season (Lagan) muhurat cluster (+6.1%), Pitru Paksha (Shraddh) (+3.9%), Chhath Puja (+3.8%), Eid-ul-Fitr (Ramzan Id) (+3.8%). Below baseline: Diwali to Bhai Dooj festival window (−4.7%), Karwa Chauth (−6.2%), Ayodhya Deepotsav (−7.2%).
+- **strongest event.** Wedding season (Lagan) muhurat cluster is the only grade-A effect: +6.1% (80% interval +3.4% to +8.8%, 12 occurrences, 163 quoted days).
+- **festival pool.** Pooled festival windows sit at +0.6% (95% interval −4.2% to +5.6%), too imprecise to confirm or reject the direction the calendar expects.
+- **forecast path.** The path runs from ₹87.9 on 2026-10-29 to ₹98.1 on 2027-12-31, with the seasonal shape peaking at ₹102.2 around 2027-02-10 and bottoming at ₹86.9 around 2027-08-14.
+- **forecast interval.** The 95% interval at the end of the horizon is ₹60.5 to ₹159.1 — a band about 101% as wide as the central value. That width is the honest summary of what this history supports; the level is one draw from it, the shape is the part worth trusting.
+- **validation.** The selected model (anchor_events) scores 13.0% sMAPE overall, 11.7% at 8–28 days and 14.0% at 29–90 days. It is the best of the candidates tested.
+- **evidence depth.** 9 of 19 events last two days or less, so each estimate rests on that many observations; the price series itself has no gaps. Event conclusions are associations in a thin sample, not causal effects.
 
 ## Data
 
 | item | value |
 |---|---|
-| observations | 425 |
+| observations | 576 |
 | first / last quote | 2025-04-01 / 2026-10-28 |
 | calendar days in span | 576 |
-| days with no quote | 151 (26.22%) |
-| gap runs / longest gap | 71 / 15 days |
-| mean / min / max | 100.4 / 59 / 145 INR per kg |
+| days with no quote | 0 (0.0%) |
+| gap runs / longest gap | 0 / 0 days |
+| mean / min / max | 100.7 / 59 / 145 INR per kg |
 | source | csv |
 
 Missing days are never filled. Models fit on quoted days only.
@@ -32,34 +32,34 @@ Missing days are never filled. Models fit on quoted days only.
 
 | event | category | occ | days | raw | pooled | 80% CI | grade |
 |---|---|---|---|---|---|---|---|
-| Vijayadashami (Dussehra) | festival | 1 | 1 | +21.87% | +6.91% | −0.1% to +14.4% | D |
-| Raksha Bandhan | festival | 2 | 2 | +16.05% | +6.81% | +0.3% to +13.7% | D |
-| Wedding season (Lagan) muhurat cluster | wedding | 12 | 139 | +5.53% | +5.42% | +3.0% to +8.0% | A |
-| Pitru Paksha (Shraddh) | observance | 2 | 14 | +5.47% | +3.58% | −0.8% to +8.1% | C |
-| Sharadiya Navratri | observance | 2 | 7 | +7.05% | +3.44% | −1.9% to +9.0% | C |
-| Muharram / Ashura | islamic | 2 | 2 | +5.90% | +2.26% | −4.4% to +9.3% | D |
-| Nirjala Ekadashi | observance | 2 | 2 | +6.18% | +1.51% | −4.8% to +8.2% | D |
-| Chhath Puja | festival | 0 | 0 | — | +1.09% | −6.8% to +9.6% | E |
-| Hartalika Teej | observance | 1 | 1 | +2.72% | +0.84% | −5.0% to +7.0% | D |
-| Eid-ul-Fitr (Ramzan Id) | islamic | 0 | 0 | — | +0.25% | −7.8% to +9.0% | E |
-| Maha Shivaratri | observance | 1 | 1 | +0.22% | +0.13% | −2.7% to +3.0% | D |
-| Christmas and New Year holidays | festival | 1 | 9 | −1.33% | −0.63% | −4.9% to +3.8% | D |
-| Eid-ul-Adha (Bakrid) and preceding days | islamic | 2 | 4 | −4.15% | −1.34% | −7.8% to +5.5% | D |
-| Krishna Janmashtami | observance | 2 | 2 | −5.75% | −2.49% | −8.2% to +3.5% | D |
-| Holi and Holika Dahan | festival | 1 | 1 | −5.73% | −3.07% | −7.9% to +2.0% | D |
-| Diwali to Bhai Dooj festival window | festival | 1 | 2 | −6.45% | −3.42% | −8.3% to +1.7% | D |
-| Chaitra Navratri | observance | 1 | 6 | −10.04% | −6.50% | −10.8% to −2.0% | D |
-| Karwa Chauth | observance | 1 | 1 | −11.68% | −6.81% | −11.4% to −1.9% | D |
-| Ayodhya Deepotsav | fair | 1 | 1 | −9.45% | −6.83% | −11.8% to −1.6% | D |
+| Vijayadashami (Dussehra) | festival | 2 | 2 | +13.23% | +7.94% | +3.1% to +13.0% | D |
+| Wedding season (Lagan) muhurat cluster | wedding | 12 | 163 | +6.27% | +6.07% | +3.4% to +8.8% | A |
+| Pitru Paksha (Shraddh) | observance | 2 | 28 | +5.12% | +3.85% | +0.5% to +7.3% | C |
+| Chhath Puja | festival | 1 | 4 | +4.47% | +3.81% | +0.6% to +7.1% | D |
+| Eid-ul-Fitr (Ramzan Id) | islamic | 1 | 3 | +4.35% | +3.81% | +0.4% to +7.3% | D |
+| Raksha Bandhan | festival | 2 | 2 | +10.86% | +3.79% | −2.2% to +10.1% | D |
+| Muharram / Ashura | islamic | 2 | 2 | +8.12% | +3.61% | −2.3% to +9.9% | D |
+| Sharadiya Navratri | observance | 2 | 19 | +4.56% | +2.65% | −1.6% to +7.1% | C |
+| Nirjala Ekadashi | observance | 2 | 2 | +11.13% | +2.56% | −3.2% to +8.6% | D |
+| Hartalika Teej | observance | 2 | 2 | +4.51% | +1.67% | −3.5% to +7.1% | D |
+| Christmas and New Year holidays | festival | 1 | 9 | −2.40% | −1.10% | −5.2% to +3.1% | D |
+| Maha Shivaratri | observance | 1 | 1 | −1.37% | −1.14% | −3.9% to +1.7% | D |
+| Eid-ul-Adha (Bakrid) and preceding days | islamic | 2 | 6 | −6.63% | −1.45% | −6.6% to +4.0% | C |
+| Chaitra Navratri | observance | 2 | 14 | −3.93% | −1.79% | −6.6% to +3.2% | C |
+| Holi and Holika Dahan | festival | 1 | 2 | −5.47% | −3.16% | −7.1% to +0.9% | D |
+| Krishna Janmashtami | observance | 2 | 3 | −10.24% | −3.28% | −8.5% to +2.2% | D |
+| Diwali to Bhai Dooj festival window | festival | 1 | 6 | −7.21% | −4.69% | −8.3% to −0.9% | D |
+| Karwa Chauth | observance | 1 | 1 | −11.68% | −6.19% | −10.4% to −1.7% | D |
+| Ayodhya Deepotsav | fair | 1 | 1 | −10.16% | −7.19% | −11.8% to −2.3% | D |
 
 
 | category | occurrences | raw | pooled | 95% CI |
 |---|---|---|---|---|
-| wedding | 1 | +5.53% | +4.44% | +0.9% to +8.1% |
-| festival | 5 | +1.75% | +0.80% | −4.9% to +6.8% |
-| islamic | 2 | +0.83% | +0.25% | −6.1% to +7.1% |
-| observance | 8 | −1.24% | −0.87% | −5.0% to +3.5% |
-| fair | 1 | −9.45% | −3.26% | −9.2% to +3.1% |
+| wedding | 1 | +6.27% | +4.86% | +1.1% to +8.8% |
+| islamic | 3 | +2.23% | +1.23% | −3.9% to +6.7% |
+| festival | 6 | +0.98% | +0.60% | −4.2% to +5.6% |
+| observance | 8 | −0.35% | −0.25% | −4.2% to +3.9% |
+| fair | 1 | −10.16% | −3.66% | −9.6% to +2.6% |
 
 
 `raw` is the matched-window difference; `pooled` shrinks it toward the category
@@ -70,22 +70,22 @@ level with enough independent occurrences to act on.
 
 | date | forecast | baseline | impact | 80% | 95% | events |
 |---|---|---|---|---|---|---|
-| 2026-10-29 | ₹89.0 | ₹95.5 | −6.8% | ₹78.7–₹100.6 | ₹73.7–₹107.4 | karwa-chauth |
-| 2027-02-11 | ₹111.3 | ₹105.6 | +5.4% | ₹86.3–₹143.5 | ₹75.5–₹164.1 | lagan-weddings |
-| 2027-08-14 | ₹84.4 | ₹84.4 | +0.0% | ₹62.4–₹114.1 | ₹53.2–₹133.8 | — |
-| 2027-12-31 | ₹99.8 | ₹100.5 | −0.6% | ₹71.0–₹140.4 | ₹59.2–₹168.2 | christmas-new-year |
+| 2026-10-29 | ₹87.9 | ₹93.7 | −6.2% | ₹76.5–₹101.2 | ₹71.0–₹108.9 | karwa-chauth |
+| 2027-02-10 | ₹108.4 | ₹102.2 | +6.1% | ₹86.1–₹136.4 | ₹76.3–₹154.1 | lagan-weddings |
+| 2027-08-14 | ₹86.9 | ₹86.9 | +0.0% | ₹67.2–₹112.4 | ₹58.6–₹128.8 | — |
+| 2027-12-31 | ₹98.1 | ₹99.2 | −1.1% | ₹71.6–₹134.6 | ₹60.5–₹159.1 | christmas-new-year |
 
 
 | month | INR/kg | month | INR/kg |
 |---|---|---|---|
-| 2026-10 | ₹90.7 | 2027-06 | ₹95.0 |
-| 2026-11 | ₹95.6 | 2027-07 | ₹89.6 |
-| 2026-12 | ₹101.1 | 2027-08 | ₹87.2 |
-| 2027-01 | ₹104.8 | 2027-09 | ₹90.1 |
-| 2027-02 | ₹108.0 | 2027-10 | ₹91.3 |
-| 2027-03 | ₹103.6 | 2027-11 | ₹98.9 |
-| 2027-04 | ₹98.1 | 2027-12 | ₹101.4 |
-| 2027-05 | ₹98.3 |  |  |
+| 2026-10 | ₹90.9 | 2027-06 | ₹96.1 |
+| 2026-11 | ₹95.5 | 2027-07 | ₹90.7 |
+| 2026-12 | ₹100.1 | 2027-08 | ₹88.0 |
+| 2027-01 | ₹103.7 | 2027-09 | ₹90.9 |
+| 2027-02 | ₹106.9 | 2027-10 | ₹91.3 |
+| 2027-03 | ₹102.8 | 2027-11 | ₹99.3 |
+| 2027-04 | ₹98.8 | 2027-12 | ₹100.4 |
+| 2027-05 | ₹98.7 |  |  |
 
 
 The baseline is the same fitted model with every event offset switched off. It is
@@ -96,17 +96,17 @@ single day, not for the mean path.
 
 | model | n | MAE ₹ | RMSE ₹ | sMAPE % | bias ₹ |
 |---|---|---|---|---|---|
-| ma7_events | 652 | 13.52 | 16.91 | 12.82 | +2.79 |
-| ma7 | 652 | 13.94 | 17.34 | 13.24 | +1.58 |
-| anchor_events | 652 | 14.82 | 18.15 | **14.24** | −2.67 |
-| ets_weekly | 652 | 15.23 | 19.27 | 14.41 | +5.33 |
-| anchor | 652 | 15.34 | 18.78 | 14.78 | −3.23 |
+| anchor_events | 939 | 13.61 | 16.67 | **13.03** | +0.17 |
+| ma7_events | 939 | 14.29 | 17.74 | 13.46 | +3.76 |
+| anchor | 939 | 14.15 | 17.36 | 13.58 | −0.53 |
+| ma7 | 939 | 14.57 | 17.99 | 13.78 | +2.48 |
+| ets_weekly | 939 | 15.31 | 19.14 | 14.49 | +6.35 |
 
 
 Rolling origins, horizons 1–90 days, scored only on quoted days. Selected model:
-**anchor_events** — sMAPE 8.6% (1–7 d), 11.96% (8–28 d),
-15.73% (29–90 d). Error curve `sigma(h) = 0.0875 × h^0.174`,
-floored by a 12-month dispersion of 0.2436.
+**anchor_events** — sMAPE 9.07% (1–7 d), 11.74% (8–28 d),
+13.98% (29–90 d). Error curve `sigma(h) = 0.103 × h^0.118`,
+floored by a 12-month dispersion of 0.2254.
 
 ## Method, in one paragraph
 
