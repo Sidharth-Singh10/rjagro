@@ -63,13 +63,17 @@ export const PricesCalendar = () => {
         },
     });
 
-    // when a run finishes, pull the new numbers
+    // When a run finishes, drop every analytics query at once.
+    //
+    // The prefix matters: ['analytics','payload'] and ['analytics','prices',…]
+    // are covered by ['analytics'], but ['analytics','all-prices'] is not a
+    // child of ['analytics','prices'] — invalidating the narrower key left the
+    // KPI strip and the monthly/weekly charts on the previous series until a
+    // reload.
     const status = statusQuery.data;
     useEffect(() => {
-        if (status?.status === 'succeeded') {
-            void qc.invalidateQueries({ queryKey: ['analytics', 'payload'] });
-            void qc.invalidateQueries({ queryKey: ['analytics', 'prices'] });
-        }
+        if (status?.status !== 'succeeded' || !status.finishedAt) return;
+        void qc.invalidateQueries({ queryKey: ['analytics'] });
     }, [status?.status, status?.finishedAt, qc]);
 
     const priceMap = useMemo(() => {
