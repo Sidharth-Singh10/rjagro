@@ -1,5 +1,14 @@
 {
   "_note": "Curate domains: move tables from `unassigned` into named domains. `db-knowledge domain <name>` reads this file.",
+  "forecast_ledger": {
+    "description": "Prospective four-model chicken-price trial: frozen protocols, issued batches, immutable predictions and append-only scoring. Read-only for the Rust API; written only by the separate forecast-ledger worker.",
+    "tables": [
+      "forecast_protocols",
+      "forecast_batches",
+      "forecast_predictions",
+      "forecast_evaluations"
+    ]
+  },
   "unassigned": {
     "description": "Tables not yet assigned to a domain — needs verification.",
     "tables": [

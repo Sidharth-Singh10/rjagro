@@ -118,6 +118,44 @@ WHERE bal.batch_id IS NOT NULL
 **Status:** verified 2026-10-10 — both queries returned zero rows after correcting
 two historical over-returns (return 3 on line 48 and return 6 on line 55).
 
+## INV-6 — Issued forecasts and their scores never change
+
+**Statement:** A published `forecast_batches` row, every `forecast_predictions`
+row and every `forecast_evaluations` row keeps the values it was written with.
+Corrections append an evaluation revision; they never edit issued evidence.
+Every score-eligible cohort carries all four models at the same actual revision.
+
+**Evidence:** `forecast_ledger_schema_additions.sql` (`forecast_append_only`,
+`forecast_batch_guard`, `forecast_prediction_guard`), the views
+`forecast_evaluation_current` / `forecast_score_rows`, and
+`chicken_price_forecast/forecast_ledger/store.py`.
+
+**Verification SQL:**
+
+```sql
+-- a published batch must stay published and keep its publication time
+SELECT id, status, published_at
+FROM forecast_batches
+WHERE status = 'published' AND published_at IS NULL;
+
+-- official batches must be unique per protocol and origin day
+SELECT protocol_id, origin_date, count(*)
+FROM forecast_batches
+WHERE kind = 'official'
+GROUP BY protocol_id, origin_date
+HAVING count(*) > 1;
+
+-- every score-eligible cohort has four models on one revision
+SELECT batch_id, target_date, count(*), count(DISTINCT actual_revision)
+FROM forecast_evaluation_current
+GROUP BY batch_id, target_date
+HAVING count(*) > 4 OR count(DISTINCT actual_revision) > 1;
+```
+
+**Status:** verified 2026-11-04 — the guards were exercised in a rolled-back
+transaction (mutation attempts raised) and all three queries returned zero rows
+against the live, empty ledger.
+
 ## How to add an invariant
 
 1. State it in one sentence and cite the evidence (file path or commit).
