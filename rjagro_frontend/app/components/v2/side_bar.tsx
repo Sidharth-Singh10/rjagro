@@ -5,6 +5,7 @@ import {
     Bird,
     ChartNoAxesColumn,
     ClipboardCheck,
+    DatabaseBackup,
     Package,
     Receipt,
     ShoppingCartIcon,
@@ -42,6 +43,7 @@ const navItems: NavItem[] = [
     { id: 'AppTraders', label: 'App Traders', icon: Smartphone },
     { id: 'Loan', label: 'Loan', icon: Banknote },
     { id: 'OtherExpenses', label: 'Other Expenses', icon: Receipt },
+    { id: 'Backups', label: 'Backups', icon: DatabaseBackup },
 ];
 
 const Sidebar: React.FC<SidebarProps> = memo(({ activeSection, onNavigate }) => {

@@ -7,6 +7,7 @@ pub mod analytics_settings;
 pub mod app_supervisors;
 pub mod app_traders;
 pub mod audit_log;
+pub mod backup_runs;
 pub mod batch_allocation_lines;
 pub mod batch_allocations;
 pub mod batch_closure_summary;

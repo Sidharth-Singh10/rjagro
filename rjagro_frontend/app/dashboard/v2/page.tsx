@@ -19,6 +19,7 @@ const SECTION_TITLES: Record<string, string> = {
     AppTraders: 'App Traders',
     Loan: 'Loan',
     OtherExpenses: 'Other Expenses',
+    Backups: 'Backup History',
 };
 
 // Placeholder shown while a module chunk is being fetched.
@@ -43,6 +44,7 @@ const EntitiesModule = dynamic(() => import('@/app/components/v2/entities_module
 const AppTradersModule = dynamic(() => import('@/app/components/v2/app_traders_module'), { loading: ModuleLoading, ssr: false });
 const LoanModule = dynamic(() => import('@/app/components/v2/loan_module'), { loading: ModuleLoading, ssr: false });
 const OtherExpensesModule = dynamic(() => import('@/app/components/v2/other_expenses_module'), { loading: ModuleLoading, ssr: false });
+const BackupsModule = dynamic(() => import('@/app/components/v2/backups_module'), { loading: ModuleLoading, ssr: false });
 
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
     Overview: OverviewModule,
@@ -57,6 +59,7 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
     AppTraders: AppTradersModule,
     Loan: LoanModule,
     OtherExpenses: OtherExpensesModule,
+    Backups: BackupsModule,
 };
 
 // Same dynamic imports as above — calling them warms the chunk cache
@@ -74,6 +77,7 @@ const moduleImporters = [
     () => import('@/app/components/v2/app_traders_module'),
     () => import('@/app/components/v2/loan_module'),
     () => import('@/app/components/v2/other_expenses_module'),
+    () => import('@/app/components/v2/backups_module'),
 ];
 
 function preloadModulesOnIdle() {

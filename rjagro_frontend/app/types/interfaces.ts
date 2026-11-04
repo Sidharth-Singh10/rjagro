@@ -993,3 +993,54 @@ export interface MetricSnapshotQuery {
   to?: string;
   metrics?: string[];
 }
+// ─── Backup history ─────────────────────────────────────────────────────────
+
+export type BackupStatus = 'running' | 'success' | 'partial' | 'failed';
+
+export interface BackupRun {
+  id: number;
+  started_at: string;
+  finished_at: string | null;
+  status: BackupStatus;
+  triggered_by: 'scheduled' | 'manual';
+  dump_bytes: number | null;
+  filename: string | null;
+  remote_host: string | null;
+  remote_ok: boolean;
+  error: string | null;
+  duration_ms: number | null;
+  /** Row still marked `running` well past its expected duration. */
+  stale: boolean;
+}
+
+export interface BackupSchedule {
+  every_days: number;
+  days_of_month: number[];
+  time_utc: string;
+  source: string;
+}
+
+export interface BackupSummary {
+  last_success_at: string | null;
+  last_success_filename: string | null;
+  hours_since_success: number | null;
+  last_run: BackupRun | null;
+  /** -1 when nothing in the window succeeded. */
+  runs_since_last_success: number;
+  next_scheduled_at: string;
+  schedule: BackupSchedule;
+  window: {
+    runs: number;
+    success: number;
+    partial: number;
+    failed: number;
+    running: number;
+  };
+  total_bytes: number;
+  remote_host: string | null;
+}
+
+export interface BackupLog {
+  summary: BackupSummary;
+  runs: BackupRun[];
+}

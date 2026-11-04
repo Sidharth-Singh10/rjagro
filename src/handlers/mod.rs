@@ -1,6 +1,7 @@
 pub mod aggregates;
 pub mod analytics;
 pub mod audit;
+pub mod backups;
 pub mod batch_requirements;
 pub mod batch_sales;
 pub mod batches;
