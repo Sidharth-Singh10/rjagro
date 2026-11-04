@@ -16,7 +16,9 @@ services:
   forecast-ledger:
     # Opt-in only: ordinary `compose up` continues to start just the old worker.
     profiles: [forecast-ledger]
-    image: rjagro_forecast_ledger:local
+    # Published by .github/workflows/ledger-worker.yml; `--build` makes the same
+    # tag locally. Pin the image you actually run, not the tag someone else built.
+    image: sidharthsingh7/rjagro_forecast_ledger:latest
     build:
       context: ./chicken_price_forecast
       dockerfile: Dockerfile.ledger

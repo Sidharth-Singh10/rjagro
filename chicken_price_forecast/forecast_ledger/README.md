@@ -34,24 +34,35 @@ The published Analytics forecast keeps coming from the existing worker.
 ## Activate it
 
 The schema is already applied. Activation is two deliberate steps, because the
-protocol fingerprint pins the methods:
+protocol fingerprint pins the methods.
+
+CI builds and pushes `sidharthsingh7/rjagro_forecast_ledger` on every push to
+`main` under `chicken_price_forecast/**`, and **prints the fingerprint for the
+image it just built** in the run summary. Use that value; it is the one the pushed
+image will compute.
 
 ```bash
-cd chicken_price_forecast
-
-# 1. Build, then read the fingerprint from *inside* the image. Interpreter and
-#    package versions are part of the fingerprint, so a local `--describe` is
-#    not the value the container will compute.
-docker build -f Dockerfile.ledger -t rjagro_forecast_ledger:local .
-
-docker run --rm rjagro_forecast_ledger:local \
+# 1. Pull the image you intend to run (the sha tag matches one build forever; the
+#    latest tag moves), then read its fingerprint and review the definition.
+docker pull sidharthsingh7/rjagro_forecast_ledger:latest
+docker run --rm sidharthsingh7/rjagro_forecast_ledger:latest \
   python -m forecast_ledger.worker --describe
 # → {"id": "<64 hex chars>", "definition": {...}}
 
-# 2. Review that definition, then start the worker with the pin.
-FORECAST_PROTOCOL_ID=<that id> DATABASE_URL=... \
-  docker run -d --restart unless-stopped --name forecast-ledger \
-  -e DATABASE_URL -e FORECAST_PROTOCOL_ID rjagro_forecast_ledger:local
+# 2. Start the worker with that pin.
+docker run -d --restart unless-stopped --name forecast-ledger --memory 2g \
+  -e DATABASE_URL=postgresql://USER:PASS@HOST:5432/rjagro \
+  -e FORECAST_PROTOCOL_ID=<that id> \
+  sidharthsingh7/rjagro_forecast_ledger:latest
+```
+
+Building locally works the same way, but the fingerprint is computed by *your*
+interpreter and package set, so build, describe and run the same local tag:
+
+```bash
+cd chicken_price_forecast
+docker build -f Dockerfile.ledger -t rjagro_forecast_ledger:local .
+docker run --rm rjagro_forecast_ledger:local python -m forecast_ledger.worker --describe
 ```
 
 Or through the sidecar file, which is opt-in and leaves the existing worker
@@ -65,6 +76,11 @@ DATABASE_URL=... FORECAST_PROTOCOL_ID=<id> \
 Without `--profile forecast-ledger` (or an explicit service target) Compose
 starts only the existing analytics worker. An empty or stale
 `FORECAST_PROTOCOL_ID` makes the container exit at startup on purpose.
+
+A new build keeps the old fingerprint only while the methods, the event calendar
+and the pinned package versions are unchanged. Change any of them and the running
+container must be restarted with the newly printed pin; it will not silently
+continue under a different method.
 
 The first run registers the protocol. Registration reads the dates already in
 `chicken_prices` into `initial_known_dates`, so that day's history cannot be

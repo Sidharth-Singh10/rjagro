@@ -150,8 +150,10 @@ scores them as quotes arrive. It does not touch this pipeline's payload, its
 
 It is not started by the command above: it needs `Dockerfile.ledger` and a pinned
 `FORECAST_PROTOCOL_ID`, and Compose only starts it with
-`--profile forecast-ledger`. See `forecast_ledger/README.md` for activation,
-schedule semantics, the scoring rules and troubleshooting.
+`--profile forecast-ledger`. `.github/workflows/ledger-worker.yml` publishes
+`sidharthsingh7/rjagro_forecast_ledger` and prints the fingerprint to pin. See
+`forecast_ledger/README.md` for activation, schedule semantics, the scoring rules
+and troubleshooting.
 
 ## Where the app's numbers come from
 
