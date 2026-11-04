@@ -1,0 +1,125 @@
+# Prospective forecast ledger
+
+Four fixed methods issue a daily forecast from the database prices, keep it
+exactly as issued, and are scored automatically as actual quotes arrive. This is
+evidence, not a leaderboard: **nothing here promotes a model into production.**
+The published Analytics forecast keeps coming from the existing worker.
+
+| Model id | Meaning | Fixed rule |
+|---|---|---|
+| `existing` | the production event-anchor equation | unchanged `cp_pipeline.run`, including its native bands |
+| `hybrid` | frozen reassessment hybrid | HGB at 1–7 days, last price at 8–30, naive/AR(1) mean beyond |
+| `ar1` | AR(1) on log price | clipped persistence, equilibrium reversion |
+| `naive` | last-price benchmark | carries the last quote |
+
+## Schedule and honesty rules
+
+- **00:05 IST** issues the official daily batch. Midnight IST closes the
+  preceding market day, so the batch trains through that day.
+- The input snapshot must be captured inside **00:05–00:07 IST**. A worker that
+  was down records a `missed` batch; the forecast is never backdated.
+- Publication must happen within **15 minutes** of the scheduled time. A late
+  fit is marked failed rather than issued with a false timestamp.
+- Missing prior-day quote, an internal daily gap, or fewer than 366 observations
+  marks the batch `blocked`; nothing is interpolated.
+- Ad-hoc captures are stored as `ad_hoc` and are scored separately. They are
+  never pooled into the official trial.
+- Only outcomes first recorded **strictly after publication** are scored.
+  Outcomes already public at protocol activation (`initial_known_dates`) get no
+  credit.
+- Actual-price corrections append a new evaluation revision. Issued forecasts,
+  snapshots, protocols and old evaluations are append-only; a deleted price
+  makes a cohort ineligible instead of scoring a stale value.
+
+## Activate it
+
+The schema is already applied. Activation is two deliberate steps, because the
+protocol fingerprint pins the methods:
+
+```bash
+cd chicken_price_forecast
+
+# 1. Build, then read the fingerprint from *inside* the image. Interpreter and
+#    package versions are part of the fingerprint, so a local `--describe` is
+#    not the value the container will compute.
+docker build -f Dockerfile.ledger -t rjagro_forecast_ledger:local .
+
+docker run --rm rjagro_forecast_ledger:local \
+  python -m forecast_ledger.worker --describe
+# → {"id": "<64 hex chars>", "definition": {...}}
+
+# 2. Review that definition, then start the worker with the pin.
+FORECAST_PROTOCOL_ID=<that id> DATABASE_URL=... \
+  docker run -d --restart unless-stopped --name forecast-ledger \
+  -e DATABASE_URL -e FORECAST_PROTOCOL_ID rjagro_forecast_ledger:local
+```
+
+Or through the sidecar file, which is opt-in and leaves the existing worker
+untouched:
+
+```bash
+DATABASE_URL=... FORECAST_PROTOCOL_ID=<id> \
+  docker compose -f docker-compose.analytics.yml --profile forecast-ledger up -d --build
+```
+
+Without `--profile forecast-ledger` (or an explicit service target) Compose
+starts only the existing analytics worker. An empty or stale
+`FORECAST_PROTOCOL_ID` makes the container exit at startup on purpose.
+
+The first run registers the protocol. Registration reads the dates already in
+`chicken_prices` into `initial_known_dates`, so that day's history cannot be
+scored as if it were a forecast.
+
+## What you should see
+
+| Time | Expected |
+|---|---|
+| immediately | one `forecast_protocols` row; no batches until the next 00:05 IST |
+| 00:05–00:07 IST | one `official` batch `queued`, then `running`, then `published` |
+| as quotes are entered | `forecast_evaluations` rows appear for matured target dates |
+| after ~1 week | the first 1–7 day scores; 31+ day buckets stay empty for a month |
+
+```sql
+SELECT origin_date, kind, status, requested_at, published_at, error
+FROM forecast_batches ORDER BY requested_at DESC LIMIT 10;
+
+SELECT model, count(*), avg(absolute_error)
+FROM forecast_score_rows GROUP BY model ORDER BY model;
+```
+
+Expect empty long-horizon buckets for a while. Empty is not zero error.
+
+## Reading the results
+
+- Scores come from complete four-model cohorts scored against the same actual
+  revision, so the comparison is like-for-like.
+- `overlapping origins` are not independent observations. Origin-balanced MAE is
+  shown next to pooled MAE for that reason.
+- Event counts are distinct event/start-date pairs and calendar years, not
+  replications. One festival in one year is not evidence of a festival effect.
+- Coverage denominators count only issued bands. Native bands are daily price
+  bands, not event-mean intervals; long horizons are labelled scenarios.
+- Official and ad-hoc cohorts are reported separately. Official batches are the
+  trial; ad-hoc updates are diagnostics.
+
+## Troubleshooting
+
+| Symptom | Cause | Action |
+|---|---|---|
+| container exits, mentions `FORECAST_PROTOCOL_ID` | pin missing or computed elsewhere | re-run `--describe` inside the image and pin that value |
+| `Pinned protocol differs from stored definition` | same fingerprint, different stored bytes | treat as corrupted data; do not edit the protocol row |
+| `missed` batches | worker down in the capture window | leave as recorded; fix monitoring |
+| `blocked` batches | bad or incomplete price history | fix `chicken_prices`; the batch stays blocked |
+| repeated `failed` | model fit error | read container logs; the message is stored in `forecast_batches.error`, details stay in logs |
+| accuracy view empty | no matured outcomes yet, or filters too narrow | widen filters; check `forecast_evaluation_current` |
+
+## Tests
+
+```bash
+cd chicken_price_forecast
+.venv/bin/python -m unittest discover -s forecast_ledger -p 'test_*.py' -v
+```
+
+`test_build.py` fits all four models on the approved MCP snapshot (slow, ~40 s)
+and checks grid alignment, nesting of bands, and the fixed segment rules. No
+database is touched by any test.
