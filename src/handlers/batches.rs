@@ -1,3 +1,4 @@
+use crate::handlers::lot_valuation::relieve_lot;
 use crate::models::{ActivateBatchPayload, CreateBatch, CreateFarmBatch};
 use axum::{
     extract::{Extension, Path, State},
@@ -188,7 +189,7 @@ async fn create_batch_with_transaction(
         }
 
         let take: Decimal = std::cmp::min(receipt.remaining_qty, Decimal::from(qty_to_allocate));
-        let line_value = take * receipt.unit_cost;
+        let line_value = relieve_lot(txn, &receipt, take).await?;
 
         // Insert allocation line
         let line = batch_allocation_lines::ActiveModel {

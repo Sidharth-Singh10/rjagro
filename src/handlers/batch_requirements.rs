@@ -21,6 +21,7 @@ use sea_orm::{DatabaseTransaction, IntoActiveModel, TransactionTrait};
 use uuid::Uuid;
 
 use crate::handlers::batch_sales::compute_total_expenses;
+use crate::handlers::lot_valuation::{relieve_lot, return_value_for_line};
 use crate::handlers::purchases::update_account_balance;
 use crate::models::{ApprovePayload, CreateStockReturn, ResponseMessage};
 
@@ -236,7 +237,7 @@ async fn approve_and_allocate(
             ));
         }
 
-        let line_value = line.qty * receipt.unit_cost;
+        let line_value = relieve_lot(txn, &receipt, line.qty).await?;
 
         // Insert allocation line
         let al = batch_allocation_lines::ActiveModel {
@@ -558,7 +559,8 @@ async fn process_stock_return(
     // Cost always comes from the allocation line (the lot it was allocated
     // from), never from the client payload.
     let unit_cost = allocation_line.unit_cost;
-    let computed_return_value = payload.return_qty * unit_cost;
+    let computed_return_value =
+        return_value_for_line(txn, &allocation_line, payload.return_qty).await?;
 
     // 2. Fetch the allocation to get item details
     let allocation = batch_allocations::Entity::find_by_id(allocation_line.allocation_id)
