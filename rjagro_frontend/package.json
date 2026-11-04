@@ -11,6 +11,7 @@
     "build:events": "node scripts/build_event_calendar.mjs",
     "validate:events": "node scripts/validate_event_calendar.mjs",
     "check:stats": "node --no-warnings --experimental-strip-types --experimental-loader ./scripts/json_module_loader.mjs scripts/check_event_stats.mjs",
+    "check:ledger": "node --no-warnings --experimental-strip-types scripts/check_forecast_ledger.mjs",
     "validate:forecast": "node scripts/validate_price_forecast.mjs"
   },
   "dependencies": {
