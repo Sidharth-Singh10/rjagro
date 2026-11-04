@@ -118,6 +118,45 @@ WHERE bal.batch_id IS NOT NULL
 **Status:** verified 2026-10-10 — both queries returned zero rows after correcting
 two historical over-returns (return 3 on line 48 and return 6 on line 55).
 
+## INV-6 — A depleted lot relieves exactly what it cost
+
+**Statement:** For every `stock_receipts` row with `remaining_qty = 0`, the value
+relieved by its allocation lines equals the purchase's `total_cost` plus the value
+put back by returns. Inventory is relieved by *value*, not by
+`qty * stock_receipts.unit_cost`: chick bills are quoted as a rupee total over a
+bird count, so the stored 2-dp rate is only an approximation and multiplying it
+out leaves a rounding stub behind on every lot.
+
+**Evidence:** `src/handlers/lot_valuation.rs` (`relieve_lot`,
+`return_value_for_line`), used by `src/handlers/batch_requirements.rs` and
+`src/handlers/batches.rs`. Historical lots were repointed by
+`inventory_value_rounding_repair.sql`.
+
+**Verification SQL:**
+
+```sql
+SELECT
+    sr.lot_id,
+    p.total_cost AS purchased,
+    COALESCE((SELECT SUM(line_value) FROM batch_allocation_lines WHERE lot_id = sr.lot_id), 0) AS relieved,
+    COALESCE((SELECT SUM(srt.return_value)
+              FROM stock_returns srt
+              JOIN batch_allocation_lines bal ON bal.allocation_line_id = srt.allocation_line_id
+              WHERE bal.lot_id = sr.lot_id), 0) AS returned
+FROM stock_receipts sr
+    JOIN purchases p ON p.purchase_id = sr.purchase_id
+WHERE sr.remaining_qty = 0
+  AND ROUND(COALESCE((SELECT SUM(line_value) FROM batch_allocation_lines WHERE lot_id = sr.lot_id), 0), 2)
+      <> ROUND(p.total_cost + COALESCE((SELECT SUM(srt.return_value)
+                                        FROM stock_returns srt
+                                        JOIN batch_allocation_lines bal ON bal.allocation_line_id = srt.allocation_line_id
+                                        WHERE bal.lot_id = sr.lot_id), 0), 2);
+```
+
+**Status:** verified 2026-11-04 — query returned zero rows after the repair.
+Before the repair all 15 chick lots with a rounding residual showed up here, and
+`inventory-chicks` (104) read -8.86 with no birds in stock.
+
 ## How to add an invariant
 
 1. State it in one sentence and cite the evidence (file path or commit).
