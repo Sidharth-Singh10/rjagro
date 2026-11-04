@@ -13,6 +13,22 @@
 #   - postgresql://user:pass@<vps-private-ip>:5432/rjagro      (on the server)
 
 services:
+  forecast-ledger:
+    # Opt-in only: ordinary `compose up` continues to start just the old worker.
+    profiles: [forecast-ledger]
+    image: rjagro_forecast_ledger:local
+    build:
+      context: ./chicken_price_forecast
+      dockerfile: Dockerfile.ledger
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+      # Empty by default; startup refuses to write unless explicitly pinned.
+      FORECAST_PROTOCOL_ID: ${FORECAST_PROTOCOL_ID:-}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2g
   analytics-worker:
     # Published by .github/workflows/analytics-worker.yml. On a server that has
     # no source checkout, `docker compose pull` fetches this tag; locally,

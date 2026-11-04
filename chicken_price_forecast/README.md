@@ -141,6 +141,18 @@ that fails when the database is unreachable.
 points at `localhost:5432` through the rjdb tunnel, which inside a container is
 the container itself.
 
+### Prospective ledger (separate, opt-in)
+
+`forecast_ledger/` is a second, independent worker. It issues four fixed model
+paths at 00:05 IST from the same `chicken_prices` table, keeps them unchanged and
+scores them as quotes arrive. It does not touch this pipeline's payload, its
+50-run retention or its published forecast.
+
+It is not started by the command above: it needs `Dockerfile.ledger` and a pinned
+`FORECAST_PROTOCOL_ID`, and Compose only starts it with
+`--profile forecast-ledger`. See `forecast_ledger/README.md` for activation,
+schedule semantics, the scoring rules and troubleshooting.
+
 ## Where the app's numbers come from
 
 `NEXT_PUBLIC_ANALYTICS_SOURCE`:

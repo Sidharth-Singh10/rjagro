@@ -1,0 +1,8 @@
+# Keep the incumbent runtime identical; challengers add only scikit-learn.
+-r requirements-worker.txt
+scikit-learn==1.9.1
+joblib==1.6.0
+threadpoolctl==3.7.0
+# python:*-slim has no system zoneinfo database, and issuance time is defined in
+# Asia/Kolkata. Without this the worker cannot even import its schedule.
+tzdata==2026.6

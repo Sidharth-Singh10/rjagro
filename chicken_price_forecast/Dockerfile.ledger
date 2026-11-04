@@ -1,0 +1,21 @@
+# Independent prospective worker; never replaces the production analytics image.
+FROM python:3.12.15-slim
+
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1
+WORKDIR /app
+COPY requirements-worker.txt requirements-ledger.txt ./
+RUN pip install -r requirements-ledger.txt
+COPY cp_pipeline ./cp_pipeline
+COPY forecast_ledger ./forecast_ledger
+# Only the two modules the ledger reuses; `reassessment` is a namespace package
+# (no __init__.py), exactly as it is in the repository.
+COPY reassessment/core.py reassessment/models.py ./reassessment/
+COPY data/raw/up_chicken_events.json ./data/raw/up_chicken_events.json
+RUN useradd --create-home --uid 10002 ledger && chown -R ledger:ledger /app
+USER ledger
+CMD ["python", "-m", "forecast_ledger.worker"]

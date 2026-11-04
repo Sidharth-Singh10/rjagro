@@ -11,6 +11,13 @@ tests/
 legacy/
 data/processed/
 data/raw/*.csv
+# research artifacts are not part of any image
+reassessment/runs/
+reassessment/input/
+reassessment/*.json
+reassessment/*.md
+reassessment/requirements.txt
+reassessment/__pycache__/
 .env
 .env.*
 *.xlsx
