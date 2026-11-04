@@ -8,9 +8,14 @@ use crate::handlers::analytics::{
     delete_price_handler, get_forecast_handler, get_prices_handler, get_report_handler,
     get_status_handler, import_prices_handler, post_recompute_handler, put_price_handler,
 };
+use crate::handlers::forecast_ledger;
 
 pub fn analytics_routes() -> Router<DatabaseConnection> {
     Router::new()
+        .route("/ledger/batches", get(forecast_ledger::batches))
+        .route("/ledger/batches/{id}", get(forecast_ledger::batch))
+        .route("/ledger/scores", get(forecast_ledger::scores))
+        .route("/ledger/report", get(forecast_ledger::report))
         .route("/prices", get(get_prices_handler))
         .route("/prices/import", post(import_prices_handler))
         .route(

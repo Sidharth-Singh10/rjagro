@@ -8,6 +8,7 @@ pub mod bird_count_history;
 pub mod farms;
 pub mod fetch_all;
 pub mod fetch_by_id;
+pub mod forecast_ledger;
 pub mod inserts;
 pub mod loans;
 pub mod metrics;
