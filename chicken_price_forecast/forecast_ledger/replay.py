@@ -16,7 +16,6 @@ Run it once. It is never imported by the long-lived worker.
 """
 import argparse
 import json
-import logging
 import os
 import time
 from datetime import date, timedelta
@@ -111,7 +110,6 @@ def main():
     parser.add_argument('--backup', default='/tmp/opencode/forecast_replay_backup.json')
     parser.add_argument('--apply', action='store_true', help='perform the replay; without it only report the plan')
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
     first, last = date.fromisoformat(args.first), date.fromisoformat(args.last)
     if last < first:
