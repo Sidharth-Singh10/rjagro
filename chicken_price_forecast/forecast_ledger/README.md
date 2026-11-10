@@ -14,16 +14,22 @@ The published Analytics forecast keeps coming from the existing worker.
 
 ## Schedule and honesty rules
 
-- **00:05 IST** issues the official daily batch. Midnight IST closes the
-  preceding market day, so the batch trains through that day.
-- The input snapshot must be captured inside **00:05–00:07 IST**. A worker that
-  was down records a `missed` batch; the forecast is never backdated.
-- Publication must happen within **15 minutes** of the scheduled time. A late
-  fit is marked failed rather than issued with a false timestamp.
-- Missing prior-day quote, an internal daily gap, or fewer than 366 observations
-  marks the batch `blocked`; nothing is interpolated.
-- Ad-hoc captures are stored as `ad_hoc` and are scored separately. They are
-  never pooled into the official trial.
+- A batch is issued **when a market day is recorded**, not on a wall clock. Every
+  recorded day at or after `originsFrom` gets exactly one `official` batch whose
+  snapshot is cut at that day, so three days entered in one save produce three
+  batches, one per day.
+- The worker polls every 15 seconds and that poll is the trigger; the save path
+  only writes the price and enqueues the analytics recompute.
+- A batch created after its nominal 00:05 slot carries `metadata.backfill`. Its
+  `published_at` is still the real time it was issued, so a late origin is never
+  presented as an on-time one.
+- A series with an internal daily gap or fewer than 366 observations blocks that
+  origin; nothing is interpolated.
+- The fit must finish within **15 minutes** of being claimed. A late fit is
+  marked failed rather than issued with a false timestamp.
+- Ad-hoc captures are stored as `ad_hoc`, are scored separately, and are skipped
+  when a batch already holds the same inputs. They are never pooled into the
+  official trial.
 - Only outcomes first recorded **strictly after publication** are scored.
   Outcomes already public at protocol activation (`initial_known_dates`) get no
   credit.
@@ -90,8 +96,9 @@ scored as if it were a forecast.
 
 | Time | Expected |
 |---|---|
-| immediately | one `forecast_protocols` row; no batches until the next 00:05 IST |
-| 00:05–00:07 IST | one `official` batch `queued`, then `running`, then `published` |
+| immediately | one `forecast_protocols` row; a batch for every recorded day at or after `originsFrom` |
+| on save | within ~15 seconds, one `official` batch for the entered day, `queued` then `published` |
+| backfilled days | the same, tagged `metadata.backfill`, each with its real `published_at` |
 | as quotes are entered | `forecast_evaluations` rows appear for matured target dates |
 | after ~1 week | the first 1–7 day scores; 31+ day buckets stay empty for a month |
 
@@ -124,8 +131,8 @@ Expect empty long-horizon buckets for a while. Empty is not zero error.
 |---|---|---|
 | container exits, mentions `FORECAST_PROTOCOL_ID` | pin missing or computed elsewhere | re-run `--describe` inside the image and pin that value |
 | `Pinned protocol differs from stored definition` | same fingerprint, different stored bytes | treat as corrupted data; do not edit the protocol row |
-| `missed` batches | worker down in the capture window | leave as recorded; fix monitoring |
-| `blocked` batches | bad or incomplete price history | fix `chicken_prices`; the batch stays blocked |
+| `blocked` batches | an internal gap, or fewer than 366 observations up to that day | fill the gap; that origin stays blocked |
+| no batch for a day you entered | the day is before `originsFrom`, or no worker is running | check the pinned protocol and container logs |
 | repeated `failed` | model fit error | read container logs; the message is stored in `forecast_batches.error`, details stay in logs |
 | accuracy view empty | no matured outcomes yet, or filters too narrow | widen filters; check `forecast_evaluation_current` |
 
