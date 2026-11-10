@@ -15,8 +15,9 @@ class ProtocolTests(unittest.TestCase):
         self.assertRegex(first, r'^[a-f0-9]{64}$')
         self.assertEqual([m['id'] for m in config['models']], ['existing', 'hybrid', 'ar1', 'naive'])
         self.assertTrue(config['events'])
-        self.assertEqual(config['issuance'], '00:05')
-        self.assertEqual(config['officialPublicationDeadlineSeconds'], 900)
+        self.assertEqual(config['issuance'], 'on price entry')
+        self.assertEqual(config['originsFrom'], '2026-11-01')
+        self.assertEqual(config['fitDeadlineSeconds'], 900)
         self.assertIn('sourceFiles', config)
 
     def test_source_hash_tracks_code_changes(self):

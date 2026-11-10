@@ -18,8 +18,10 @@ def definition():
            if not p.name.startswith('test_')]
     paths += [ROOT/'reassessment/models.py',ROOT/'reassessment/core.py',DEFAULT_EVENTS]
     files={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
-    d=dict(name='Four-model prospective trial v1',timezone='Asia/Kolkata',issuance='00:05',
-           closesPreviousDay=True,officialCaptureGraceSeconds=120,officialPublicationDeadlineSeconds=900,forecastEnd='2027-12-31',
+    d=dict(name='Four-model prospective trial v2',timezone='Asia/Kolkata',
+           issuance='on price entry',originsFrom='2026-11-01',
+           officialBatch='one per recorded market day, snapshot cut at that day',
+           fitDeadlineSeconds=900,forecastEnd='2027-12-31',
            models=[dict(id=k,name=v,version='v1',role='production' if k=='existing' else 'challenger') for k,v in LABELS.items()],
            hybrid={'1-7':'hgb','8-30':'naive','31+':'ensemble'},
            calibration=dict(method='absolute log-error quantiles, unique target dates, min 4 origins/30 dates',

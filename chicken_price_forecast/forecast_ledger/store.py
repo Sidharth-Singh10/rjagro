@@ -1,13 +1,13 @@
 """Application database adapter. Agent investigations use PostgreSQL MCP only."""
 import hashlib
 import json
-from datetime import timedelta
+from datetime import date,timedelta
 
 import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from forecast_ledger.core import IST,schedule,evaluate,MODELS
+from forecast_ledger.core import (IST,evaluate,MODELS,official_window,pending_origins)
 from forecast_ledger.forecasting import series_from_snapshot
 
 
@@ -32,38 +32,85 @@ class Store:
         with self.connect() as conn,conn.transaction():
             conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ')
             now=conn.execute('SELECT transaction_timestamp() AS now').fetchone()['now']
-            clock=schedule(now)
-            if kind=='official' and clock['state']=='waiting':
-                return
-            origin=clock['origin']
-            if kind=='ad_hoc':
-                latest=conn.execute('SELECT max(price_date) AS d FROM chicken_prices WHERE price_date<=%s',
-                                    (now.astimezone(IST).date(),)).fetchone()['d']
-                if latest is None:
-                    return
-                origin=latest
-            rows=conn.execute('''SELECT price_date,price,updated_at FROM chicken_prices
-                WHERE price_date<=%s ORDER BY price_date''',(origin,)).fetchall()
-            watermark=conn.execute('SELECT coalesce(max(id),0) AS id FROM chicken_price_audit').fetchone()['id']
-            snapshot=dict(prices=[dict(date=str(r['price_date']),price=float(r['price']),
-                                      recordedAt=r['updated_at'].isoformat()) for r in rows],
-                          source='rjagro.public.chicken_prices',availability='recorded snapshot, not original historical vintages')
-            digest=hashlib.sha256(json.dumps(snapshot,sort_keys=True).encode()).hexdigest()
-            key=f'{kind}:{self.protocol_id}:{origin}' + (f':{digest}' if kind=='ad_hoc' else '')
-            state,error='queued',None
-            if kind=='official' and clock['state']=='missed':
-                state,error='missed','Official input capture window missed; no backdated forecast was issued'
+            if kind=='official':
+                self._capture_official(conn,now)
             else:
-                try:
-                    series_from_snapshot(snapshot,origin)
-                except ValueError as exc:
-                    state,error='blocked',str(exc)
-            conn.execute('''INSERT INTO forecast_batches
-                (protocol_id,intent_key,kind,origin_date,scheduled_for,snapshot_at,snapshot,dataset_hash,
-                 source_watermark,status,error)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING''',
-                (self.protocol_id,key,kind,origin,clock['scheduled'] if kind=='official' else None,
-                 now,Jsonb(snapshot),digest,watermark,state,error))
+                self._capture_ad_hoc(conn,now)
+
+    def _capture_official(self,conn,now):
+        """One official batch per recorded market day, issued as that day arrives."""
+        floor=self._origins_from(conn)
+        if floor is None:
+            return
+        priced=[r['price_date'] for r in conn.execute(
+            'SELECT price_date FROM chicken_prices WHERE price_date>=%s ORDER BY price_date',(floor,))]
+        if not priced:
+            return
+        batched={r['origin_date'] for r in conn.execute(
+            "SELECT origin_date FROM forecast_batches WHERE protocol_id=%s AND kind='official'",
+            (self.protocol_id,))}
+        for origin in pending_origins(priced,batched,floor):
+            rows=self._prices(conn,origin)
+            if not rows or rows[-1]['price_date']!=origin:
+                continue
+            snapshot=self._snapshot(rows)
+            state,error='queued',None
+            try:
+                series_from_snapshot(snapshot,origin)
+            except ValueError as exc:
+                state,error='blocked',str(exc)
+            start,end=official_window(origin)
+            self._insert(conn,now,origin,'official',state,error,snapshot,scheduled_for=start,
+                         metadata={'backfill':True} if now>=end else {})
+
+    def _origins_from(self,conn):
+        row=conn.execute("SELECT definition->>'originsFrom' AS d FROM forecast_protocols WHERE id=%s",
+                         (self.protocol_id,)).fetchone()
+        if not row or not row['d']:
+            return None
+        return date.fromisoformat(row['d'])
+
+    def _capture_ad_hoc(self,conn,now):
+        latest=conn.execute('SELECT max(price_date) AS d FROM chicken_prices WHERE price_date<=%s',
+                            (now.astimezone(IST).date(),)).fetchone()['d']
+        if latest is None:
+            return
+        snapshot=self._snapshot(self._prices(conn,latest))
+        digest=self._digest(snapshot)
+        # An official batch holding these same inputs already records this change.
+        if conn.execute('''SELECT 1 AS hit FROM forecast_batches
+                WHERE protocol_id=%s AND origin_date=%s AND dataset_hash=%s''',
+                (self.protocol_id,latest,digest)).fetchone():
+            return
+        state,error='queued',None
+        try:
+            series_from_snapshot(snapshot,latest)
+        except ValueError as exc:
+            state,error='blocked',str(exc)
+        self._insert(conn,now,latest,'ad_hoc',state,error,snapshot,key_suffix=f':{digest}')
+
+    def _prices(self,conn,upto):
+        return conn.execute('''SELECT price_date,price,updated_at FROM chicken_prices
+            WHERE price_date<=%s ORDER BY price_date''',(upto,)).fetchall()
+
+    def _snapshot(self,rows):
+        return dict(prices=[dict(date=str(r['price_date']),price=float(r['price']),
+                                 recordedAt=r['updated_at'].isoformat()) for r in rows],
+                    source='rjagro.public.chicken_prices',
+                    availability='recorded snapshot, not original historical vintages')
+
+    def _digest(self,snapshot):
+        return hashlib.sha256(json.dumps(snapshot,sort_keys=True).encode()).hexdigest()
+
+    def _insert(self,conn,now,origin,kind,state,error,snapshot,scheduled_for=None,key_suffix='',metadata=None):
+        watermark=conn.execute('SELECT coalesce(max(id),0) AS id FROM chicken_price_audit').fetchone()['id']
+        conn.execute('''INSERT INTO forecast_batches
+            (protocol_id,intent_key,kind,origin_date,scheduled_for,snapshot_at,snapshot,dataset_hash,
+             source_watermark,status,error,metadata)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING''',
+            (self.protocol_id,f'{kind}:{self.protocol_id}:{origin}{key_suffix}',kind,origin,
+             scheduled_for,now,Jsonb(snapshot),self._digest(snapshot),watermark,state,error,
+             Jsonb(metadata or {})))
 
     def claim(self):
         with self.connect() as conn,conn.transaction():
@@ -90,8 +137,8 @@ class Store:
             if current['status']!='running' or current['started_at']!=job['started_at']:
                 raise ValueError('Stale worker cannot publish a reclaimed batch')
             now=conn.execute('SELECT clock_timestamp() AS now').fetchone()['now']
-            if job['kind']=='official' and now>job['scheduled_for']+timedelta(minutes=15):
-                conn.execute("UPDATE forecast_batches SET status='failed',attempts=3,error='Publication deadline missed; no late official forecast' WHERE id=%s",(job['id'],))
+            if now>current['started_at']+timedelta(minutes=15):
+                conn.execute("UPDATE forecast_batches SET status='failed',attempts=3,error='Fit did not finish inside the deadline; no late forecast' WHERE id=%s",(job['id'],))
                 return
             with conn.cursor() as cur:
                 cur.executemany('''INSERT INTO forecast_predictions

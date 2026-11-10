@@ -1,22 +1,38 @@
 import unittest
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
-from forecast_ledger.core import IST, schedule, evaluate, horizon_bucket, summarize
+from forecast_ledger.core import (IST,official_window,pending_origins,evaluate,
+                                  horizon_bucket,summarize)
 
 
 class LedgerTests(unittest.TestCase):
     def test_ist_offset_is_available_at_runtime(self):
         self.assertEqual(IST.utcoffset(datetime(2026, 11, 4, tzinfo=IST)), __import__('datetime').timedelta(hours=5, minutes=30))
 
-    def test_ist_midnight_closes_previous_day(self):
-        s=schedule(datetime(2026,11,4,18,35,tzinfo=timezone.utc))
-        self.assertEqual(s['origin'],date(2026,11,4))
-        self.assertEqual(s['state'],'due')
-        self.assertEqual(s['scheduled'].isoformat(),'2026-11-05T00:05:00+05:30')
+    def test_every_recorded_day_after_the_floor_gets_one_batch(self):
+        priced=[date(2026,10,31),date(2026,11,1),date(2026,11,2),date(2026,11,3),date(2026,11,4)]
+        self.assertEqual(pending_origins(priced,set(),date(2026,11,1)),
+                         [date(2026,11,1),date(2026,11,2),date(2026,11,3),date(2026,11,4)])
 
-    def test_no_backdated_official_runs(self):
-        self.assertEqual(schedule(datetime(2026,11,4,18,34,tzinfo=timezone.utc))['state'],'waiting')
-        self.assertEqual(schedule(datetime(2026,11,4,19,0,tzinfo=timezone.utc))['state'],'missed')
+    def test_a_three_day_import_queues_three_origins_not_one(self):
+        priced=[date(2026,10,31),date(2026,11,5),date(2026,11,6),date(2026,11,7)]
+        batched={date(2026,10,31)}
+        self.assertEqual(pending_origins(priced,batched,date(2026,11,1)),
+                         [date(2026,11,5),date(2026,11,6),date(2026,11,7)])
+
+    def test_capture_is_idempotent(self):
+        priced=[date(2026,11,1),date(2026,11,2)]
+        self.assertEqual(pending_origins(priced,{date(2026,11,1)},date(2026,11,1)),[date(2026,11,2)])
+        self.assertEqual(pending_origins(priced,set(priced),date(2026,11,1)),[])
+
+    def test_a_wrong_floor_cannot_queue_the_whole_history(self):
+        priced=[date(2026,11,1)+timedelta(days=i) for i in range(100)]
+        self.assertEqual(len(pending_origins(priced,set(),date(2026,11,1),limit=30)),30)
+
+    def test_backfill_window_bounds(self):
+        start,end=official_window(date(2026,11,4))
+        self.assertEqual(start.isoformat(),'2026-11-05T00:05:00+05:30')
+        self.assertEqual(end.isoformat(),'2026-11-06T00:00:00+05:30')
 
     def test_score_bias_and_intervals(self):
         p=dict(prediction=110,lo80=95,hi80=115,lo95=90,hi95=120)

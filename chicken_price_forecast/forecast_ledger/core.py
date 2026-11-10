@@ -7,13 +7,28 @@ import math
 IST=ZoneInfo('Asia/Kolkata')
 MODELS=('existing','hybrid','ar1','naive')
 LABELS={'existing':'Existing event anchor','hybrid':'Frozen hybrid','ar1':'AR(1)','naive':'Last-price benchmark'}
+CAPTURE_START=time(0,5)
+MAX_CAPTURES_PER_TICK=30
 
 
-def schedule(now):
-    local=now.astimezone(IST)
-    at=datetime.combine(local.date(),time(0,5),tzinfo=IST)
-    state='waiting' if local<at else 'due' if local<at+timedelta(minutes=2) else 'missed'
-    return dict(origin=local.date()-timedelta(days=1),scheduled=at,state=state)
+def official_window(origin):
+    """Nominal IST slot for an origin: 00:05 the next day until midnight after it.
+
+    The window no longer gates issuance. It labels a batch created after its own
+    slot as a backfill, because the snapshot it trains on was recorded late.
+    """
+    day=origin+timedelta(days=1)
+    return (datetime.combine(day,CAPTURE_START,tzinfo=IST),
+            datetime.combine(day+timedelta(days=1),time(0,0),tzinfo=IST))
+
+
+def pending_origins(priced,batched,floor,limit=MAX_CAPTURES_PER_TICK):
+    """Recorded market days at or after `floor` that still need an official batch.
+
+    Ordered, so a paced replay issues one origin at a time, and bounded, so a
+    wrong floor cannot queue the whole history inside a single tick.
+    """
+    return [d for d in sorted(priced) if d>=floor and d not in batched][:limit]
 
 
 def horizon_bucket(h):
