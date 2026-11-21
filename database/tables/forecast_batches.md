@@ -50,6 +50,12 @@ three attempts.
   recorded `blocked` once with the reason and is never retried.
 - `metadata.backfill` marks a batch issued after its nominal 00:05 slot. Its
   `published_at` is still the real issue time; nothing is backdated.
+- `metadata.eventChallenger` holds the archived event-aligned candidate for this
+  origin when the worker runs with `--event-challenger`. It is a comparison
+  record only: `status:'ready'` carries the daily path, log components and
+  versioned calendar hash; `status:'unavailable'` records a contained failure.
+  It never enters `forecast_predictions`, never affects the four-model cohort or
+  its scores, and is never promoted automatically.
 - `forecast_batch_immutable` freezes the snapshot, intent key, origin, schedule
   and hashes. After publication the row is fully frozen, including status.
 - `(status = 'published') = (published_at IS NOT NULL)`.

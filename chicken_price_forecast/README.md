@@ -142,7 +142,6 @@ points at `localhost:5432` through the rjdb tunnel, which inside a container is
 the container itself.
 
 ### Prospective ledger (separate, opt-in)
-
 `forecast_ledger/` is a second, independent worker. It issues four fixed model
 paths at 00:05 IST from the same `chicken_prices` table, keeps them unchanged and
 scores them as quotes arrive. It does not touch this pipeline's payload, its
@@ -154,6 +153,26 @@ It is not started by the command above: it needs `Dockerfile.ledger` and a pinne
 `sidharthsingh7/rjagro_forecast_ledger` and prints the fingerprint to pin. See
 `forecast_ledger/README.md` for activation, schedule semantics, the scoring rules
 and troubleshooting.
+
+### Event-aligned challenger (separate, not published)
+
+`event_forecast/` is the finalized event-aware candidate: a regularized
+log-price regression with AR(1) deviations whose event features follow **actual**
+festival and Lucknow muhurat dates. It is deliberately **not** the published
+model; see `event_forecast/README.md` for the formulation, the measured
+comparison against AR(1), the production anchor and a shifted-calendar
+falsification, and the promotion criteria.
+
+It is archived only when the ledger worker is started with
+`--event-challenger`, which writes the candidate issuance into
+`forecast_batches.metadata.eventChallenger` for newly issued batches. The four
+published models, their scoring and the Analytics payload are unchanged, and any
+candidate failure leaves the incumbent untouched.
+
+```bash
+PYTHONPATH=. .venv/bin/python -m unittest discover -s event_forecast -t . -p 'test_*.py' -v
+```
+
 
 ## Where the app's numbers come from
 
