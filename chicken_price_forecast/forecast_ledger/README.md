@@ -42,6 +42,10 @@ The published Analytics forecast keeps coming from the existing worker.
 The schema is already applied. Activation is two deliberate steps, because the
 protocol fingerprint pins the methods.
 
+**Protocol v3** starts its official cohort on **2026-11-21**, the activation day,
+not on the old 2026-11-01 floor. Enabling a new method must not backfill origins
+whose outcomes were already public; the v2 cohort stays frozen and intact.
+
 CI builds and pushes `sidharthsingh7/rjagro_forecast_ledger` on every push to
 `main` under `chicken_price_forecast/**`, and **prints the fingerprint for the
 image it just built** in the run summary. Use that value; it is the one the pushed
@@ -52,14 +56,16 @@ image will compute.
 #    latest tag moves), then read its fingerprint and review the definition.
 docker pull sidharthsingh7/rjagro_forecast_ledger:latest
 docker run --rm sidharthsingh7/rjagro_forecast_ledger:latest \
-  python -m forecast_ledger.worker --describe
-# → {"id": "<64 hex chars>", "definition": {...}}
+  python -m forecast_ledger.worker --describe --event-challenger
+# → {"id": "<64 hex chars>", "definition": {... "eventChallenger": {...}}}
 
-# 2. Start the worker with that pin.
+# 2. Start the worker with that pin. Drop --event-challenger to run only the
+#    original four-model cohort under a protocol whose fingerprint omits it.
 docker run -d --restart unless-stopped --name forecast-ledger --memory 2g \
   -e DATABASE_URL=postgresql://USER:PASS@HOST:5432/rjagro \
   -e FORECAST_PROTOCOL_ID=<that id> \
-  sidharthsingh7/rjagro_forecast_ledger:latest
+  sidharthsingh7/rjagro_forecast_ledger:latest \
+  python -m forecast_ledger.worker --event-challenger
 ```
 
 Building locally works the same way, but the fingerprint is computed by *your*

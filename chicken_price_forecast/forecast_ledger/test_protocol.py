@@ -16,9 +16,23 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual([m['id'] for m in config['models']], ['existing', 'hybrid', 'ar1', 'naive'])
         self.assertTrue(config['events'])
         self.assertEqual(config['issuance'], 'on price entry')
-        self.assertEqual(config['originsFrom'], '2026-11-01')
+        # The floor starts each protocol on its activation day so a new cohort never
+        # backfills origins whose outcomes were already public. Bumping it is a
+        # deliberate protocol version change, not a routine edit.
+        self.assertEqual(config['originsFrom'], '2026-11-21')
         self.assertEqual(config['fitDeadlineSeconds'], 900)
         self.assertIn('sourceFiles', config)
+
+    def test_event_challenger_is_opt_in_and_covered_by_the_pin(self):
+        plain, plain_config = definition()
+        with_challenger, challenger_config = definition(event_challenger=True)
+        self.assertNotIn('eventChallenger', plain_config)
+        self.assertNotEqual(plain, with_challenger)
+        candidate = challenger_config['eventChallenger']
+        self.assertEqual(candidate['role'], 'challenger')
+        self.assertRegex(candidate['fingerprint'], r'^[a-f0-9]{64}$')
+        self.assertIn('calendarHash', candidate)
+        self.assertEqual(candidate['promotion'], 'never automatic; incumbent remains published')
 
     def test_source_hash_tracks_code_changes(self):
         _, config = definition()

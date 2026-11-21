@@ -122,21 +122,56 @@ MAE in ₹/kg:
 - All models underpredicted quotes at or above ₹110/kg by ₹10.7-15.7; event
   features did not remove that failure mode.
 
-## Promotion decision
+## Activating the archive
 
-**Not promoted.** Objective reasons:
+The candidate is archived **only** for newly issued batches under a protocol that
+pins it. Enabling the flag changes the protocol fingerprint, so activation creates
+a new cohort rather than mutating the existing one.
+
+Protocol v3 starts its official cohort on the activation day (`originsFrom =
+2026-11-21`) so no origin is backfilled after its outcomes were public.
+
+```bash
+docker pull sidharthsingh7/rjagro_forecast_ledger:latest
+docker run --rm sidharthsingh7/rjagro_forecast_ledger:latest \
+  python -m forecast_ledger.worker --describe --event-challenger   # read the pin
+docker run -d --restart unless-stopped --name forecast-ledger \
+  -e DATABASE_URL=... -e FORECAST_PROTOCOL_ID=<pin> \
+  sidharthsingh7/rjagro_forecast_ledger:latest \
+  python -m forecast_ledger.worker --event-challenger
+```
+
+Expected on the first day a price is recorded: one official batch for that day,
+`queued` then `published`, whose `metadata.eventChallenger.status` is `ready`.
+Nothing appears retroactively for November 1-20.
+
+## Rollback
+
+Restart the worker without `--event-challenger`, keeping the pin of the
+four-model-only protocol (or re-pin). Existing archived metadata stays, the
+`/analytics/ledger/challenger` route returns `null`, and the ledger UI shows its
+empty state. No SQL, no migration.
+
+## Promotion criteria
+
+Frozen before the prospective trial; **all** required:
+
+1. at least 12 official origins with matured 30-day outcomes;
+2. origin-balanced MAE at 1-30 days at least 5% better than both AR(1) and the
+   published anchor;
+3. the real calendar better than the shifted-calendar falsification by more than
+   the 80% paired block-bootstrap interval;
+4. no regression in 80% daily coverage.
+
+Until then the incumbent stays published and this model stays a challenger.
+
+**Current status: not promoted.** Objective reasons:
 
 1. No measured advantage over AR(1); the extra structure is not justified by accuracy.
 2. The real calendar does not beat a deliberately shifted calendar.
 3. Only one December-to-January transition and 60 days of evaluated support.
 
-Promotion criteria (all required, frozen before the next trial): at least 12
-official origins with matured 30-day outcomes; origin-balanced MAE at 1-30 days
-at least 5% better than both AR(1) and the published anchor; real calendar
-better than shifted by more than the 80% paired block-bootstrap interval; no
-regression in 80% coverage. Otherwise the incumbent stays published.
-
-## Integration and rollback
+## Integration
 
 Archiving is opt-in and additive. With `--event-challenger`, the worker stores
 the full candidate issuance under `forecast_batches.metadata.eventChallenger`
@@ -149,7 +184,3 @@ and never blocks publication.
 Read-only surface: `GET /analytics/ledger/challenger` returns the latest archived
 issuance; the Analytics ledger renders it under "Issued forecasts" with the
 component breakdown.
-
-Rollback: restart the ledger worker **without** `--event-challenger`. Existing
-batches keep their archived metadata (append-only), the route returns `null`,
-and the UI shows its empty state. No database change is required.

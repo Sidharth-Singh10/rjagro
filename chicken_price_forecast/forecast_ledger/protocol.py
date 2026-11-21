@@ -18,8 +18,11 @@ def definition(event_challenger=False):
            if not p.name.startswith('test_')]
     paths += [ROOT/'reassessment/models.py',ROOT/'reassessment/core.py',DEFAULT_EVENTS]
     files={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
-    d=dict(name='Four-model prospective trial v2',timezone='Asia/Kolkata',
-           issuance='on price entry',originsFrom='2026-11-01',
+    # v3 starts a clean prospective cohort. The floor moved from 2026-11-01 to the
+    # activation day so enabling the event challenger does not backfill batches
+    # whose outcomes were already public. The v2 protocol stays frozen and intact.
+    d=dict(name='Four-model prospective trial v3',timezone='Asia/Kolkata',
+           issuance='on price entry',originsFrom='2026-11-21',
            officialBatch='one per recorded market day, snapshot cut at that day',
            fitDeadlineSeconds=900,forecastEnd='2027-12-31',
            models=[dict(id=k,name=v,version='v1',role='production' if k=='existing' else 'challenger') for k,v in LABELS.items()],
