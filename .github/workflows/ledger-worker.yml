@@ -93,18 +93,24 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
 
-      - name: Read the protocol fingerprint from the image
+      - name: Read the protocol fingerprints from the image
         id: fp
         run: |
           # --describe touches no database: it prints the fingerprint computed by
           # the pushed image, which is the only value the container will accept.
-          id=$(docker run --rm "${{ env.IMAGE }}:latest" \
+          # Two pins exist because --event-challenger is part of the definition.
+          plain=$(docker run --rm "${{ env.IMAGE }}:latest" \
             python -m forecast_ledger.worker --describe | jq -r .id)
-          if ! printf '%s' "$id" | grep -Eq '^[a-f0-9]{64}$'; then
-            echo "::error::--describe did not print a protocol fingerprint"
-            exit 1
-          fi
-          echo "id=$id" >> "$GITHUB_OUTPUT"
+          challenger=$(docker run --rm "${{ env.IMAGE }}:latest" \
+            python -m forecast_ledger.worker --describe --event-challenger | jq -r .id)
+          for id in "$plain" "$challenger"; do
+            if ! printf '%s' "$id" | grep -Eq '^[a-f0-9]{64}$'; then
+              echo "::error::--describe did not print a protocol fingerprint"
+              exit 1
+            fi
+          done
+          echo "plain=$plain" >> "$GITHUB_OUTPUT"
+          echo "challenger=$challenger" >> "$GITHUB_OUTPUT"
 
       - name: Summary
         run: |
@@ -115,23 +121,30 @@ jobs:
             echo '```'
             echo "${{ steps.meta.outputs.tags }}"
             echo '```'
-            echo "Protocol fingerprint for this image:"
+            echo "Protocol fingerprint, four published models only:"
             echo '```'
-            echo "${{ steps.fp.outputs.id }}"
+            echo "${{ steps.fp.outputs.plain }}"
+            echo '```'
+            echo "Protocol fingerprint, four models plus the archived event challenger:"
+            echo '```'
+            echo "${{ steps.fp.outputs.challenger }}"
             echo '```'
             echo "Review the definition before pinning it:"
             echo '```bash'
             echo "docker run --rm ${{ env.IMAGE }}:latest \\"
-            echo "  python -m forecast_ledger.worker --describe"
+            echo "  python -m forecast_ledger.worker --describe --event-challenger"
             echo '```'
-            echo "Then start or restart the worker with that pin:"
+            echo "Then start or restart the worker with the matching pin. The flag and the"
+            echo "pin must agree or the container exits instead of forecasting under a"
+            echo "different method."
             echo '```bash'
             echo "docker pull ${{ env.IMAGE }}:latest"
             echo "docker stop forecast-ledger 2>/dev/null; docker rm forecast-ledger 2>/dev/null"
             echo "docker run -d --restart unless-stopped --name forecast-ledger --memory 2g \\"
             echo "  -e DATABASE_URL=postgresql://USER:PASS@HOST:5432/rjagro \\"
-            echo "  -e FORECAST_PROTOCOL_ID=${{ steps.fp.outputs.id }} \\"
-            echo "  ${{ env.IMAGE }}:latest"
+            echo "  -e FORECAST_PROTOCOL_ID=${{ steps.fp.outputs.challenger }} \\"
+            echo "  ${{ env.IMAGE }}:latest \\"
+            echo "  python -m forecast_ledger.worker --event-challenger"
             echo '```'
             echo "The fingerprint changes with any method, calendar or statistical-package"
             echo "change, so a container left on an old pin will exit rather than issue"
