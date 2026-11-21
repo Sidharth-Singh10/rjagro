@@ -16,7 +16,10 @@ export * from '@/app/utils/model_series';
 
 export interface ModelForecast {
     days: ChartDay[];
+    /** Issue time: when the forecast was published. */
     issuedAt: string | null;
+    /** Last training day: the snapshot cut, distinct from the issue date. */
+    trainedThrough: string | null;
     source: string;
     published: boolean;
     isLoading: boolean;
@@ -74,6 +77,14 @@ export function useModelForecast(model: ModelId, horizon: Horizon, payload: Anal
             ? challenger.data?.latest?.publishedAt ?? null
             : batch.data?.publishedAt ?? null;
 
+    // The published payload reports its data cutoff; a ledger batch reports the
+    // origin day it cut its snapshot at, which is the same thing in practice.
+    const trainedThrough = model === 'published'
+        ? payload.meta?.dataThrough ?? null
+        : model === 'event_ar'
+            ? challenger.data?.latest?.challenger?.trainingCutoff ?? null
+            : batch.data?.originDate ?? null;
+
     const source = model === 'published'
         ? 'production analytics run'
         : model === 'event_ar'
@@ -84,6 +95,7 @@ export function useModelForecast(model: ModelId, horizon: Horizon, payload: Anal
     return {
         days,
         issuedAt,
+        trainedThrough,
         source,
         published: model === 'published',
         isLoading: active?.isLoading ?? false,

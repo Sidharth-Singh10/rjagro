@@ -43,9 +43,16 @@ const seriesFromDays = (history: Array<{ date: string; price: number }>, rows: C
             band95: null, band80: null, active: [],
         }));
     const last = [...history].reverse().find((p) => p.date <= first);
+    // Only join the observed line to the forecast when they are contiguous. A
+    // wider gap means the two come from different vintages; seeding a price
+    // there would draw a forecast for a date no model ever issued, and a long
+    // diagonal that looks like real movement.
     if (last && points.length) {
-        points[points.length - 1].forecast = last.price;
-        points[points.length - 1].baseline = last.price;
+        const gapDays = (Date.parse(`${first}T00:00:00Z`) - Date.parse(`${last.date}T00:00:00Z`)) / 864e5;
+        if (gapDays <= 1) {
+            points[points.length - 1].forecast = last.price;
+            points[points.length - 1].baseline = last.price;
+        }
     }
     for (const r of rows) {
         points.push({
@@ -92,7 +99,7 @@ const ForecastTooltip = ({ active, payload }: any) => {
 };
 
 export const ForecastSection = memo(() => {
-    const { payload, history } = useAnalytics();
+    const { payload, history, historyLive, live } = useAnalytics();
     const f = payload.forecast;
     const v = payload.validation;
     const [model, setModel] = useState<ModelId>(analyticsIsLive ? 'event_ar' : 'published');
@@ -212,6 +219,9 @@ export const ForecastSection = memo(() => {
                         {selected.role === 'published' ? 'published' : selected.role === 'challenger' ? 'challenger · not published' : 'ledger benchmark'}
                     </span>
                     <span className="text-gray-500">{selected.note}</span>
+                    {forecast.trainedThrough && (
+                        <span className="text-gray-400">· trained through {formatDate(forecast.trainedThrough)}</span>
+                    )}
                     {forecast.issuedAt && (
                         <span className="text-gray-400">· issued {formatDate(forecast.issuedAt.slice(0, 10))}</span>
                     )}
@@ -221,6 +231,12 @@ export const ForecastSection = memo(() => {
                         </span>
                     )}
                 </div>
+                {live && !historyLive && (
+                    <p role="status" className="mb-2 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+                        Observed quotes are the bundled snapshot ending {formatDate(payload.data.last)}; the live
+                        price request did not load. Model forecasts below are unaffected.
+                    </p>
+                )}
                 {forecast.error ? (
                     <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-xs text-red-800">
                         Could not load this model&apos;s forecast. The published forecast is unaffected.

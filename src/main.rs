@@ -57,6 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "http://tauri.localhost",
         "https://tauri.localhost",
         "https://rjagro.vercel.app",
+        "https://rjagro.mutref.tech",
         "http://localhost:5173",
         "http://localhost:3000",
         "http://localhost:1420",
