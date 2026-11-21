@@ -101,8 +101,31 @@ pub async fn batches(State(db): State<DatabaseConnection>,Query(q):Query<LedgerQ
     Ok(Json(json!({"protocols":protocols,"protocolId":id,"batches":rows,"limit":q.limit.unwrap_or(30),"offset":q.offset.unwrap_or(0)})))
 }
 
-pub async fn batch(State(db):State<DatabaseConnection>,Path(id):Path<String>) -> Result<Json<Value>,ApiError> {
-    let id=Uuid::parse_str(&id).map_err(|_|bad("Invalid batch id"))?;
+/// Latest archived event-aware challenger. Read-only, opt-in, never promoted.
+/// An empty result is a valid state: the worker archives it only when started
+/// with `--event-challenger`.
+pub async fn challenger(State(db):State<DatabaseConnection>,Query(q):Query<LedgerQuery>) -> Result<Json<Value>,ApiError> {
+    q.validate()?;
+    ready(&db).await?;
+    let id=protocol(&db,q.protocol.as_deref()).await?;
+    if q.protocol.is_some() && id.is_none() { return Err(unknown_protocol()); }
+    let row=data(&db,r#"
+        SELECT coalesce((
+            SELECT jsonb_build_object('batchId',b.id,'originDate',b.origin_date,
+                'publishedAt',b.published_at,'protocolId',b.protocol_id,
+                'challenger',b.metadata->'eventChallenger')
+            FROM forecast_batches b
+            WHERE b.protocol_id=$1 AND b.status='published'
+              AND b.metadata ? 'eventChallenger'
+              AND b.metadata->'eventChallenger'->>'status'='ready'
+            ORDER BY b.published_at DESC,b.id DESC LIMIT 1
+        ),'null'::jsonb) AS data
+    "#,vec![id.clone().into()]).await?;
+    Ok(Json(json!({"protocolId":id,"latest":row,
+        "caveat":"Event-aware challenger archived in batch metadata for comparison only. It does not replace the four published models, is not scored by the ledger, and is never promoted automatically."})))
+}
+
+pub async fn batch(State(db):State<DatabaseConnection>,Path(id):Path<String>) -> Result<Json<Value>,ApiError> {    let id=Uuid::parse_str(&id).map_err(|_|bad("Invalid batch id"))?;
     ready(&db).await?;
     let row=db.query_one(Statement::from_sql_and_values(DbBackend::Postgres,r#"
         SELECT jsonb_build_object('id',b.id,'protocolId',b.protocol_id,'kind',b.kind,'originDate',b.origin_date,

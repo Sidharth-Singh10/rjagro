@@ -14,6 +14,7 @@ pub fn analytics_routes() -> Router<DatabaseConnection> {
     Router::new()
         .route("/ledger/batches", get(forecast_ledger::batches))
         .route("/ledger/batches/{id}", get(forecast_ledger::batch))
+        .route("/ledger/challenger", get(forecast_ledger::challenger))
         .route("/ledger/scores", get(forecast_ledger::scores))
         .route("/ledger/report", get(forecast_ledger::report))
         .route("/prices", get(get_prices_handler))
