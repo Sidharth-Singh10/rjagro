@@ -1,5 +1,5 @@
 import api from './api';
-import { isBatchSummary, isLedgerBatch, isLedgerScore, type BatchList, type LedgerBatch, type ScoreResponse } from './forecast_ledger_types';
+import { isBatchSummary, isLedgerBatch, isLedgerScore, isChallengerEnvelope, type BatchList, type ChallengerEnvelope, type LedgerBatch, type ScoreResponse } from './forecast_ledger_types';
 
 export async function ledgerBatches(protocol: string, kind: string, offset: number): Promise<BatchList> {
     const { data } = await api.get<BatchList>('/analytics/ledger/batches', { params: { protocol: protocol || undefined, kind, offset, limit: 30 } });
@@ -12,7 +12,11 @@ export async function ledgerBatch(id: string): Promise<LedgerBatch> {
     return data;
 }
 export interface ScoreFilters { protocol: string; kind: string; segment: string; event?: string; from?: string; to?: string }
-export async function ledgerScores(filters: ScoreFilters): Promise<ScoreResponse> {
+export async function ledgerChallenger(protocol: string): Promise<ChallengerEnvelope> {
+    const { data } = await api.get<unknown>('/analytics/ledger/challenger', { params: { protocol: protocol || undefined } });
+    if (!isChallengerEnvelope(data)) throw new Error('Invalid challenger forecast response');
+    return data;
+}export async function ledgerScores(filters: ScoreFilters): Promise<ScoreResponse> {
     const { data } = await api.get<ScoreResponse>('/analytics/ledger/scores', { params: { ...filters, protocol: filters.protocol || undefined } });
     if (!data || !Array.isArray(data.scores) || !data.scores.every(isLedgerScore) || !Number.isFinite(Date.parse(data.generatedAt))) throw new Error('Invalid ledger score response');
     return data;

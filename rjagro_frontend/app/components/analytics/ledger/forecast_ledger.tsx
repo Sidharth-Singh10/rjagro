@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ledgerBatch, ledgerBatches, ledgerError } from '@/app/utils/forecast_ledger';
 import { ForecastComparison } from './forecast_comparison';
 import { LedgerAccuracy } from './accuracy';
+import { ChallengerForecast } from './challenger_forecast';
 
 export function ForecastLedger() {
     const [view, setView] = useState<'forecasts' | 'accuracy'>('forecasts');
@@ -39,6 +40,7 @@ export function ForecastLedger() {
             {batch.isLoading && selectedId && <p role="status" className="text-sm text-gray-600">Loading issued predictions…</p>}
             {batch.error && <p role="alert" className="text-sm text-red-700">{ledgerError(batch.error)}</p>}
             {batch.data && <ForecastComparison key={batch.data.id} batch={batch.data} />}
+            {batch.data?.status === 'published' && <ChallengerForecast protocol={resolvedProtocol} />}
         </>}
     </section>;
 }

@@ -106,3 +106,59 @@ export function chartPoints(rows: LedgerPrediction[], intervalModel: LedgerModel
     }
     return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
+
+// ─── Event-aligned challenger (archived in batch metadata, never published) ───
+export interface ChallengerDay {
+    date: string; prediction: number;
+    levelLog: number; seasonalLog: number; eventLog: number; recentLog: number;
+    lo80: number; hi80: number; lo95: number; hi95: number; intervalStatus: string;
+}
+export interface ChallengerWeek {
+    start: string; end: string; prediction: number;
+    lo80: number; hi80: number; lo95: number; hi95: number; intervalStatus: string;
+}
+export interface Challenger {
+    status: 'ready' | 'unavailable'; model: string; name: string; role: string;
+    version: string; fingerprint: string; trainingCutoff: string; datasetHash: string;
+    calendarHash: string; daily: ChallengerDay[]; weekly: ChallengerWeek[];
+    tentativeDateSensitivityMaxInr?: number; caveat?: string; error?: string;
+    metadata?: { rho?: number; coefficients?: Record<string, number>; promotion?: string };
+    intervalBands?: Record<string, { calibrationDates: number; calibrationOrigins: number }>;
+}
+export interface ChallengerEnvelope {
+    protocolId: string | null; caveat: string;
+    latest: { batchId: string; originDate: string; publishedAt: string; protocolId: string; challenger: Challenger } | null;
+}
+const finiteNumber = (v: unknown): v is number => finite(v);
+const logComponents = ['levelLog', 'seasonalLog', 'eventLog', 'recentLog'] as const;
+export const isChallengerDay = (v: unknown): v is ChallengerDay => {
+    if (!object(v) || !isDate(v.date) || !finiteNumber(v.prediction) || v.prediction <= 0) return false;
+    if (!logComponents.every((k) => finiteNumber(v[k]))) return false;
+    if (typeof v.intervalStatus !== 'string') return false;
+    for (const level of [80, 95]) {
+        const lo = v[`lo${level}`], hi = v[`hi${level}`];
+        if (!finiteNumber(lo) || !finiteNumber(hi) || lo <= 0 || lo > v.prediction || hi < v.prediction) return false;
+    }
+    if (Number(v.lo95) > Number(v.lo80) || Number(v.hi95) < Number(v.hi80)) return false;
+    // The exposed components must reproduce the stored central value (2 dp contract).
+    const rebuilt = Math.exp(logComponents.reduce((sum, k) => sum + Number(v[k]), 0));
+    return Math.abs(rebuilt - v.prediction) <= 0.02;
+};
+export const isChallenger = (v: unknown): v is Challenger => {
+    if (!object(v) || typeof v.model !== 'string' || typeof v.version !== 'string') return false;
+    if (!['ready', 'unavailable'].includes(String(v.status))) return false;
+    if (v.status === 'unavailable') return true;
+    if (typeof v.name !== 'string' || v.role !== 'challenger' || !isFingerprint(v.fingerprint)
+        || !isDate(v.trainingCutoff) || !isFingerprint(v.datasetHash) || !isFingerprint(v.calendarHash)
+        || !Array.isArray(v.daily) || !v.daily.length || !v.daily.every(isChallengerDay)) return false;
+    if (!Array.isArray(v.weekly) || !v.weekly.every((w: unknown) => object(w) && isDate(w.start)
+        && isDate(w.end) && finiteNumber(w.prediction) && finiteNumber(w.lo95) && finiteNumber(w.hi95))) return false;
+    return v.daily.every((d: ChallengerDay, i: number) => i === 0
+        || Date.parse(d.date) - Date.parse((v.daily as ChallengerDay[])[i - 1].date) === 86_400_000);
+};
+export const isChallengerEnvelope = (v: unknown): v is ChallengerEnvelope => {
+    if (!object(v) || (v.protocolId !== null && !isFingerprint(v.protocolId)) || typeof v.caveat !== 'string') return false;
+    if (v.latest === null) return true;
+    return object(v.latest) && typeof v.latest.batchId === 'string' && isDate(v.latest.originDate)
+        && isTimestamp(v.latest.publishedAt) && isChallenger(v.latest.challenger);
+};
