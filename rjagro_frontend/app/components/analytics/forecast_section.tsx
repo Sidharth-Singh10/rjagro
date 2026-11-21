@@ -32,28 +32,7 @@ interface Point {
     active: string[];
 }
 
-const smooth = (rows: ChartDay[], window = 7): ChartDay[] => {
-    const half = Math.floor(window / 2);
-    return rows.map((row, i) => {
-        const slice = rows.slice(Math.max(0, i - half), Math.min(rows.length, i + half + 1));
-        const mean = (pick: (r: ChartDay) => number | null) => {
-            const values = slice.map(pick).filter((v): v is number => v !== null);
-            return values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
-        };
-        return {
-            ...row,
-            forecast: mean((r) => r.forecast) ?? row.forecast,
-            baseline: mean((r) => r.baseline),
-            lo80: mean((r) => r.lo80) ?? row.lo80,
-            hi80: mean((r) => r.hi80) ?? row.hi80,
-            lo95: mean((r) => r.lo95) ?? row.lo95,
-            hi95: mean((r) => r.hi95) ?? row.hi95,
-        };
-    });
-};
-
-const seriesFromDays = (history: Array<{ date: string; price: number }>, days: ChartDay[]): Point[] => {
-    const rows = smooth(days);
+const seriesFromDays = (history: Array<{ date: string; price: number }>, rows: ChartDay[]): Point[] => {
     const first = rows[0]?.date;
     if (!first) return [];
     const cutoff = new Date(Date.parse(`${first}T00:00:00Z`) - 60 * 864e5).toISOString().slice(0, 10);
@@ -183,7 +162,7 @@ export const ForecastSection = memo(() => {
             </div>
 
             <ChartCard
-                title="Forecast by model (7-day mean, ₹ per kg)"
+                title="Forecast by model (₹ per kg)"
                 headerControls={
                     analyticsIsLive ? (
                         <div className="flex flex-wrap items-end gap-3">
@@ -317,8 +296,8 @@ export const ForecastSection = memo(() => {
                 </>
                 )}
                 <p className="mt-2 text-[11px] leading-relaxed text-gray-400">
-                    Bands are prediction intervals for a single day, not for the average path. Lines are a centred
-                    7-day mean for legibility; the values in this model&apos;s tables are daily.
+                    Every point is the daily value the model issued, with no smoothing. Bands are prediction
+                    intervals for a single day, not for the average path.
                 </p>
             </ChartCard>
 
