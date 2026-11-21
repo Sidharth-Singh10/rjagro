@@ -12,6 +12,8 @@
     "validate:events": "node scripts/validate_event_calendar.mjs",
     "check:stats": "node --no-warnings --experimental-strip-types --experimental-loader ./scripts/json_module_loader.mjs scripts/check_event_stats.mjs",
     "check:ledger": "node --no-warnings --experimental-strip-types scripts/check_forecast_ledger.mjs",
+    "check:models": "node --no-warnings --experimental-strip-types --experimental-loader ./scripts/json_module_loader.mjs scripts/check_model_forecast.mjs",
+    "check:challenger": "node --no-warnings --experimental-strip-types scripts/check_event_challenger.mjs",
     "validate:forecast": "node scripts/validate_price_forecast.mjs"
   },
   "dependencies": {

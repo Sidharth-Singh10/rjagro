@@ -1,5 +1,5 @@
 'use client'
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import {
     Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
@@ -7,9 +7,12 @@ import { CalendarClock } from 'lucide-react';
 import { ChartCard } from '../v2/overview/chart_card';
 import { chart } from '../v2/overview/chart_colors';
 import {
-    eventName, formatDate, formatInr, formatPct, formatRange,
-    type AnalyticsPayload, type DailyRow,
+    eventName, formatDate, formatInr, formatPct, formatRange, analyticsIsLive,
 } from '@/app/utils/analytics';
+import {
+    HORIZONS, MODEL_OPTIONS, useModelForecast,
+    type ChartDay, type Horizon, type ModelId,
+} from '@/app/utils/model_forecast';
 import { useAnalytics } from './analytics_provider';
 import { ConclusionsList } from './conclusions_list';
 
@@ -29,26 +32,30 @@ interface Point {
     active: string[];
 }
 
-const smooth = (rows: DailyRow[], window = 7): DailyRow[] => {
+const smooth = (rows: ChartDay[], window = 7): ChartDay[] => {
     const half = Math.floor(window / 2);
     return rows.map((row, i) => {
         const slice = rows.slice(Math.max(0, i - half), Math.min(rows.length, i + half + 1));
-        const mean = (pick: (r: DailyRow) => number) => slice.reduce((s, r) => s + pick(r), 0) / slice.length;
+        const mean = (pick: (r: ChartDay) => number | null) => {
+            const values = slice.map(pick).filter((v): v is number => v !== null);
+            return values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
+        };
         return {
             ...row,
-            forecast: mean((r) => r.forecast),
+            forecast: mean((r) => r.forecast) ?? row.forecast,
             baseline: mean((r) => r.baseline),
-            lo80: mean((r) => r.lo80),
-            hi80: mean((r) => r.hi80),
-            lo95: mean((r) => r.lo95),
-            hi95: mean((r) => r.hi95),
+            lo80: mean((r) => r.lo80) ?? row.lo80,
+            hi80: mean((r) => r.hi80) ?? row.hi80,
+            lo95: mean((r) => r.lo95) ?? row.lo95,
+            hi95: mean((r) => r.hi95) ?? row.hi95,
         };
     });
 };
 
-const seriesFor = (payload: AnalyticsPayload, history: Array<{ date: string; price: number }>): Point[] => {
-    const rows = smooth(payload.forecast.daily);
-    const first = rows[0]?.date ?? payload.forecast.start;
+const seriesFromDays = (history: Array<{ date: string; price: number }>, days: ChartDay[]): Point[] => {
+    const rows = smooth(days);
+    const first = rows[0]?.date;
+    if (!first) return [];
     const cutoff = new Date(Date.parse(`${first}T00:00:00Z`) - 60 * 864e5).toISOString().slice(0, 10);
     const points: Point[] = history
         .filter((p) => p.date >= cutoff && p.date <= first)
@@ -64,7 +71,7 @@ const seriesFor = (payload: AnalyticsPayload, history: Array<{ date: string; pri
     for (const r of rows) {
         points.push({
             date: r.date, history: null, forecast: r.forecast, baseline: r.baseline,
-            band95: [r.lo95, r.hi95], band80: [r.lo80, r.hi80], active: r.events,
+            band95: [r.lo95, r.hi95], band80: [r.lo80, r.hi80], active: r.events ?? [],
         });
     }
     return points;
@@ -78,10 +85,9 @@ const Kpi = ({ label, value, hint }: { label: string; value: string; hint?: stri
     </div>
 );
 
-const ForecastTooltip = ({ active, payload, analytics }: any) => {
+const ForecastTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
-    // `payload` here is recharts' array of series for the hovered point; the
-    // analytics payload has to be handed in explicitly.
+    // `payload` here is recharts' array of series for the hovered point.
     const row = payload[0]?.payload as Point | undefined;
     if (!row) return null;
     return (
@@ -90,13 +96,13 @@ const ForecastTooltip = ({ active, payload, analytics }: any) => {
             {row.forecast !== null ? (
                 <div className="space-y-0.5">
                     <p className="text-gray-600">Forecast <span className="font-semibold text-gray-800">{formatInr(row.forecast)}</span></p>
-                    <p className="text-gray-500">Baseline <span className="font-medium">{formatInr(row.baseline)}</span></p>
+                    {row.baseline !== null && (
+                        <p className="text-gray-500">Baseline <span className="font-medium">{formatInr(row.baseline)}</span></p>
+                    )}
                     <p className="text-gray-500">80% band {formatInr(row.band80?.[0] ?? null)} – {formatInr(row.band80?.[1] ?? null)}</p>
                     <p className="text-gray-400">95% band {formatInr(row.band95?.[0] ?? null)} – {formatInr(row.band95?.[1] ?? null)}</p>
                     {row.active?.length > 0 && (
-                        <p className="pt-1 text-gray-500">
-                            Events: {row.active.map((id) => eventName(analytics, id)).join(', ')}
-                        </p>
+                        <p className="pt-1 text-gray-500">Events: {row.active.join(', ')}</p>
                     )}
                 </div>
             ) : (
@@ -110,15 +116,28 @@ export const ForecastSection = memo(() => {
     const { payload, history } = useAnalytics();
     const f = payload.forecast;
     const v = payload.validation;
+    const [model, setModel] = useState<ModelId>(analyticsIsLive ? 'event_ar' : 'published');
+    const [horizon, setHorizon] = useState<Horizon>(90);
 
-    const series = useMemo(() => seriesFor(payload, history), [payload, history]);
+    // Offline builds read the bundled payload, so the ledger-backed models have
+    // no source. Keep the pre-existing published-only behaviour rather than
+    // offering options that can only fail.
+    const options = analyticsIsLive ? MODEL_OPTIONS : MODEL_OPTIONS.filter((o) => o.id === 'published');
+    const selected = useMemo(
+        () => options.find((o) => o.id === model) ?? options[0],
+        [options, model]);
+    const forecast = useModelForecast(model, horizon, payload);
+
+    const series = useMemo(() => seriesFromDays(history, forecast.days), [history, forecast.days]);
     const domain = useMemo<[number, number]>(() => {
-        const vals = [f.peak.value, f.trough.value, f.lastLo95, f.lastHi95];
+        const vals: number[] = [f.peak.value, f.trough.value];
         for (const p of series) {
             if (p.history !== null) vals.push(p.history);
+            if (p.forecast !== null) vals.push(p.forecast);
             if (p.band95) vals.push(p.band95[0], p.band95[1]);
         }
         const finite = vals.filter((x) => Number.isFinite(x));
+        if (!finite.length) return [0, 100];
         return [Math.floor((Math.min(...finite) - 6) / 10) * 10, Math.ceil((Math.max(...finite) + 6) / 10) * 10];
     }, [series, f]);
 
@@ -131,9 +150,9 @@ export const ForecastSection = memo(() => {
                 <div>
                     <h3 className="text-sm font-semibold text-gray-700">What the model expects next</h3>
                     <p className="mt-0.5 max-w-3xl text-[11px] text-gray-500">
-                        A daily forecast to {formatDate(f.end)} from the price history and the event calendar. The
-                        solid line includes the fitted event effects; the dashed line is the same model with every
-                        event switched off. Bands are prediction intervals for a single day, not for the average path.
+                        A daily forecast to {formatDate(f.end)} from the price history and the event calendar. Pick a
+                        model to compare against the published one; the default is the new event-aligned challenger,
+                        which is <span className="font-medium text-gray-600">not</span> what the app publishes.
                     </p>
                 </div>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-500">
@@ -142,15 +161,21 @@ export const ForecastSection = memo(() => {
                 </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <Kpi label={formatDate(f.end)} value={formatInr(f.lastCentral)}
-                     hint={`95% band ${formatInr(f.lastLo95)} – ${formatInr(f.lastHi95)}`} />
-                <Kpi label="Seasonal peak" value={formatInr(f.peak.value)}
-                     hint={`${formatDate(f.peak.date)}, before event effects`} />
-                <Kpi label="Seasonal trough" value={formatInr(f.trough.value)}
-                     hint={`${formatDate(f.trough.date)}, before event effects`} />
-                <Kpi label="Event-adjusted days" value={`${f.eventDays}`}
-                     hint={`of ${f.days}; the rest equal the baseline`} />
+            <div>
+                <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                    <h4 className="text-sm font-semibold text-gray-700">Published forecast at a glance</h4>
+                    <span className="text-[11px] text-gray-400">these cards describe the published model, not the chart below</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <Kpi label={formatDate(f.end)} value={formatInr(f.lastCentral)}
+                         hint={`95% band ${formatInr(f.lastLo95)} – ${formatInr(f.lastHi95)}`} />
+                    <Kpi label="Seasonal peak" value={formatInr(f.peak.value)}
+                         hint={`${formatDate(f.peak.date)}, before event effects`} />
+                    <Kpi label="Seasonal trough" value={formatInr(f.trough.value)}
+                         hint={`${formatDate(f.trough.date)}, before event effects`} />
+                    <Kpi label="Event-adjusted days" value={`${f.eventDays}`}
+                         hint={`of ${f.days}; the rest equal the baseline`} />
+                </div>
             </div>
 
             <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -158,9 +183,77 @@ export const ForecastSection = memo(() => {
             </div>
 
             <ChartCard
-                title="Daily forecast (7-day mean, ₹ per kg)"
-                headerControls={<span className="text-[11px] text-gray-400">starts {formatInr(f.first)} on {formatDate(f.start)}</span>}
+                title="Forecast by model (7-day mean, ₹ per kg)"
+                headerControls={
+                    analyticsIsLive ? (
+                        <div className="flex flex-wrap items-end gap-3">
+                            <label className="text-[11px] text-gray-500">
+                                Model
+                                <select
+                                    aria-label="Forecast model"
+                                    className="ml-1.5 rounded border border-gray-300 bg-white px-2 py-1 text-[11px] text-gray-700"
+                                    value={model}
+                                    onChange={(e) => setModel(e.target.value as ModelId)}
+                                >
+                                    {options.map((o) => (
+                                        <option key={o.id} value={o.id}>{o.label}</option>
+                                    ))}
+                                </select>
+                            </label>
+                            <label className="text-[11px] text-gray-500">
+                                Horizon
+                                <select
+                                    aria-label="Forecast horizon"
+                                    className="ml-1.5 rounded border border-gray-300 bg-white px-2 py-1 text-[11px] text-gray-700"
+                                    value={String(horizon)}
+                                    onChange={(e) => setHorizon(
+                                        (e.target.value === 'all' ? 'all' : Number(e.target.value)) as Horizon)}
+                                >
+                                    {HORIZONS.map((h) => (
+                                        <option key={String(h.value)} value={String(h.value)}>{h.label}</option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+                    ) : (
+                        <span className="text-[11px] text-gray-400">
+                            bundled forecast · model comparison needs the live backend
+                        </span>
+                    )
+                }
             >
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${
+                        selected.role === 'published'
+                            ? 'border-gray-200 bg-white text-gray-600'
+                            : selected.role === 'challenger'
+                                ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                : 'border-gray-200 bg-gray-50 text-gray-600'
+                    }`}>
+                        {selected.role === 'published' ? 'published' : selected.role === 'challenger' ? 'challenger · not published' : 'ledger benchmark'}
+                    </span>
+                    <span className="text-gray-500">{selected.note}</span>
+                    {forecast.issuedAt && (
+                        <span className="text-gray-400">· issued {formatDate(forecast.issuedAt.slice(0, 10))}</span>
+                    )}
+                    {forecast.days.length > 0 && (
+                        <span className="text-gray-400">
+                            · {forecast.days.length} days to {formatDate(forecast.days[forecast.days.length - 1].date)}
+                        </span>
+                    )}
+                </div>
+                {forecast.error ? (
+                    <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-xs text-red-800">
+                        Could not load this model&apos;s forecast. The published forecast is unaffected.
+                    </p>
+                ) : forecast.isLoading ? (
+                    <p role="status" className="p-6 text-xs text-gray-500">Loading {selected.label}…</p>
+                ) : forecast.days.length === 0 ? (
+                    <p role="status" className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-xs text-gray-600">
+                        No issued forecast is archived for {selected.label} in this protocol yet. Nothing is substituted.
+                    </p>
+                ) : (
+                <>
                 <div className="h-[340px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={series} margin={{ top: 8, right: 24, bottom: 4, left: -6 }}>
@@ -183,17 +276,20 @@ export const ForecastSection = memo(() => {
                                 tickFormatter={(value: number) => `₹${value}`}
                                 width={52}
                             />
-                            <Tooltip content={<ForecastTooltip analytics={payload} />} />
+                            <Tooltip content={<ForecastTooltip />} />
                             <Area dataKey="band95" type="linear" stroke="none" fill={chart.rose} fillOpacity={0.09}
                                   isAnimationActive={false} activeDot={false} connectNulls={false} />
                             <Area dataKey="band80" type="linear" stroke="none" fill={chart.rose} fillOpacity={0.17}
                                   isAnimationActive={false} activeDot={false} connectNulls={false} />
-                            <ReferenceLine x={f.start} stroke={chart.tick} strokeDasharray="3 3"
+                            <ReferenceLine x={series.find((p) => p.forecast !== null)?.date ?? f.start}
+                                           stroke={chart.tick} strokeDasharray="3 3"
                                            label={{ value: 'forecast', position: 'insideTopRight', fontSize: 9, fill: chart.tick }} />
                             <Line dataKey="history" stroke={chart.brand} strokeWidth={1.6} dot={false}
                                   isAnimationActive={false} connectNulls />
-                            <Line dataKey="baseline" stroke={chart.blue} strokeWidth={1.2} strokeDasharray="4 3"
-                                  dot={false} isAnimationActive={false} connectNulls />
+                            {forecast.published && (
+                                <Line dataKey="baseline" stroke={chart.blue} strokeWidth={1.2} strokeDasharray="4 3"
+                                      dot={false} isAnimationActive={false} connectNulls />
+                            )}
                             <Line dataKey="forecast" stroke={chart.rose} strokeWidth={1.9} dot={false}
                                   isAnimationActive={false} connectNulls />
                         </ComposedChart>
@@ -204,11 +300,13 @@ export const ForecastSection = memo(() => {
                         <span className="h-0.5 w-4 rounded" style={{ backgroundColor: chart.brand }} /> observed
                     </span>
                     <span className="inline-flex items-center gap-1.5">
-                        <span className="h-0.5 w-4 rounded" style={{ backgroundColor: chart.rose }} /> event-adjusted forecast
+                        <span className="h-0.5 w-4 rounded" style={{ backgroundColor: chart.rose }} /> {selected.label}
                     </span>
-                    <span className="inline-flex items-center gap-1.5">
-                        <span className="h-0.5 w-4 rounded border-t border-dashed" style={{ borderColor: chart.blue }} /> baseline without events
-                    </span>
+                    {forecast.published && (
+                        <span className="inline-flex items-center gap-1.5">
+                            <span className="h-0.5 w-4 rounded border-t border-dashed" style={{ borderColor: chart.blue }} /> baseline without events
+                        </span>
+                    )}
                     <span className="inline-flex items-center gap-1.5">
                         <span className="h-2.5 w-4 rounded" style={{ backgroundColor: chart.rose, opacity: 0.17 }} /> 80%
                     </span>
@@ -216,6 +314,12 @@ export const ForecastSection = memo(() => {
                         <span className="h-2.5 w-4 rounded" style={{ backgroundColor: chart.rose, opacity: 0.09 }} /> 95%
                     </span>
                 </div>
+                </>
+                )}
+                <p className="mt-2 text-[11px] leading-relaxed text-gray-400">
+                    Bands are prediction intervals for a single day, not for the average path. Lines are a centred
+                    7-day mean for legibility; the values in this model&apos;s tables are daily.
+                </p>
             </ChartCard>
 
             <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">

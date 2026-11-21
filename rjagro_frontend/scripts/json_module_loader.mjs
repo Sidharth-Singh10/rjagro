@@ -2,25 +2,29 @@
  * Minimal ESM hooks so the Node check scripts can import the TypeScript
  * modules, which in turn import the committed JSON datasets.
  *
- * - extensionless relative imports (`./rate_tracker`) resolve to `.ts`
+ * - the `@/*` path alias resolves to the project root, as in tsconfig
+ * - extensionless relative imports (`./rate_tracker`) resolve to `.ts`/`.tsx`
  * - `.json` imports come back as a module with a default export
  */
 import { readFile } from 'node:fs/promises';
 
+const ROOT = new URL('../', import.meta.url);
+
 export async function resolve(specifier, context, next) {
-    if (specifier.startsWith('.') && !/\.[a-z0-9]+$/i.test(specifier)) {
-        try {
-            return await next(`${specifier}.ts`, context);
-        } catch {
-            // fall through to the normal resolver
-        }
-        try {
-            return await next(`${specifier}.tsx`, context);
-        } catch {
-            // fall through
+    const target = specifier.startsWith('@/')
+        ? new URL(specifier.slice(2), ROOT).href
+        : specifier;
+    const isPath = target.startsWith('.') || target.startsWith('file:');
+    if (isPath && !/\.[a-z0-9]+$/i.test(target)) {
+        for (const ext of ['.ts', '.tsx']) {
+            try {
+                return await next(`${target}${ext}`, context);
+            } catch {
+                // try the next extension, then fall through to the normal resolver
+            }
         }
     }
-    return next(specifier, context);
+    return next(target, context);
 }
 
 export async function load(url, context, next) {
