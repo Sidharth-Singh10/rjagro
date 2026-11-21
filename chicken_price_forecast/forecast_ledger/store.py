@@ -147,7 +147,7 @@ class Store:
                     [(job['id'],r['model'],r['target_date'],r['horizon'],r['prediction'],r['lo80'],r['hi80'],
                       r['lo95'],r['hi95'],r['interval_status'],Jsonb(r['events'])) for r in rows])
             conn.execute('''UPDATE forecast_batches SET status='published',published_at=clock_timestamp(),metadata=%s
-                WHERE id=%s''',(Jsonb(metadata),job['id']))
+                WHERE id=%s''',(Jsonb({**current['metadata'],**metadata}),job['id']))
 
     def reconcile(self):
         """Latest truth revisions append scores; never rewrite issued forecasts."""

@@ -12,7 +12,7 @@ from forecast_ledger.core import LABELS
 ROOT=Path(__file__).resolve().parents[1]
 
 
-def definition():
+def definition(event_challenger=False):
     events=load(DEFAULT_EVENTS).discrete[['definition_id','name']].drop_duplicates()
     paths=[p for folder in ('cp_pipeline','forecast_ledger') for p in (ROOT/folder).glob('*.py')
            if not p.name.startswith('test_')]
@@ -34,5 +34,9 @@ def definition():
            # Only packages that change fitted numbers; the database driver does not.
            packages={k:importlib.metadata.version(k) for k in ('numpy','pandas','scipy','statsmodels','scikit-learn','joblib','threadpoolctl')},
            sourceFiles=files)
+    if event_challenger:
+        from event_forecast.service import definition as challenger_definition
+        key, candidate = challenger_definition()
+        d['eventChallenger'] = dict(candidate, fingerprint=key)
     fingerprint=hashlib.sha256(json.dumps(d,sort_keys=True,separators=(',',':')).encode()).hexdigest()
     return fingerprint,d

@@ -12,6 +12,7 @@ COPY requirements-worker.txt requirements-ledger.txt ./
 RUN pip install -r requirements-ledger.txt
 COPY cp_pipeline ./cp_pipeline
 COPY forecast_ledger ./forecast_ledger
+COPY event_forecast ./event_forecast
 # Only the two modules the ledger reuses; `reassessment` is a namespace package
 # (no __init__.py), exactly as it is in the repository.
 COPY reassessment/core.py reassessment/models.py ./reassessment/
