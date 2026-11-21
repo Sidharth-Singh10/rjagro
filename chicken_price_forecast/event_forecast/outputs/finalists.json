@@ -1,0 +1,449 @@
+{
+  "protocol": {
+    "version": "finalists-2026-11-21",
+    "origins": "1st and 15th monthly, 2026-04-01 .. 2026-10-15",
+    "maxHorizon": 60,
+    "minimumTraining": 183,
+    "availability": "reconstructed: revised history and predictable calendars; not original publication vintages",
+    "selection": "no retuning after scores; simplest defensible model that is not materially worse"
+  },
+  "variants": {
+    "ar1": "reassessment AR(1) on log price",
+    "production_anchor_events": "production equation via reassessment backtest path",
+    "event_ar": "this challenger, no annual term",
+    "event_ar_annual": "this challenger with weak annual harmonic",
+    "annual_only": "calendar + weekdays only, no event features (isolation control)"
+  },
+  "dataset": {
+    "observations": 599,
+    "first": "2025-04-01",
+    "last": "2026-11-20",
+    "calendarFingerprint": "ea3f02212b7ec99111a341a8d98c4dafa0b8368d0f166b4f6bb6b651ff8906af"
+  },
+  "summary": [
+    {
+      "window": "1-7",
+      "model": "annual_only",
+      "n": 98,
+      "origins": 14,
+      "dates": 98,
+      "mae": 8.903789170226489,
+      "rmse": 10.76399271590508,
+      "bias": 2.1816922511672407
+    },
+    {
+      "window": "1-7",
+      "model": "ar1",
+      "n": 98,
+      "origins": 14,
+      "dates": 98,
+      "mae": 9.020284805836226,
+      "rmse": 11.106771285223868,
+      "bias": 3.2173755220842244
+    },
+    {
+      "window": "1-7",
+      "model": "event_ar",
+      "n": 98,
+      "origins": 14,
+      "dates": 98,
+      "mae": 9.16620071822829,
+      "rmse": 11.2008616817776,
+      "bias": 3.0424751058163775
+    },
+    {
+      "window": "1-7",
+      "model": "event_ar_annual",
+      "n": 98,
+      "origins": 14,
+      "dates": 98,
+      "mae": 8.908475979666523,
+      "rmse": 10.806170612513714,
+      "bias": 2.2319912730450024
+    },
+    {
+      "window": "1-7",
+      "model": "event_ar_shift28",
+      "n": 98,
+      "origins": 14,
+      "dates": 98,
+      "mae": 9.039429632558134,
+      "rmse": 11.044189410223947,
+      "bias": 2.789417255893883
+    },
+    {
+      "window": "1-7",
+      "model": "production_anchor_events",
+      "n": 98,
+      "origins": 14,
+      "dates": 98,
+      "mae": 9.218025216066412,
+      "rmse": 11.589260159025338,
+      "bias": 2.841448164822492
+    },
+    {
+      "window": "1-14",
+      "model": "annual_only",
+      "n": 196,
+      "origins": 14,
+      "dates": 196,
+      "mae": 10.1155082250112,
+      "rmse": 12.267023812471177,
+      "bias": 0.9858853887891664
+    },
+    {
+      "window": "1-14",
+      "model": "ar1",
+      "n": 196,
+      "origins": 14,
+      "dates": 196,
+      "mae": 10.2058595983163,
+      "rmse": 12.476012838972188,
+      "bias": 2.416805898395513
+    },
+    {
+      "window": "1-14",
+      "model": "event_ar",
+      "n": 196,
+      "origins": 14,
+      "dates": 196,
+      "mae": 10.230409718223068,
+      "rmse": 12.532080965844946,
+      "bias": 2.3030236160650555
+    },
+    {
+      "window": "1-14",
+      "model": "event_ar_annual",
+      "n": 196,
+      "origins": 14,
+      "dates": 196,
+      "mae": 10.057887753615933,
+      "rmse": 12.182413642507365,
+      "bias": 0.9634583089859504
+    },
+    {
+      "window": "1-14",
+      "model": "event_ar_shift28",
+      "n": 196,
+      "origins": 14,
+      "dates": 196,
+      "mae": 10.105926812495158,
+      "rmse": 12.442206054166409,
+      "bias": 2.014913256412782
+    },
+    {
+      "window": "1-14",
+      "model": "production_anchor_events",
+      "n": 196,
+      "origins": 14,
+      "dates": 196,
+      "mae": 11.163938515335227,
+      "rmse": 13.618798922731628,
+      "bias": 2.7761249434082775
+    },
+    {
+      "window": "1-30",
+      "model": "annual_only",
+      "n": 420,
+      "origins": 14,
+      "dates": 227,
+      "mae": 10.973266956611,
+      "rmse": 13.258167290731448,
+      "bias": -0.575492842982753
+    },
+    {
+      "window": "1-30",
+      "model": "ar1",
+      "n": 420,
+      "origins": 14,
+      "dates": 227,
+      "mae": 10.737866180231915,
+      "rmse": 13.191006617535711,
+      "bias": 1.4677908426292945
+    },
+    {
+      "window": "1-30",
+      "model": "event_ar",
+      "n": 420,
+      "origins": 14,
+      "dates": 227,
+      "mae": 10.759619508094186,
+      "rmse": 13.181085967120381,
+      "bias": 1.3498291640218534
+    },
+    {
+      "window": "1-30",
+      "model": "event_ar_annual",
+      "n": 420,
+      "origins": 14,
+      "dates": 227,
+      "mae": 10.973433091322853,
+      "rmse": 13.269761819445403,
+      "bias": -0.8056352714639028
+    },
+    {
+      "window": "1-30",
+      "model": "event_ar_shift28",
+      "n": 420,
+      "origins": 14,
+      "dates": 227,
+      "mae": 10.655619969508123,
+      "rmse": 13.090237921650353,
+      "bias": 1.210121030464739
+    },
+    {
+      "window": "1-30",
+      "model": "production_anchor_events",
+      "n": 420,
+      "origins": 14,
+      "dates": 227,
+      "mae": 11.410788581840968,
+      "rmse": 14.074884718022963,
+      "bias": 2.904059220805554
+    },
+    {
+      "window": "1-60",
+      "model": "annual_only",
+      "n": 806,
+      "origins": 14,
+      "dates": 233,
+      "mae": 11.918306018085284,
+      "rmse": 14.50951664176873,
+      "bias": -2.1995590476487794
+    },
+    {
+      "window": "1-60",
+      "model": "ar1",
+      "n": 806,
+      "origins": 14,
+      "dates": 233,
+      "mae": 11.53661308635455,
+      "rmse": 14.123094841084587,
+      "bias": 0.561100263666403
+    },
+    {
+      "window": "1-60",
+      "model": "event_ar",
+      "n": 806,
+      "origins": 14,
+      "dates": 233,
+      "mae": 11.520830448046404,
+      "rmse": 14.052350871982714,
+      "bias": 0.41178412865114045
+    },
+    {
+      "window": "1-60",
+      "model": "event_ar_annual",
+      "n": 806,
+      "origins": 14,
+      "dates": 233,
+      "mae": 11.966519687917218,
+      "rmse": 14.601505024793845,
+      "bias": -2.6588089245630138
+    },
+    {
+      "window": "1-60",
+      "model": "event_ar_shift28",
+      "n": 806,
+      "origins": 14,
+      "dates": 233,
+      "mae": 11.46151349002394,
+      "rmse": 14.008658678510578,
+      "bias": 0.4587823403911789
+    },
+    {
+      "window": "1-60",
+      "model": "production_anchor_events",
+      "n": 806,
+      "origins": 14,
+      "dates": 233,
+      "mae": 13.774295245774297,
+      "rmse": 16.847204665224545,
+      "bias": 2.8075657086284656
+    },
+    {
+      "window": "late-1-30",
+      "model": "ar1",
+      "n": 120,
+      "origins": 4,
+      "dates": 74,
+      "mae": 9.332174385213337,
+      "rmse": 11.441204627121785,
+      "bias": 2.473027849171413
+    },
+    {
+      "window": "late-1-30",
+      "model": "production_anchor_events",
+      "n": 120,
+      "origins": 4,
+      "dates": 74,
+      "mae": 9.561625183077904,
+      "rmse": 11.762389663111513,
+      "bias": 6.137907020161942
+    },
+    {
+      "window": "late-1-30",
+      "model": "event_ar",
+      "n": 120,
+      "origins": 4,
+      "dates": 74,
+      "mae": 9.048082488758835,
+      "rmse": 11.070922175043341,
+      "bias": 1.950066585071157
+    },
+    {
+      "window": "late-1-30",
+      "model": "event_ar_shift28",
+      "n": 120,
+      "origins": 4,
+      "dates": 74,
+      "mae": 8.795456299272173,
+      "rmse": 10.874904152702898,
+      "bias": 2.043793695855294
+    },
+    {
+      "window": "late-1-30",
+      "model": "event_ar_annual",
+      "n": 120,
+      "origins": 4,
+      "dates": 74,
+      "mae": 9.540347777973476,
+      "rmse": 11.536656023503149,
+      "bias": 0.9106466774901735
+    },
+    {
+      "window": "late-1-30",
+      "model": "annual_only",
+      "n": 120,
+      "origins": 4,
+      "dates": 74,
+      "mae": 9.619237762262618,
+      "rmse": 11.685011287817023,
+      "bias": 1.135457393714989
+    }
+  ],
+  "checks": {
+    "peakUnderprediction": {
+      "annual_only": {
+        "bias": -15.304203909800384,
+        "mae": 15.759555479925222
+      },
+      "ar1": {
+        "bias": -12.123479173615557,
+        "mae": 12.859332426349555
+      },
+      "event_ar": {
+        "bias": -12.13391735163593,
+        "mae": 12.878467880892039
+      },
+      "event_ar_annual": {
+        "bias": -15.698772844878265,
+        "mae": 16.174195355597252
+      },
+      "event_ar_shift28": {
+        "bias": -12.135102848309215,
+        "mae": 12.80962765006337
+      },
+      "production_anchor_events": {
+        "bias": -10.738974705068118,
+        "mae": 12.689548848305606
+      }
+    },
+    "eventWindow1to30": {
+      "annual_only": {
+        "n": 130,
+        "origins": 12,
+        "dates": 70,
+        "mae": 10.966879231745784,
+        "rmse": 13.25055193018183,
+        "bias": 3.6401342245836568
+      },
+      "ar1": {
+        "n": 130,
+        "origins": 12,
+        "dates": 70,
+        "mae": 11.360849843494316,
+        "rmse": 13.848605893202453,
+        "bias": 5.345370461677541
+      },
+      "event_ar": {
+        "n": 130,
+        "origins": 12,
+        "dates": 70,
+        "mae": 11.334218907985772,
+        "rmse": 13.89680435958201,
+        "bias": 5.390072883054542
+      },
+      "event_ar_annual": {
+        "n": 130,
+        "origins": 12,
+        "dates": 70,
+        "mae": 10.861891767886824,
+        "rmse": 13.136384557570075,
+        "bias": 3.4778630037916276
+      },
+      "event_ar_shift28": {
+        "n": 130,
+        "origins": 12,
+        "dates": 70,
+        "mae": 11.161318257627464,
+        "rmse": 13.782382990686548,
+        "bias": 5.255084820407585
+      },
+      "production_anchor_events": {
+        "n": 130,
+        "origins": 12,
+        "dates": 70,
+        "mae": 12.061603299936014,
+        "rmse": 14.744590777560276,
+        "bias": 8.105203253137836
+      }
+    },
+    "stability": [
+      {
+        "model": "annual_only",
+        "meanAbsRevision": 9.367148041939902,
+        "worstOriginMae": 15.790923722230296
+      },
+      {
+        "model": "ar1",
+        "meanAbsRevision": 9.227782591818222,
+        "worstOriginMae": 15.839542822461787
+      },
+      {
+        "model": "event_ar",
+        "meanAbsRevision": 9.148799812438684,
+        "worstOriginMae": 16.42268374064917
+      },
+      {
+        "model": "event_ar_annual",
+        "meanAbsRevision": 9.308148243509299,
+        "worstOriginMae": 16.57292473326091
+      },
+      {
+        "model": "event_ar_shift28",
+        "meanAbsRevision": 9.062121136170942,
+        "worstOriginMae": 16.501618181211413
+      },
+      {
+        "model": "production_anchor_events",
+        "meanAbsRevision": 12.750468555146728,
+        "worstOriginMae": 15.401438859818235
+      }
+    ],
+    "interval80": [
+      {
+        "model": "event_ar",
+        "coverage80": 0.8561643835616438,
+        "scoredDays": 146,
+        "status": "empirical_dependent_calibration; small sample"
+      },
+      {
+        "model": "ar1",
+        "coverage80": 0.8493150684931506,
+        "scoredDays": 146,
+        "status": "empirical_dependent_calibration; small sample"
+      }
+    ]
+  }
+}

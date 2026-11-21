@@ -1,0 +1,62 @@
+{
+  "version": "lucknow-events-2026-11-21-v1",
+  "verifiedAt": "2026-11-21",
+  "coverageStart": "2025-04-01",
+  "coverageEnd": "2027-12-31",
+  "region": "Lucknow reference; exact market of the chicken quote remains unverified",
+  "availability": "Computed calendars are predictable; historical source vintages are not archived. Historical evaluation is reconstructed, not point-in-time.",
+  "weddingSource": "https://www.drikpanchang.com/shubh-dates/shubh-marriage-dates-with-muhurat.html?geoname-id=1264733&year={year}",
+  "weddingConvention": "Panchang Shuddhi, sunrise-day availability; not wedding volume, procurement volume, or evidence of meat consumption",
+  "weddings": {
+    "2025": {
+      "4": [14,16,17,18,19,20,21,25,29,30],
+      "5": [1,5,6,8,10,14,15,16,17,18,22,23,24,27,28],
+      "6": [2,4,5,7,8],
+      "11": [2,3,8,12,13,16,17,18,21,22,23,25,30],
+      "12": [4,5,6]
+    },
+    "2026": {
+      "2": [5,6,8,10,12,14,19,20,21,24,25,26],
+      "3": [2,3,4,7,8,9,11,12],
+      "4": [15,20,21,25,26,27,28,29],
+      "5": [1,3,5,6,7,8,13,14],
+      "6": [21,22,23,24,25,26,27,29],
+      "7": [1,6,7,11,12],
+      "11": [21,24,25,26],
+      "12": [2,3,4,5,6,11,12]
+    },
+    "2027": {
+      "1": [15,18,19,20,24,26,27,30,31],
+      "2": [2,3,9,10,11,14,15,21,22,25,26,27,28],
+      "3": [1,2,3,4,9,10,14],
+      "4": [18,19,21,23,24,25,26,27,28],
+      "5": [4,7,9,13,14,15,16,17,18,19,20,21,22,23,24,25,30,31],
+      "6": [1,5,9,10,11,12,13,15,16,17,19,20,21,26,27,28],
+      "7": [1,7,8,9,11,12],
+      "11": [10,11,15,16,20,21,23,24,25,26,29],
+      "12": [2,7,9,12,13,14]
+    }
+  },
+  "corrections": [
+    {
+      "id": "magh-mela",
+      "year": 2026,
+      "start": "2026-01-03",
+      "end": "2026-02-15",
+      "source": "https://rb.indianrailways.gov.in/uploads/directorate/mec_engg/2025/Magh%20Mela%2C%202026%20at%20Prayagraj_17_12_2025.pdf",
+      "note": "Opening date corrected from January 14. Excluded from point features: one observed year, local market relevance and net meat demand unidentified."
+    }
+  ],
+  "unmodelled": [
+    {"id":"pausha-purnima","dates":["2026-01-03","2027-01-22"]},
+    {"id":"sakat-chauth","dates":["2026-01-06","2027-01-25"]}
+  ],
+  "festivalSource": "https://www.drikpanchang.com/calendars/hindu/hinducalendar.html?geoname-id=1264733&year={year}",
+  "limitations": [
+    "No positive wedding or January premium is assumed.",
+    "Pausha Purnima and Sakat Chauth have no independently replicated winter response; no coefficient is invented.",
+    "Official 2027 Magh Mela opening is unverified; no opening-date demand effect is forecast.",
+    "Makar Sankranti January 15, 2027 astronomical date differs from January 14 holiday listings.",
+    "Tentative Islamic dates remain scenario assumptions; no realized future weather enters features."
+  ]
+}

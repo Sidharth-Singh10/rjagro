@@ -1,0 +1,24 @@
+{
+  "trainingCutoff": "2026-11-20",
+  "source": "live forecast ledger, latest published batch, models existing and ar1",
+  "existing": {
+    "December 2026": 92.79,
+    "Christmas–New Year": 90.94,
+    "January 1–7": 92.53,
+    "January 8–14": 93.18,
+    "January 15–21": 99.28,
+    "January 22–31": 99.37,
+    "February 1–14": 99.60,
+    "February 15–28": 100.04
+  },
+  "ar1": {
+    "December 2026": 91.72,
+    "Christmas–New Year": 94.89,
+    "January 1–7": 95.95,
+    "January 8–14": 96.71,
+    "January 15–21": 97.28,
+    "January 22–31": 97.76,
+    "February 1–14": 98.20,
+    "February 15–28": 98.48
+  }
+}
