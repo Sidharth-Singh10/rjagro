@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, CreditCard, Receipt, Plus, ArrowLeft, Save, BookOpen } from 'lucide-react';
-import { SupplierLedgerEntry, SupplierPayable, SupplierPayment } from '@/app/types/interfaces';
+import React, { useId, useState } from 'react';
+import { X, CreditCard, Receipt, Plus, ArrowLeft, Save, BookOpen, ChevronRight } from 'lucide-react';
+import { SupplierHistoryEntry, SupplierLedgerEntry, SupplierPayable, SupplierPayment } from '@/app/types/interfaces';
 import { fetchSupplierLedger, fetchSupplierPayables, fetchSupplierPayments, handleAddSupplierPayment } from '@/app/api/supplier';
 import { EntryType } from '@/app/types/enums';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -37,7 +37,7 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
         staleTime: 5 * 60 * 1000,
     });
 
-    const { data: ledger = [], isLoading: ledgerLoading } = useQuery<SupplierLedgerEntry[]>({
+    const { data: ledger = [], isLoading: ledgerLoading } = useQuery<SupplierHistoryEntry[]>({
         queryKey: ['supplier_ledger', supplierId],
         queryFn: () => fetchSupplierLedger(supplierId!),
         enabled,
@@ -151,7 +151,7 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({ supp
                                     <>
                                         {activeTab === 'payable' && <PayablesTable data={payables} />}
                                         {activeTab === 'paid' && <PaymentsTable data={payments} />}
-                                        {activeTab === 'ledger' && <LedgerTable data={ledger} />}
+                                        {activeTab === 'ledger' && <LedgerTable key={supplierId} data={ledger} />}
                                     </>
                                 )}
                             </div>
@@ -330,58 +330,89 @@ const PaymentsTable = ({ data }: { data: SupplierPayment[] }) => (
         </div>
 );
 
-const LedgerTable = ({ data }: { data: SupplierLedgerEntry[] }) => (
+const LedgerTable = ({ data }: { data: SupplierHistoryEntry[] }) => (
     data.length === 0 ? <EmptyState message="No ledger entries found." /> :
-        <div className="bg-white border rounded-lg overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div tabIndex={0} role="region" aria-label="Supplier history" className="bg-white border rounded-lg overflow-x-auto shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
             <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-500 font-medium border-b">
                     <tr>
-                        <th className="px-4 py-3">Date</th>
-                        <th className="px-4 py-3">Description</th>
-                        <th className="px-4 py-3">Ref</th>
-                        <th className="px-4 py-3">Type</th>
+                        <th scope="col" className="px-4 py-3">Date</th>
+                        <th scope="col" className="px-4 py-3">Description</th>
+                        <th scope="col" className="px-4 py-3">Ref</th>
+                        <th scope="col" className="px-4 py-3">Type</th>
                         {/* Split Amount into Liability and Cash */}
-                        <th className="px-4 py-3 text-right">Liability</th>
-                        <th className="px-4 py-3 text-right">Cash</th>
+                        <th scope="col" className="px-4 py-3 text-right">Liability</th>
+                        <th scope="col" className="px-4 py-3 text-right">Cash</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                    {data.map((row, index) => {
-                        // Determine where the amount goes based on EntryType
-                        const isLiability = row.entry_type === EntryType.Payable;
-                        const isCash = row.entry_type === EntryType.Cash || row.entry_type === EntryType.Settlement;
-                        return (
-                            <tr key={index} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                                    {new Date(row.date).toLocaleDateString()}
-                                </td>
-                                <td className="px-4 py-3 font-medium text-gray-900">{row.description}</td>
-                                <td className="px-4 py-3 text-gray-500 font-mono text-xs">{row.reference || '-'}</td>
-                                <td className="px-4 py-3">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${isCash
-                                        ? 'bg-green-50 text-green-700 border-green-200'
-                                        : 'bg-red-50 text-red-700 border-red-200'
-                                        }`}>
-                                        {row.entry_type || ''}
-                                    </span>
-                                </td>
-
-                                {/* Liability Column: Only shows if type is PAYABLE */}
-                                <td className="px-4 py-3 font-medium text-right text-red-600">
-                                    {isLiability ? row.amount : '-'}
-                                </td>
-
-                                {/* Cash Column: Shows if type is CASH or SETTLEMENT */}
-                                <td className="px-4 py-3 font-medium text-right text-green-600">
-                                    {isCash ? row.amount : '-'}
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
+                {data.map((row) => (
+                    <LedgerHistoryRows
+                        key={row.purchases.length > 0 ? `order-${row.purchase_order_id}` :
+                            row.purchase_id !== null ? `purchase-${row.purchase_id}` : `payment-${row.payment_id}`}
+                        row={row}
+                    />
+                ))}
             </table>
         </div>
 );
+
+const LedgerHistoryRows = ({ row }: { row: SupplierHistoryEntry }) => {
+    const [expanded, setExpanded] = useState(false);
+    const detailsId = useId();
+    const grouped = row.purchases.length > 0;
+    return (
+        <>
+            <tbody className="border-b border-gray-100">
+                <tr className="hover:bg-gray-50">
+                    <LedgerCells row={row} description={grouped ? (
+                        <button
+                            type="button"
+                            aria-expanded={expanded}
+                            aria-controls={detailsId}
+                            onClick={() => setExpanded(previous => !previous)}
+                            className="flex items-center gap-2 rounded px-1 py-2 text-left focus-visible:outline-2 focus-visible:outline-green-600"
+                        >
+                            <ChevronRight size={16} aria-hidden="true" className={`shrink-0 ${expanded ? 'rotate-90' : ''}`} />
+                            <span>{row.description}<span className="block text-xs font-normal text-gray-500">
+                                {row.purchases.length} {row.purchases.length === 1 ? 'purchase' : 'purchases'} · Total liability
+                            </span></span>
+                        </button>
+                    ) : row.description} />
+                </tr>
+            </tbody>
+            {grouped && (
+                <tbody id={detailsId} hidden={!expanded} className="divide-y divide-gray-100 bg-gray-50">
+                    {row.purchases.map(purchase => (
+                        <tr key={purchase.purchase_id}>
+                            <LedgerCells row={purchase} description={<span className="block pl-6">{purchase.description}</span>} />
+                        </tr>
+                    ))}
+                </tbody>
+            )}
+        </>
+    );
+};
+
+const LedgerCells = ({ row, description }: { row: SupplierLedgerEntry; description: React.ReactNode }) => {
+    const isLiability = row.entry_type === EntryType.Payable;
+    const isCash = row.entry_type === EntryType.Cash || row.entry_type === EntryType.Settlement;
+    return (
+        <>
+            <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{new Date(`${row.date}T00:00:00`).toLocaleDateString()}</td>
+            <td className="px-4 py-3 font-medium text-gray-900">{description}</td>
+            <td className="px-4 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">{row.reference || '-'}</td>
+            <td className="px-4 py-3">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${isCash
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-red-50 text-red-700 border-red-200'}`}>
+                    {row.entry_type || ''}
+                </span>
+            </td>
+            <td className="px-4 py-3 font-medium text-right text-red-600">{isLiability ? row.amount : '-'}</td>
+            <td className="px-4 py-3 font-medium text-right text-green-600">{isCash ? row.amount : '-'}</td>
+        </>
+    );
+};
 
 const EmptyState = ({ message }: { message: string }) => (
     <div className="flex flex-col items-center justify-center h-40 text-gray-400 bg-white border border-dashed rounded-lg">

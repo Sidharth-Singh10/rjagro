@@ -390,6 +390,16 @@ pub struct SupplierLedgerEntry {
     pub reference: String,
     pub amount: Decimal,
     pub entry_type: Option<String>,
+    pub purchase_id: Option<i32>,
+    pub purchase_order_id: Option<i32>,
+    pub payment_id: Option<i32>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SupplierHistoryEntry {
+    #[serde(flatten)]
+    pub entry: SupplierLedgerEntry,
+    pub purchases: Vec<SupplierLedgerEntry>,
 }
 
 #[derive(Serialize)]

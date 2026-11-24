@@ -1,7 +1,7 @@
 use crate::{
     consts::{CASH_ACCOUNT_ID, LIABILITY_ACCOUNT_ID},
     handlers::purchases::{internal_error, update_account_balance},
-    models::{CreateSupplierPayment, SupplierLedgerEntry, SupplierPayable},
+    models::{CreateSupplierPayment, SupplierHistoryEntry, SupplierLedgerEntry, SupplierPayable},
 };
 use axum::{
     extract::{Path, State},
@@ -37,6 +37,87 @@ pub async fn create_supplier_payment(
         .map_err(internal_error("commit transaction"))?;
 
     Ok(Json(payment))
+}
+
+#[cfg(test)]
+mod history_tests {
+    use super::*;
+
+    fn purchase(
+        id: i32,
+        order: Option<i32>,
+        amount: &str,
+        date: &str,
+        kind: &str,
+    ) -> SupplierLedgerEntry {
+        SupplierLedgerEntry {
+            date: date.parse().unwrap(),
+            description: "Purchase - ITEM".into(),
+            reference: format!("PID-{id}"),
+            amount: amount.parse().unwrap(),
+            entry_type: Some(kind.into()),
+            purchase_id: Some(id),
+            purchase_order_id: order,
+            payment_id: None,
+        }
+    }
+
+    #[test]
+    fn history_groups_payables_with_exact_totals_and_latest_date() {
+        let rows = group_supplier_history(vec![
+            purchase(1, Some(10), "0.10", "2026-11-01", "PAYABLE"),
+            purchase(2, Some(10), "0.20", "2026-11-03", "PAYABLE"),
+            purchase(3, Some(20), "4.50", "2026-11-02", "PAYABLE"),
+        ]);
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].entry.purchase_order_id, Some(10));
+        assert_eq!(rows[0].entry.amount.to_string(), "0.30");
+        assert_eq!(rows[0].entry.date.to_string(), "2026-11-03");
+        assert_eq!(rows[0].entry.reference, "POID-10");
+        assert_eq!(rows[0].purchases.len(), 2);
+        assert_eq!(rows[0].purchases[0].purchase_id, Some(2));
+        assert_eq!(rows[1].purchases.len(), 1);
+        let json = serde_json::to_value(&rows).unwrap();
+        assert_eq!(json[0]["reference"], "POID-10");
+        assert_eq!(json[0]["purchases"][0]["purchase_id"], 2);
+        assert!(
+            json[0].get("entry").is_none(),
+            "History fields stay at the top level"
+        );
+    }
+
+    #[test]
+    fn history_keeps_unlinked_purchases_cash_and_settlements_separate() {
+        let mut settlement = purchase(9, None, "2.00", "2026-11-04", "SETTLEMENT");
+        settlement.purchase_id = None;
+        settlement.payment_id = Some(9);
+        settlement.reference = "BANK-REF".into();
+        let rows = group_supplier_history(vec![
+            purchase(1, None, "1.00", "2026-11-01", "PAYABLE"),
+            purchase(2, None, "3.00", "2026-11-01", "PAYABLE"),
+            purchase(3, Some(10), "5.00", "2026-11-02", "CASH"),
+            purchase(4, Some(10), "7.00", "2026-11-02", "PAYABLE"),
+            settlement,
+        ]);
+        assert_eq!(rows.len(), 5);
+        assert_eq!(rows[0].entry.reference, "BANK-REF");
+        assert_eq!(rows[0].entry.amount.to_string(), "2.00");
+        assert!(rows[0].purchases.is_empty());
+        assert_eq!(rows.iter().filter(|r| !r.purchases.is_empty()).count(), 1);
+        let group = rows.iter().find(|r| !r.purchases.is_empty()).unwrap();
+        assert_eq!(group.entry.amount.to_string(), "7.00");
+        assert_eq!(group.purchases[0].purchase_id, Some(4));
+        let cash = rows.iter().find(|r| r.entry.purchase_id == Some(3)).unwrap();
+        assert!(cash.purchases.is_empty());
+        assert_eq!(cash.entry.amount.to_string(), "5.00");
+        let payable_total: sea_orm::prelude::Decimal = rows
+            .iter()
+            .filter(|r| r.entry.entry_type.as_deref() == Some("PAYABLE"))
+            .map(|r| r.entry.amount)
+            .sum();
+        assert_eq!(payable_total.to_string(), "11.00");
+        assert!(group_supplier_history(vec![]).is_empty());
+    }
 }
 
 async fn insert_payment_record<C: TransactionTrait + sea_orm::ConnectionTrait>(
@@ -176,12 +257,8 @@ pub async fn get_supplier_ledger_handler(
     State(db): State<DatabaseConnection>,
     Path(supplier_id): Path<i32>,
 ) -> impl IntoResponse {
-    // SQL Breakdown:
-    // 1. Select PURCHASES. Cast payment_type enum to text.
-    //    We treat Purchase Cost as POSITIVE (+).
-    // 2. UNION ALL
-    // 3. Select SUPPLIER_PAYMENTS.
-    //    We treat Settlements as NEGATIVE (-) to offset the debt.
+    // History is a read-only projection: amounts remain positive and entry_type
+    // determines the Liability/Cash column. Only PAYABLE purchases are grouped.
 
     let sql = r#"
         SELECT 
@@ -189,7 +266,10 @@ pub async fn get_supplier_ledger_handler(
             CONCAT('Purchase - ', item_code) AS description,
             CONCAT('PID-', purchase_id) AS reference,
             total_cost AS amount,
-            CAST(payment_type AS TEXT) AS entry_type
+            CAST(payment_type AS TEXT) AS entry_type,
+            purchase_id,
+            purchase_order_id,
+            NULL::integer AS payment_id
         FROM purchases 
         WHERE supplier_id = $1
 
@@ -199,8 +279,11 @@ pub async fn get_supplier_ledger_handler(
             payment_date AS date,
             CONCAT('Payment - ', COALESCE(payment_mode, 'Unknown')) AS description,
             COALESCE(reference_number, CONCAT('SPID-', payment_id)) AS reference,
-            (amount) AS amount, -- Make payments negative
-            'SETTLEMENT' AS entry_type
+            amount AS amount,
+            'SETTLEMENT' AS entry_type,
+            NULL::integer AS purchase_id,
+            NULL::integer AS purchase_order_id,
+            payment_id
         FROM supplier_payments 
         WHERE supplier_id = $1
 
@@ -218,14 +301,63 @@ pub async fn get_supplier_ledger_handler(
         .await;
 
     match result {
-        Ok(ledger) => {
-            // Optional: If you want to calculate a "Running Balance" in Rust before sending:
-            // You can iterate over `ledger` (reversed) to sum up values.
-            Json(ledger).into_response()
-        }
+        Ok(ledger) => Json(group_supplier_history(ledger)).into_response(),
         Err(e) => {
             eprintln!("Ledger Error: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
+}
+
+fn group_supplier_history(mut entries: Vec<SupplierLedgerEntry>) -> Vec<SupplierHistoryEntry> {
+    // Sort before grouping so children and each group's representative date are newest first.
+    entries.sort_by(|a, b| {
+        b.date
+            .cmp(&a.date)
+            .then_with(|| b.reference.cmp(&a.reference))
+            .then_with(|| b.purchase_id.cmp(&a.purchase_id))
+            .then_with(|| b.payment_id.cmp(&a.payment_id))
+    });
+    let mut rows: Vec<SupplierHistoryEntry> = Vec::new();
+    let mut orders = std::collections::HashMap::new();
+    for entry in entries {
+        if let Some(order_id) = entry
+            .purchase_order_id
+            .filter(|_| entry.entry_type.as_deref() == Some("PAYABLE"))
+        {
+            let index = *orders.entry(order_id).or_insert_with(|| {
+                let index = rows.len();
+                rows.push(SupplierHistoryEntry {
+                    entry: SupplierLedgerEntry {
+                        date: entry.date,
+                        description: format!("Purchase Order #{order_id}"),
+                        reference: format!("POID-{order_id}"),
+                        amount: Default::default(),
+                        entry_type: entry.entry_type.clone(),
+                        purchase_id: None,
+                        purchase_order_id: Some(order_id),
+                        payment_id: None,
+                    },
+                    purchases: Vec::new(),
+                });
+                index
+            });
+            rows[index].entry.amount += entry.amount;
+            rows[index].purchases.push(entry);
+        } else {
+            rows.push(SupplierHistoryEntry {
+                entry,
+                purchases: Vec::new(),
+            });
+        }
+    }
+    rows.sort_by(|a, b| {
+        b.entry
+            .date
+            .cmp(&a.entry.date)
+            .then_with(|| b.entry.reference.cmp(&a.entry.reference))
+            .then_with(|| b.entry.purchase_id.cmp(&a.entry.purchase_id))
+            .then_with(|| b.entry.payment_id.cmp(&a.entry.payment_id))
+    });
+    rows
 }

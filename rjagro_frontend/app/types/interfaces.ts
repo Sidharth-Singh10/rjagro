@@ -764,7 +764,14 @@ export interface SupplierLedgerEntry {
   description: string,
   reference: string,
   amount: string,
-  entry_type: string,
+  entry_type: string | null,
+  purchase_id: number | null,
+  purchase_order_id: number | null,
+  payment_id: number | null,
+}
+
+export interface SupplierHistoryEntry extends SupplierLedgerEntry {
+  purchases: SupplierLedgerEntry[],
 }
 
 export interface TraderReceivable {

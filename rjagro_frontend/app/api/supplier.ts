@@ -1,4 +1,4 @@
-import { Supplier, SupplierPayable, SupplierPayload, SupplierPayment, SupplierPaymentPayload, SupplierPaymentTotal } from "../types/interfaces";
+import { Supplier, SupplierHistoryEntry, SupplierPayable, SupplierPayload, SupplierPayment, SupplierPaymentPayload, SupplierPaymentTotal } from "../types/interfaces";
 import api from "../utils/api";
 import { toast } from "react-toastify";
 
@@ -55,8 +55,7 @@ export const fetchSupplierPayments = async (supplierId: number): Promise<Supplie
   return response.data;
 }
 
-// fix `any` later
-export const fetchSupplierLedger  = async (supplierId: number): Promise<any[]> => {
+export const fetchSupplierLedger  = async (supplierId: number): Promise<SupplierHistoryEntry[]> => {
   const response = await api.get(`/getbyid/supplier_ledger/${supplierId}`);
   return response.data;
 }
