@@ -377,7 +377,18 @@ const LedgerHistoryRows = ({ row }: { row: SupplierHistoryEntry }) => {
                                 {row.purchases.length} {row.purchases.length === 1 ? 'purchase' : 'purchases'} · Total liability
                             </span></span>
                         </button>
-                    ) : row.description} />
+                    ) : row.description} reference={grouped ? (
+                        <button
+                            type="button"
+                            aria-label={`${expanded ? 'Collapse' : 'Expand'} purchase order #${row.purchase_order_id}`}
+                            aria-expanded={expanded}
+                            aria-controls={detailsId}
+                            onClick={() => setExpanded(previous => !previous)}
+                            className="rounded py-2 text-green-700 underline underline-offset-2 hover:text-green-800 focus-visible:outline-2 focus-visible:outline-green-600"
+                        >
+                            {row.reference}
+                        </button>
+                    ) : row.reference || '-'} />
                 </tr>
             </tbody>
             {grouped && (
@@ -393,14 +404,18 @@ const LedgerHistoryRows = ({ row }: { row: SupplierHistoryEntry }) => {
     );
 };
 
-const LedgerCells = ({ row, description }: { row: SupplierLedgerEntry; description: React.ReactNode }) => {
+const LedgerCells = ({ row, description, reference }: {
+    row: SupplierLedgerEntry;
+    description: React.ReactNode;
+    reference?: React.ReactNode;
+}) => {
     const isLiability = row.entry_type === EntryType.Payable;
     const isCash = row.entry_type === EntryType.Cash || row.entry_type === EntryType.Settlement;
     return (
         <>
             <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{new Date(`${row.date}T00:00:00`).toLocaleDateString()}</td>
             <td className="px-4 py-3 font-medium text-gray-900">{description}</td>
-            <td className="px-4 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">{row.reference || '-'}</td>
+            <td className="px-4 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">{reference ?? (row.reference || '-')}</td>
             <td className="px-4 py-3">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium border ${isCash
                     ? 'bg-green-50 text-green-700 border-green-200'
